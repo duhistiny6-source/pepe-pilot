@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Pro</title>
+    <title>Pepe Pilot Relax</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>body { margin: 0; background-color: #1a3c1a; overflow: hidden; }</style>
 </head>
@@ -21,11 +21,15 @@ const config = {
 const game = new Phaser.Game(config);
 let plane, claw, chain, targets, scoreText;
 let isLaunching = false;
-let isReturning = false; // Добавили плавный возврат
+let isReturning = false;
 let angle = 0; 
-let swingSpeed = 0.015; // БЫЛО 0.025. Сделал медленнее (плавный замах)
+
+// --- НАСТРОЙКИ СКОРОСТИ ---
+let swingSpeed = 0.008; // Было 0.015. Теперь качается ОЧЕНЬ плавно.
+let grabSpeed = 2.5;    // Было 4. Теперь летит в два раза медленнее.
+// --------------------------
+
 let scoreTON = 0;
-let grabSpeed = 4; // БЫЛО 9. Теперь летит плавно, можно успеть рассмотреть цель
 
 function preload() {
     this.load.image('plane', 'https://labs.phaser.io/assets/sprites/tinified/ship.png');
@@ -56,18 +60,16 @@ function create() {
 
 function update() {
     if (!isLaunching && !isReturning) {
-        // ПЛАВНОЕ РАСКАЧИВАНИЕ
         angle += swingSpeed;
         if (angle > 0.8 || angle < -0.8) swingSpeed = -swingSpeed;
         claw.x = plane.x + Math.sin(angle) * 120;
         claw.y = plane.y + Math.cos(angle) * 120;
     } else if (isLaunching) {
-        // ПЛАВНЫЙ ВЫСТРЕЛ
         claw.x += Math.sin(angle) * grabSpeed;
         claw.y += Math.cos(angle) * grabSpeed;
         
         targets.children.iterate(child => {
-            if (child && Phaser.Geom.Intersects.CircleToCircle(claw, child)) {
+            if (child && child.active && Phaser.Geom.Intersects.CircleToCircle(claw, child)) {
                 let type = child.getData('type');
                 if(type === 'BEAR') scoreTON -= 0.05;
                 else if(type === 'TON') scoreTON += 0.001;
@@ -83,14 +85,15 @@ function update() {
             isReturning = true;
         }
     } else if (isReturning) {
-        // ПЛАВНЫЙ ВОЗВРАТ К САМОЛЕТУ
-        let dx = (plane.x + Math.sin(angle) * 120) - claw.x;
-        let dy = (plane.y + Math.cos(angle) * 120) - claw.y;
+        let targetX = plane.x + Math.sin(angle) * 120;
+        let targetY = plane.y + Math.cos(angle) * 120;
+        let dx = targetX - claw.x;
+        let dy = targetY - claw.y;
         let dist = Math.sqrt(dx*dx + dy*dy);
         
         if (dist > 5) {
-            claw.x += dx * 0.1;
-            claw.y += dy * 0.1;
+            claw.x += dx * 0.15; // Скорость возврата чуть быстрее вылета
+            claw.y += dy * 0.15;
         } else {
             isReturning = false;
         }
@@ -103,3 +106,4 @@ function update() {
 </script>
 </body>
 </html>
+        
