@@ -1,14 +1,11 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot TON</title>
+    <title>Pepe Pilot Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
-    <style>
-        body { margin: 0; background-color: #1a3c1a; overflow: hidden; }
-        canvas { display: block; margin: 0 auto; }
-    </style>
+    <style>body { margin: 0; background-color: #1a3c1a; overflow: hidden; }</style>
 </head>
 <body>
 <script>
@@ -16,7 +13,7 @@ const config = {
     type: Phaser.AUTO,
     width: window.innerWidth,
     height: window.innerHeight,
-    backgroundColor: '#2d5a27', // Твой зеленый фон
+    backgroundColor: '#2d5a27',
     physics: { default: 'arcade' },
     scene: { preload: preload, create: create, update: update }
 };
@@ -24,84 +21,89 @@ const config = {
 const game = new Phaser.Game(config);
 let plane, claw, chain, targets;
 let isLaunching = false;
+let angle = 0; 
+let swingSpeed = 0.025; // Скорость качания
 let scoreTON = 0;
+let grabSpeed = 9; 
 
 function preload() {
-    // Временные заглушки (потом заменим на реальную графику Пепе)
     this.load.image('plane', 'https://labs.phaser.io/assets/sprites/tinified/ship.png');
 }
 
 function create() {
-    // Самолетик Пепе наверху
-    plane = this.add.sprite(config.width / 2, 80, 'plane').setScale(1.5);
+    // Самолет Пепе
+    plane = this.add.sprite(config.width / 2, 60, 'plane').setScale(1.2).setDepth(3);
     
-    // Клешня (цепь)
-    chain = this.add.rectangle(config.width / 2, 80, 4, 0, 0xcccccc);
-    claw = this.add.circle(config.width / 2, 80, 15, 0xffd700);
+    // Графика для ЦЕПИ
+    chain = this.add.graphics().setDepth(1);
     
-    // Группа для монеток и медведей
+    // Клешня (шарик)
+    claw = this.add.circle(config.width / 2, 120, 15, 0xffd700).setDepth(2);
+    
     targets = this.physics.add.group();
-
-    // Спавним монетки (TON, DOGS, NOT...) и медведей
     const types = ['TON', 'DOGS', 'NOT', 'HAMSTER', 'USDT', 'BEAR'];
-    for(let i=0; i<15; i++) {
-        let x = Phaser.Math.Between(50, config.width - 50);
-        let y = Phaser.Math.Between(250, config.height - 100);
-        let t = this.add.circle(x, y, 20, 0xffff00); // Монетки желтые
+    
+    // Генерируем монетки
+    for(let i=0; i<18; i++) {
+        let x = Phaser.Math.Between(40, config.width - 40);
+        let y = Phaser.Math.Between(220, config.height - 100);
+        let coin = this.add.circle(x, y, 18, 0xffff00);
         let label = Phaser.Math.RND.pick(types);
-        if(label === 'BEAR') t.setFillStyle(0x8b4513); // Медведь коричневый
+        if(label === 'BEAR') coin.setFillStyle(0x8b4513);
         
-        t.setData('type', label);
-        targets.add(t);
-        this.add.text(x-15, y-10, label, {fontSize: '10px', color: '#000'});
+        coin.setData('type', label);
+        targets.add(coin);
+        this.add.text(x-12, y-8, label, {fontSize: '9px', color: '#000', fontWeight: 'bold'});
     }
 
-    // Текст баланса
-    this.scoreText = this.add.text(20, 20, 'Balance: 0 TON', { fontSize: '20px', fill: '#fff' });
-
-    // Клик/Тап для запуска клешни
-    this.input.on('pointerdown', launchClaw);
-}
-
-function launchClaw() {
-    if (isLaunching) return;
-    isLaunching = true;
+    this.scoreText = this.add.text(20, 20, 'Balance: 0 TON', { fontSize: '22px', fill: '#fff', fontStyle: 'bold' });
+    
+    // Запуск по тапу
+    this.input.on('pointerdown', () => { 
+        if(!isLaunching) isLaunching = true; 
+    });
 }
 
 function update() {
     if (!isLaunching) {
-        // Клешня качается (как в Moonbix)
-        claw.x = plane.x + Math.sin(this.time.now / 300) * 100;
-        claw.y = 100;
-        chain.x = plane.x;
-        chain.y = 80;
-        chain.width = 2; // Толщина цепи
-    } else {
-        // Клешня летит вниз (упрощенно для теста)
-        claw.y += 5;
-        chain.height = claw.y - 80;
+        // РАСКАЧИВАНИЕ ШАРИКА И ЦЕПИ
+        angle += swingSpeed;
+        if (angle > 0.8 || angle < -0.8) swingSpeed = -swingSpeed;
         
-        // Проверка столкновения
+        // Математика маятника: шарик движется по дуге
+        claw.x = plane.x + Math.sin(angle) * 120;
+        claw.y = plane.y + Math.cos(angle) * 120;
+    } else {
+        // ВЫСТРЕЛ (движение по вектору угла)
+        claw.x += Math.sin(angle) * grabSpeed;
+        claw.y += Math.cos(angle) * grabSpeed;
+        
+        // Проверка столкновений
         targets.children.iterate(child => {
             if (child && Phaser.Geom.Intersects.CircleToCircle(claw, child)) {
                 let type = child.getData('type');
-                if(type === 'BEAR') scoreTON -= 0.1;
+                if(type === 'BEAR') scoreTON -= 0.05;
                 else if(type === 'TON') scoreTON += 0.001;
                 
                 this.scoreText.setText('Balance: ' + scoreTON.toFixed(3) + ' TON');
                 child.destroy();
-                resetClaw();
+                returnToPlane();
             }
         });
 
-        if (claw.y > config.height) resetClaw();
+        // Возврат если улетел за край
+        if (claw.y > config.height || claw.x < 0 || claw.x > config.width) returnToPlane();
     }
+
+    // ОБНОВЛЕНИЕ ЦЕПИ: Рисуем линию от самолета к шарику в каждом кадре
+    chain.clear();
+    chain.lineStyle(4, 0xaaaaaa); // Серый цвет цепи
+    chain.lineBetween(plane.x, plane.y, claw.x, claw.y);
 }
 
-function resetClaw() {
+function returnToPlane() {
     isLaunching = false;
-    claw.y = 100;
-    chain.height = 0;
+    // Клешня возвращается в исходную точку маятника
 }
 </script>
 </body>
