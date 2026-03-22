@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Slow</title>
+    <title>Pepe Pilot Physics</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>body { margin: 0; background-color: #1a3c1a; overflow: hidden; touch-action: none; }</style>
 </head>
@@ -24,9 +24,12 @@ let isLaunching = false;
 let isReturning = false;
 let angle = 0; 
 
-// ЭКСТРЕМАЛЬНО МЕДЛЕННО ДЛЯ ПРОВЕРКИ
-let swingSpeed = 0.007; 
-let grabSpeed = 1.5;    
+// --- НАСТРОЙКИ ФИЗИКИ (МЯГКОСТЬ) ---
+let swingSpeed = 0.012;  // Скорость замаха
+let launchSpeed = 3.5;   // Скорость опускания (сделал чуть быстрее, чтобы не было скучно)
+let returnSpeed = 0.06;  // Плавность возврата (чем меньше число, тем медленнее тянет)
+// ------------------------------------
+
 let scoreTON = 0;
 
 function preload() {
@@ -58,19 +61,21 @@ function create() {
 
 function update() {
     if (!isLaunching && !isReturning) {
+        // Качаемся
         angle += swingSpeed;
         if (angle > 0.8 || angle < -0.8) swingSpeed = -swingSpeed;
         claw.x = plane.x + Math.sin(angle) * 120;
         claw.y = plane.y + Math.cos(angle) * 120;
     } else if (isLaunching) {
-        claw.x += Math.sin(angle) * grabSpeed;
-        claw.y += Math.cos(angle) * grabSpeed;
+        // Опускаемся плавно
+        claw.x += Math.sin(angle) * launchSpeed;
+        claw.y += Math.cos(angle) * launchSpeed;
         
         targets.children.iterate(child => {
             if (child && child.active && Phaser.Geom.Intersects.CircleToCircle(claw, child)) {
                 let type = child.getData('type');
                 if(type === 'BEAR') scoreTON -= 0.05;
-                else if(type === 'TON') scoreTON += 0.005; // Увеличил награду за TON
+                else if(type === 'TON') scoreTON += 0.005;
                 scoreText.setText('Balance: ' + scoreTON.toFixed(3) + ' TON');
                 child.destroy();
                 isLaunching = false;
@@ -83,18 +88,18 @@ function update() {
             isReturning = true;
         }
     } else if (isReturning) {
+        // ВОЗВРАТ: Используем "Lerp" для плавного замедления в конце
         let targetX = plane.x + Math.sin(angle) * 120;
         let targetY = plane.y + Math.cos(angle) * 120;
-        let dx = targetX - claw.x;
-        let dy = targetY - claw.y;
-        let dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist > 5) {
-            claw.x += dx * 0.1;
-            claw.y += dy * 0.1;
-        } else {
-            isReturning = false;
-        }
+        
+        // Клешня замедляется по мере приближения к самолету
+        claw.x += (targetX - claw.x) * returnSpeed;
+        claw.y += (targetY - claw.y) * returnSpeed;
+        
+        let dist = Phaser.Math.Distance.Between(claw.x, claw.y, targetX, targetY);
+        if (dist < 3) isReturning = false;
     }
+
     chain.clear();
     chain.lineStyle(4, 0xaaaaaa);
     chain.lineBetween(plane.x, plane.y, claw.x, claw.y);
@@ -102,5 +107,6 @@ function update() {
 </script>
 </body>
 </html>
+
 
         
