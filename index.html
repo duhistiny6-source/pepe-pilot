@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Gold Collector</title>
+    <title>Pepe Pilot: Moonbix Style</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #010103; overflow: hidden; touch-action: none; }
@@ -26,10 +26,10 @@ let angle = 0, swingSpeed = 0.015, launchSpeed = 8, returnSpeed = 0.15;
 let score = 0;
 
 function preload() {
-    // Загружаем фон
+    // Фон
     this.load.image('sky', 'https://labs.phaser.io/assets/skies/space3.png');
     
-    // ПРИВЯЗЫВАЕМ ТВОИ ФАЙЛЫ (названия точно как в твоем GitHub)
+    // Твои картинки из GitHub (названия взяты с твоего скриншота)
     this.load.image('pepe', 'images (32).jpeg'); 
     this.load.image('ton_coin', 'ton-ecosystem.jpg'); 
     this.load.image('dogs_coin', 'images (33).jpeg'); 
@@ -37,13 +37,12 @@ function preload() {
 }
 
 function create() {
-    // Фон
-    this.add.image(config.width/2, config.height/2, 'sky').setAlpha(0.3).setScale(1.5).setDepth(0);
+    this.add.image(config.width/2, config.height/2, 'sky').setAlpha(0.3).setScale(1.5);
     
     // Пепе-пилот
     plane = this.add.sprite(config.width / 2, 100, 'pepe').setScale(0.6).setDepth(5);
     
-    // Золотая клешня и цепь
+    // Золотая клешня
     claw = this.add.circle(config.width / 2, 180, 18, 0xffd700).setDepth(4);
     chain = this.add.graphics().setDepth(3);
     
@@ -52,24 +51,18 @@ function create() {
 
     // Генерация монет
     for(let i=0; i<12; i++) {
-        let attempts = 0;
-        let x, y;
-        do {
-            x = Phaser.Math.Between(80, config.width - 80);
-            y = Phaser.Math.Between(320, config.height - 180);
-            attempts++;
-        } while (this.physics.overlapCirc(x, y, 60) && attempts < 15);
-
+        let x = Phaser.Math.Between(80, config.width - 80);
+        let y = Phaser.Math.Between(300, config.height - 150);
+        
         let type = Phaser.Math.RND.pick(assets);
         let coin = targets.create(x, y, type);
-        coin.setDisplaySize(75, 75); 
+        coin.setDisplaySize(70, 70); // Размер как в Moonbix
         coin.setData('val', type === 'ton_coin' ? 50 : 10);
     }
 
-    // Счет
     scoreText = this.add.text(config.width/2, 45, '0', { 
         fontSize: '56px', fill: '#fff', fontStyle: 'bold', fontFamily: 'Arial Black'
-    }).setOrigin(0.5).setDepth(10);
+    }).setOrigin(0.5);
 
     this.input.on('pointerdown', () => { if(!isLaunching && !isReturning) isLaunching = true; });
 }
@@ -107,7 +100,7 @@ function update() {
     }
 
     chain.clear();
-    chain.lineStyle(5, 0xffd700, 0.9); 
+    chain.lineStyle(5, 0xffd700, 0.8); 
     chain.lineBetween(plane.x, plane.y + 20, claw.x, claw.y);
 }
 </script>
