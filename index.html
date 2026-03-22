@@ -27,7 +27,23 @@ let isLaunching = false, isReturning = false;
 let angle = 0, swingSpeed = 0.015, launchSpeed = 8, returnSpeed = 0.15;
 let score = 0;
 
+function preload() // Находим этот блок в районе 31 строки
+    scene: { 
+        preload: preload, 
+        create: create, 
+        update: update 
+    
 function preload() {
+    // Загружаем фон
+    this.load.image('sky', 'https://labs.phaser.io/assets/skies/space3.png');
+    
+    // ПРИВЯЗЫВАЕМ ТВОИ ФАЙЛЫ (названия точно как в GitHub)
+    this.load.image('pepe', 'images (32).jpeg'); 
+    this.load.image('ton_coin', 'ton-ecosystem.jpg'); 
+    this.load.image('dogs_coin', 'images (33).jpeg'); 
+    this.load.image('not_coin', 'images (35).jpeg');
+}
+
     // Чистый фон космоса (без старых звезд)
     this.load.image('sky', 'https://labs.phaser.io/assets/skies/space3.png');
     
