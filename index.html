@@ -7,8 +7,6 @@
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #010103; overflow: hidden; touch-action: none; }
-        /* Добавляем шрифт, похожий на Moonbix */
-        @font-face { font-family: 'MoonbixFont'; src: url('https://db.onlinewebfonts.com/t/01f0212a7746538c642e12e128174542.ttf'); }
     </style>
 </head>
 <body>
@@ -27,51 +25,32 @@ let isLaunching = false, isReturning = false;
 let angle = 0, swingSpeed = 0.015, launchSpeed = 8, returnSpeed = 0.15;
 let score = 0;
 
-function preload() // Находим этот блок в районе 31 строки
-    scene: { 
-        preload: preload, 
-        create: create, 
-        update: update 
-    
 function preload() {
     // Загружаем фон
     this.load.image('sky', 'https://labs.phaser.io/assets/skies/space3.png');
     
-    // ПРИВЯЗЫВАЕМ ТВОИ ФАЙЛЫ (названия точно как в GitHub)
+    // ПРИВЯЗЫВАЕМ ТВОИ ФАЙЛЫ (названия точно как в твоем GitHub)
     this.load.image('pepe', 'images (32).jpeg'); 
     this.load.image('ton_coin', 'ton-ecosystem.jpg'); 
     this.load.image('dogs_coin', 'images (33).jpeg'); 
     this.load.image('not_coin', 'images (35).jpeg');
 }
 
-    // Чистый фон космоса (без старых звезд)
-    this.load.image('sky', 'https://labs.phaser.io/assets/skies/space3.png');
-    
-    // === ВНИМАНИЕ: Загрузи свои файлы в GitHub и укажи здесь их названия ===
-    // Если они лежат в той же папке, что и index.html:
-    this.load.image('pepe', 'pepe.png'); // Твой Пепе-пилот (как на примере image_14.png)
-    
-    // Качественные текстурированные монеты (как на image_14.png)
-    this.load.image('dogs_coin', 'dogs_coin.png');
-    this.load.image('ton_coin', 'ton_coin.png');
-    this.load.image('not_coin', 'not_coin.png');
-}
-
 function create() {
-    // Добавляем глубокий фон и убираем лишний визуальный мусор
+    // Фон
     this.add.image(config.width/2, config.height/2, 'sky').setAlpha(0.3).setScale(1.5).setDepth(0);
     
-    // Пепе теперь выглядит круто и текстурировано
+    // Пепе-пилот
     plane = this.add.sprite(config.width / 2, 100, 'pepe').setScale(0.6).setDepth(5);
     
-    // Золотая клешня (как в Moonbix)
+    // Золотая клешня и цепь
     claw = this.add.circle(config.width / 2, 180, 18, 0xffd700).setDepth(4);
     chain = this.add.graphics().setDepth(3);
     
     targets = this.physics.add.group();
     const assets = ['ton_coin', 'dogs_coin', 'not_coin'];
 
-    // Раскладываем монеты аккуратно и КРУПНО (75px), как на примере image_14.png
+    // Генерация монет
     for(let i=0; i<12; i++) {
         let attempts = 0;
         let x, y;
@@ -79,15 +58,15 @@ function create() {
             x = Phaser.Math.Between(80, config.width - 80);
             y = Phaser.Math.Between(320, config.height - 180);
             attempts++;
-        } while (this.physics.overlapCirc(x, y, 60) && attempts < 15); // Физический радиус чтобы не слипались
+        } while (this.physics.overlapCirc(x, y, 60) && attempts < 15);
 
         let type = Phaser.Math.RND.pick(assets);
         let coin = targets.create(x, y, type);
-        coin.setDisplaySize(75, 75); // Сочные, большие монеты!
+        coin.setDisplaySize(75, 75); 
         coin.setData('val', type === 'ton_coin' ? 50 : 10);
     }
 
-    // Стилизованный счет по центру (как в Moonbix)
+    // Счет
     scoreText = this.add.text(config.width/2, 45, '0', { 
         fontSize: '56px', fill: '#fff', fontStyle: 'bold', fontFamily: 'Arial Black'
     }).setOrigin(0.5).setDepth(10);
@@ -97,13 +76,11 @@ function create() {
 
 function update() {
     if (!isLaunching && !isReturning) {
-        // Качаемся
         angle += swingSpeed;
         if (angle > 0.8 || angle < -0.8) swingSpeed = -swingSpeed;
         claw.x = plane.x + Math.sin(angle) * 120;
         claw.y = plane.y + Math.cos(angle) * 120;
     } else if (isLaunching) {
-        // Опускаемся плавно
         claw.x += Math.sin(angle) * launchSpeed;
         claw.y += Math.cos(angle) * launchSpeed;
         
@@ -122,7 +99,6 @@ function update() {
             isReturning = true;
         }
     } else if (isReturning) {
-        // Плавный возврат (Lerp)
         let tx = plane.x + Math.sin(angle) * 120;
         let ty = plane.y + Math.cos(angle) * 120;
         claw.x += (tx - claw.x) * returnSpeed;
@@ -131,7 +107,7 @@ function update() {
     }
 
     chain.clear();
-    chain.lineStyle(5, 0xffd700, 0.9); // Сочная золотая цепь
+    chain.lineStyle(5, 0xffd700, 0.9); 
     chain.lineBetween(plane.x, plane.y + 20, claw.x, claw.y);
 }
 </script>
