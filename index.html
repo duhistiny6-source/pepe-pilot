@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Elite</title>
+    <title>Pepe Moonbix Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
-    <style>body { margin: 0; background-color: #050505; overflow: hidden; touch-action: none; }</style>
+    <style>body { margin: 0; background-color: #020205; overflow: hidden; }</style>
 </head>
 <body>
 <script>
@@ -13,7 +13,6 @@ const config = {
     type: Phaser.AUTO,
     width: window.innerWidth,
     height: window.innerHeight,
-    backgroundColor: '#050508',
     physics: { default: 'arcade' },
     scene: { preload: preload, create: create, update: update }
 };
@@ -21,60 +20,48 @@ const config = {
 const game = new Phaser.Game(config);
 let plane, claw, chain, targets, scoreText;
 let isLaunching = false, isReturning = false;
-let angle = 0; 
-
-// Настройки как в Moonbix
-let swingSpeed = 0.015; 
-let launchSpeed = 6;    
-let returnSpeed = 0.1;
-let scoreTON = 0;
+let angle = 0, swingSpeed = 0.02, launchSpeed = 8, returnSpeed = 0.15;
+let score = 0;
 
 function preload() {
-    // Чистый фон космоса
+    // Используем качественный фон космоса
     this.load.image('sky', 'https://labs.phaser.io/assets/skies/space3.png');
     
-    // Логотипы крипты (Прозрачные PNG)
-    this.load.image('ton', 'https://raw.githubusercontent.com/itgoldio/smart-contract-ton/master/images/ton_logo.png');
-    this.load.image('not', 'https://cryptologos.cc/logos/notcoin-not-logo.png?v=032');
-    this.load.image('dogs', 'https://coin-images.coingecko.com/coins/images/39531/large/dogs.png?1722931455');
-    
-    // Пепе (пока используем эту, но она будет одна и четкая)
-    this.load.image('pepe', 'https://labs.phaser.io/assets/sprites/ship.png');
+    // ВНИМАНИЕ: Загрузи свои файлы в GitHub и укажи здесь их названия
+    // Если они лежат в той же папке, что и index.html, пути будут такими:
+    this.load.image('pepe', 'pepe.png'); // Твой Пепе в самолете
+    this.load.image('ton', 'ton.png');   // Лого TON
+    this.load.image('not', 'not.png');   // Лого NOT
+    this.load.image('dogs', 'dogs.png'); // Лого DOGS
 }
 
 function create() {
-    this.add.image(config.width/2, config.height/2, 'sky').setAlpha(0.4);
+    this.add.image(config.width/2, config.height/2, 'sky').setAlpha(0.5);
     
-    // Главный герой
-    plane = this.add.sprite(config.width / 2, 80, 'pepe').setScale(1.5).setDepth(3);
+    // Пепе теперь выглядит круто
+    plane = this.add.sprite(config.width / 2, 100, 'pepe').setScale(0.5).setDepth(5);
     
-    // Клешня и цепь
-    chain = this.add.graphics().setDepth(1);
-    claw = this.add.circle(config.width / 2, 140, 12, 0xffd700).setDepth(2);
+    // Клешня (сделаем её золотистой и заметной)
+    claw = this.add.circle(config.width / 2, 180, 15, 0xffcc00).setDepth(4);
+    chain = this.add.graphics().setDepth(3);
     
     targets = this.physics.add.group();
     const assets = ['ton', 'not', 'dogs'];
-    
-    // Создаем 12 крупных, аккуратно расставленных монет
-    for(let i=0; i<12; i++) {
-        let x = Phaser.Math.Between(60, config.width - 60);
-        let y = Phaser.Math.Between(250, config.height - 120);
+
+    // Раскладываем монеты аккуратно, как в Moonbix
+    for(let i=0; i<10; i++) {
+        let x = Phaser.Math.Between(80, config.width - 80);
+        let y = Phaser.Math.Between(300, config.height - 150);
         
-        // Проверка, чтобы не спавнились друг в друге
-        if (this.physics.overlapCirc(x, y, 50).length === 0) {
-            let type = Phaser.Math.RND.pick(assets);
-            let coin = targets.create(x, y, type);
-            coin.setDisplaySize(55, 55); // Крупный размер как в Moonbix
-            coin.setData('val', type === 'ton' ? 0.05 : 0.01);
-        }
+        let type = Phaser.Math.RND.pick(assets);
+        let coin = targets.create(x, y, type);
+        coin.setDisplaySize(70, 70); // Крупные монеты!
+        coin.setCircle(35); // Физика по форме монеты
     }
 
-    scoreText = this.add.text(25, 25, 'SCORE: 0 TON', { 
-        fontSize: '28px', 
-        fill: '#00ff00', 
-        fontStyle: 'bold',
-        fontFamily: 'Arial Black'
-    }).setDepth(10);
+    scoreText = this.add.text(config.width/2, 40, '0', { 
+        fontSize: '48px', fill: '#fff', fontStyle: 'bold', fontFamily: 'Arial'
+    }).setOrigin(0.5);
 
     this.input.on('pointerdown', () => { if(!isLaunching && !isReturning) isLaunching = true; });
 }
@@ -82,21 +69,19 @@ function create() {
 function update() {
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
-        if (angle > 0.9 || angle < -0.9) swingSpeed = -swingSpeed;
-        claw.x = plane.x + Math.sin(angle) * 100;
-        claw.y = plane.y + Math.cos(angle) * 100;
+        if (angle > 0.8 || angle < -0.8) swingSpeed = -swingSpeed;
+        claw.x = plane.x + Math.sin(angle) * 120;
+        claw.y = plane.y + Math.cos(angle) * 120;
     } else if (isLaunching) {
         claw.x += Math.sin(angle) * launchSpeed;
         claw.y += Math.cos(angle) * launchSpeed;
         
-        targets.children.iterate(child => {
-            if (child && child.active && Phaser.Geom.Intersects.CircleToCircle(claw, child)) {
-                scoreTON += child.getData('val');
-                scoreText.setText('SCORE: ' + scoreTON.toFixed(2) + ' TON');
-                child.destroy();
-                isLaunching = false;
-                isReturning = true;
-            }
+        this.physics.overlap(claw, targets, (c, target) => {
+            score += 10;
+            scoreText.setText(score);
+            target.destroy();
+            isLaunching = false;
+            isReturning = true;
         });
 
         if (claw.y > config.height || claw.x < 0 || claw.x > config.width) {
@@ -104,17 +89,18 @@ function update() {
             isReturning = true;
         }
     } else if (isReturning) {
-        let tx = plane.x + Math.sin(angle) * 100;
-        let ty = plane.y + Math.cos(angle) * 100;
+        let tx = plane.x + Math.sin(angle) * 120;
+        let ty = plane.y + Math.cos(angle) * 120;
         claw.x += (tx - claw.x) * returnSpeed;
         claw.y += (ty - claw.y) * returnSpeed;
-        if (Phaser.Math.Distance.Between(claw.x, claw.y, tx, ty) < 5) isReturning = false;
+        if (Phaser.Math.Distance.Between(claw.x, claw.y, tx, ty) < 10) isReturning = false;
     }
 
     chain.clear();
-    chain.lineStyle(3, 0xaaaaaa, 0.6);
-    chain.lineBetween(plane.x, plane.y, claw.x, claw.y);
+    chain.lineStyle(4, 0xffd700, 0.8);
+    chain.lineBetween(plane.x, plane.y + 20, claw.x, claw.y);
 }
 </script>
 </body>
 </html>
+             
