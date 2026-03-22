@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -21,10 +21,11 @@ const config = {
 const game = new Phaser.Game(config);
 let plane, claw, chain, targets, scoreText;
 let isLaunching = false;
+let isReturning = false; // Добавили плавный возврат
 let angle = 0; 
-let swingSpeed = 0.025; 
+let swingSpeed = 0.015; // БЫЛО 0.025. Сделал медленнее (плавный замах)
 let scoreTON = 0;
-let grabSpeed = 9; 
+let grabSpeed = 4; // БЫЛО 9. Теперь летит плавно, можно успеть рассмотреть цель
 
 function preload() {
     this.load.image('plane', 'https://labs.phaser.io/assets/sprites/tinified/ship.png');
@@ -50,16 +51,18 @@ function create() {
     }
 
     scoreText = this.add.text(20, 20, 'Balance: 0 TON', { fontSize: '22px', fill: '#fff', fontStyle: 'bold' });
-    this.input.on('pointerdown', () => { if(!isLaunching) isLaunching = true; });
+    this.input.on('pointerdown', () => { if(!isLaunching && !isReturning) isLaunching = true; });
 }
 
 function update() {
-    if (!isLaunching) {
+    if (!isLaunching && !isReturning) {
+        // ПЛАВНОЕ РАСКАЧИВАНИЕ
         angle += swingSpeed;
         if (angle > 0.8 || angle < -0.8) swingSpeed = -swingSpeed;
         claw.x = plane.x + Math.sin(angle) * 120;
         claw.y = plane.y + Math.cos(angle) * 120;
-    } else {
+    } else if (isLaunching) {
+        // ПЛАВНЫЙ ВЫСТРЕЛ
         claw.x += Math.sin(angle) * grabSpeed;
         claw.y += Math.cos(angle) * grabSpeed;
         
@@ -71,10 +74,26 @@ function update() {
                 scoreText.setText('Balance: ' + scoreTON.toFixed(3) + ' TON');
                 child.destroy();
                 isLaunching = false;
+                isReturning = true;
             }
         });
 
-        if (claw.y > config.height || claw.x < 0 || claw.x > config.width) isLaunching = false;
+        if (claw.y > config.height || claw.x < 0 || claw.x > config.width) {
+            isLaunching = false;
+            isReturning = true;
+        }
+    } else if (isReturning) {
+        // ПЛАВНЫЙ ВОЗВРАТ К САМОЛЕТУ
+        let dx = (plane.x + Math.sin(angle) * 120) - claw.x;
+        let dy = (plane.y + Math.cos(angle) * 120) - claw.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist > 5) {
+            claw.x += dx * 0.1;
+            claw.y += dy * 0.1;
+        } else {
+            isReturning = false;
+        }
     }
 
     chain.clear();
