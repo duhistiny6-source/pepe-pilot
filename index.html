@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pepe Pilot TON</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <style>
+        body { margin: 0; background-color: #1a3c1a; overflow: hidden; }
+        canvas { display: block; margin: 0 auto; }
+    </style>
+</head>
+<body>
+<script>
+const config = {
+    type: Phaser.AUTO,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    backgroundColor: '#2d5a27', // Твой зеленый фон
+    physics: { default: 'arcade' },
+    scene: { preload: preload, create: create, update: update }
+};
+
+const game = new Phaser.Game(config);
+let plane, claw, chain, targets;
+let isLaunching = false;
+let scoreTON = 0;
+
+function preload() {
+    // Временные заглушки (потом заменим на реальную графику Пепе)
+    this.load.image('plane', 'https://labs.phaser.io/assets/sprites/tinified/ship.png');
+}
+
+function create() {
+    // Самолетик Пепе наверху
+    plane = this.add.sprite(config.width / 2, 80, 'plane').setScale(1.5);
+    
+    // Клешня (цепь)
+    chain = this.add.rectangle(config.width / 2, 80, 4, 0, 0xcccccc);
+    claw = this.add.circle(config.width / 2, 80, 15, 0xffd700);
+    
+    // Группа для монеток и медведей
+    targets = this.physics.add.group();
+
+    // Спавним монетки (TON, DOGS, NOT...) и медведей
+    const types = ['TON', 'DOGS', 'NOT', 'HAMSTER', 'USDT', 'BEAR'];
+    for(let i=0; i<15; i++) {
+        let x = Phaser.Math.Between(50, config.width - 50);
+        let y = Phaser.Math.Between(250, config.height - 100);
+        let t = this.add.circle(x, y, 20, 0xffff00); // Монетки желтые
+        let label = Phaser.Math.RND.pick(types);
+        if(label === 'BEAR') t.setFillStyle(0x8b4513); // Медведь коричневый
+        
+        t.setData('type', label);
+        targets.add(t);
+        this.add.text(x-15, y-10, label, {fontSize: '10px', color: '#000'});
+    }
+
+    // Текст баланса
+    this.scoreText = this.add.text(20, 20, 'Balance: 0 TON', { fontSize: '20px', fill: '#fff' });
+
+    // Клик/Тап для запуска клешни
+    this.input.on('pointerdown', launchClaw);
+}
+
+function launchClaw() {
+    if (isLaunching) return;
+    isLaunching = true;
+}
+
+function update() {
+    if (!isLaunching) {
+        // Клешня качается (как в Moonbix)
+        claw.x = plane.x + Math.sin(this.time.now / 300) * 100;
+        claw.y = 100;
+        chain.x = plane.x;
+        chain.y = 80;
+        chain.width = 2; // Толщина цепи
+    } else {
+        // Клешня летит вниз (упрощенно для теста)
+        claw.y += 5;
+        chain.height = claw.y - 80;
+        
+        // Проверка столкновения
+        targets.children.iterate(child => {
+            if (child && Phaser.Geom.Intersects.CircleToCircle(claw, child)) {
+                let type = child.getData('type');
+                if(type === 'BEAR') scoreTON -= 0.1;
+                else if(type === 'TON') scoreTON += 0.001;
+                
+                this.scoreText.setText('Balance: ' + scoreTON.toFixed(3) + ' TON');
+                child.destroy();
+                resetClaw();
+            }
+        });
+
+        if (claw.y > config.height) resetClaw();
+    }
+}
+
+function resetClaw() {
+    isLaunching = false;
+    claw.y = 100;
+    chain.height = 0;
+}
+</script>
+</body>
+</html>
