@@ -33,14 +33,13 @@ let angle = 0, swingSpeed = 0.04, launchSpeed = 18;
 let score = 0, timeLeft = 60;
 
 function preload() {
-    // Важно: анонимный режим для обхода CORS
-    this.load.crossOrigin = 'anonymous';
-    
-    // Прямые ссылки на твои файлы
-    this.load.image('sky', ASSETS_URL + 'bg.jpg');
-    this.load.image('pepe', ASSETS_URL + 'pepe.png');
-    this.load.image('ton', ASSETS_URL + 'ton-ecosystem-removebe.png');
+    // Убираем длинные ссылки и ищем файлы в той же папке
+    this.load.image('sky', 'bg.jpg'); 
+    this.load.image('pepe', 'pepe.png');
+    this.load.image('ton', 'ton-ecosystem-removebe.png');
 }
+
+     
 
 function create() {
     // 1. Создаем фон
