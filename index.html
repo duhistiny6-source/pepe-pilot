@@ -28,7 +28,7 @@ let score = 0, timeLeft = 60, isGameOver = false;
 
 function preload() {
     this.load.crossOrigin = 'anonymous';
-    // Проверь, что расширения (jpeg/png) на GitHub совпадают с этими!
+    // Проверь регистр букв на GitHub! (pg.jpeg или pg.jpg?)
     this.load.image('sky', 'pg.jpeg');
     this.load.image('pepe', 'pepe.png');
     this.load.image('chain', 'cep.png'); 
@@ -39,42 +39,55 @@ function preload() {
 }
 
 function create() {
-    // 1. ФОН (Если pg.jpeg нет, будет темно-синий экран)
+    // 1. ФОН
     if (this.textures.exists('sky')) {
         let bg = this.add.image(config.width/2, config.height/2, 'sky');
         let scale = Math.max(config.width / bg.width, config.height / bg.height);
         bg.setScale(scale).setScrollFactor(0);
     } else {
-        this.add.rectangle(0,0, config.width, config.height, 0x001133).setOrigin(0);
+        // Запасной фон если файл не найден
+        this.add.rectangle(0, 0, config.width, config.height, 0x001a00).setOrigin(0);
     }
 
-    // 2. ЦЕПЬ (Сделали очень жирной)
+    // 2. ЦЕПЬ
     chainSprite = this.add.sprite(0, 0, 'chain');
+    // Если картинки цепи нет, создаем временную видимость, чтобы не было ошибки
     if (!this.textures.exists('chain')) {
-        // Если картинки нет, рисуем серый прямоугольник вместо неё
         chainSprite.setVisible(false);
     }
     chainSprite.setOrigin(0.5, 0).setDepth(5);
     
-    // Точка захвата
-    this.clawPoint = this.add.circle(config.width/2, 300, 35, 0xffcc00, 0); 
+    // Невидимая точка захвата для физики
+    this.clawPoint = this.add.circle(config.width/2, 300, 35, 0x00ff00, 0); 
     this.physics.add.existing(this.clawPoint);
 
-    // 3. САМОЛЕТ (Плавное покачивание)
+    // 3. САМОЛЕТ (Пепе)
     plane = this.add.sprite(config.width / 2, 140, 'pepe');
     plane.setDepth(10).setDisplaySize(220, 160);
+
+    // Анимация покачивания самолета
     this.tweens.add({
-        targets: plane, y: 170, duration: 2000, yoyo: true, loop: -1, ease: 'Sine.easeInOut'
+        targets: plane,
+        y: 170,
+        duration: 2000,
+        yoyo: true,
+        loop: -1,
+        ease: 'Sine.easeInOut'
     });
 
     // 4. МОНЕТКИ (Все 90x90)
     targets = this.physics.add.group();
     for(let i=0; i<8; i++) { spawnCoin(this); }
 
-    // 5. МАТРИЧНЫЙ ТАЙМЕР (Зеленый Courier)
-    scoreText = this.add.text(20, 20, 'SCORE: 0', { fontSize: '24px', fill: '#0f0', fontFamily: 'Courier New', fontWeight: 'bold' });
-    timerText = this.add.text(config.width - 180, 20, 'TIME: 60', { fontSize: '24px', fill: '#0f0', fontFamily: 'Courier New', fontWeight: 'bold' });
+    // 5. МАТРИЧНЫЙ ТАЙМЕР
+    scoreText = this.add.text(20, 20, 'SCORE: 0', { 
+        fontSize: '24px', fill: '#0f0', fontFamily: 'Courier New', fontWeight: 'bold' 
+    });
+    timerText = this.add.text(config.width - 180, 20, 'TIME: 60', { 
+        fontSize: '24px', fill: '#0f0', fontFamily: 'Courier New', fontWeight: 'bold' 
+    });
 
+    // Логика таймера
     this.time.addEvent({
         delay: 1000,
         callback: () => { 
@@ -103,30 +116,43 @@ function create() {
 
 function spawnCoin(scene) {
     let x, y, tooClose;
+    let attempts = 0;
     do {
         x = Phaser.Math.Between(80, config.width - 80);
         y = Phaser.Math.Between(config.height * 0.55, config.height - 100);
+        // Проверка, чтобы монеты не слипались
         tooClose = targets.getChildren().some(c => Phaser.Math.Distance.Between(x, y, c.x, c.y) < 110);
-    } while (tooClose);
+        attempts++;
+    } while (tooClose && attempts < 20);
 
     let randomCoin = Phaser.Utils.Array.GetRandom(['ton', 'usdt', 'not', 'dogs']);
     let coin = targets.create(x, y, randomCoin);
-    // ФИКС: Все монетки теперь ровные 90x90
-    coin.setDisplaySize(90, 90).setDepth(4).setOrigin(0.5); 
+    
+    if (coin) {
+        coin.setDisplaySize(90, 90).setDepth(4).setOrigin(0.5);
+    }
 }
 
 function endGame(scene) {
     isGameOver = true;
     scene.physics.pause();
-    scene.add.rectangle(config.width/2, config.height/2, config.width, config.height, 0x000000, 0.8).setDepth(20);
-    scene.add.text(config.width/2, config.height/2 - 40, 'TIME IS UP', { fontSize: '48px', fill: '#0f0', fontFamily: 'Courier New' }).setOrigin(0.5).setDepth(21);
-    scene.add.text(config.width/2, config.height/2 + 40, 'TOTAL: ' + score, { fontSize: '32px', fill: '#fff', fontFamily: 'Courier New' }).setOrigin(0.5).setDepth(21);
+    // Темная плашка в конце
+    let overlay = scene.add.rectangle(config.width/2, config.height/2, config.width, config.height, 0x000000, 0.8);
+    overlay.setDepth(20);
+    
+    scene.add.text(config.width/2, config.height/2 - 40, 'TIME IS UP', { 
+        fontSize: '48px', fill: '#0f0', fontFamily: 'Courier New' 
+    }).setOrigin(0.5).setDepth(21);
+    
+    scene.add.text(config.width/2, config.height/2 + 40, 'TOTAL: ' + score, { 
+        fontSize: '32px', fill: '#fff', fontFamily: 'Courier New' 
+    }).setOrigin(0.5).setDepth(21);
 }
 
 function update() {
     if (isGameOver) return;
 
-    // ФИКС: ПРИВЯЗКА К НОСУ (Ниже винта)
+    // ТОЧКА ПРИВЯЗКИ: Центр винта самолета (учитывает покачивание)
     let px = plane.x; 
     let py = plane.y + 82; 
 
@@ -143,28 +169,39 @@ function update() {
         }
     } else if (isReturning) {
         let dist = Phaser.Math.Distance.Between(this.clawPoint.x, this.clawPoint.y, px, py);
+        // Возврат клешни к носу
         this.clawPoint.x += (px - this.clawPoint.x) * 0.15;
         this.clawPoint.y += (py - this.clawPoint.y) * 0.15;
         
-        if (caughtItem) { caughtItem.x = this.clawPoint.x; caughtItem.y = this.clawPoint.y; }
-        if (dist < 40) {
+        if (caughtItem) { 
+            caughtItem.x = this.clawPoint.x; 
+            caughtItem.y = this.clawPoint.y; 
+        }
+        
+        if (dist < 45) {
             isReturning = false;
             if (caughtItem) { 
                 score += 100; 
                 scoreText.setText('SCORE: ' + score); 
-                caughtItem.destroy(); caughtItem = null; spawnCoin(this); 
+                caughtItem.destroy(); 
+                caughtItem = null; 
+                spawnCoin(this); 
             }
         }
     }
 
-    // ВИЗУАЛ ЦЕПИ (Ультра жирная - 160)
+    // РИСУЕМ ЦЕПЬ
     chainSprite.x = px;
     chainSprite.y = py;
-    chainSprite.rotation = Phaser.Math.Angle.Between(px, py, this.clawPoint.x, this.clawPoint.y) - Math.PI / 2; 
-    chainSprite.displayWidth = 160; 
-    chainSprite.displayHeight = Phaser.Math.Distance.Between(px, py, this.clawPoint.x, this.clawPoint.y) + 30; 
+    let angleToClaw = Phaser.Math.Angle.Between(px, py, this.clawPoint.x, this.clawPoint.y);
+    chainSprite.rotation = angleToClaw - Math.PI / 2; 
+    
+    // Растягиваем цепь до клешни
+    let currentDist = Phaser.Math.Distance.Between(px, py, this.clawPoint.x, this.clawPoint.y);
+    chainSprite.displayWidth = 160; // Жирность троса
+    chainSprite.displayHeight = currentDist + 30; 
 }
 </script>
 </body>
 </html>
-            
+                     
