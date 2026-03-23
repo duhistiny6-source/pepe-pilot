@@ -25,17 +25,24 @@ let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, launchSpeed = 15, returnSpeed = 10;
 let score = 0, timeLeft = 60;
 
-function preload() {
-    // ВСТАВЛЯЕМ ТВОИ ДЛИННЫЕ ИМЕНА ИЗ GITHUB
-    
-    // Фон (Кукуруза)
+function preload() {function preload() {
+    // Используем полные ссылки, чтобы исключить ошибки путей
+    const baseUrl = window.location.href.replace('index.html', '');
+
+    // Загрузка ФОНА (внимательно проверь расширение .jpg или .png в GitHub!)
     this.load.image('sky', 'кукуруза-поле-урожай-производство-сельскохозяйственных-культур-акварельная-иллюстрация-генеративный-ai_739548-1591.jpg'); 
     
-    // Пепе на самолете
+    // Загрузка ПЕПЕ (уже работает, но закрепим результат)
     this.load.image('pepe', 'file_00000000224471f495fc636c04d23a98-removebg-preview (1).png');
     
-    // Монетка TON
-    this.load.image('ton', 'ton-ecosystem-removebe.png');
+    // Загрузка МОНЕТКИ (судя по скриншоту, имя обрезано или изменено)
+    // Давай попробуем загрузить её под обоими возможными именами
+    this.load.image('ton', 'ton-ecosystem-removebe.png'); 
+    this.load.image('not', 'ton-ecosystem-removebe.png');
+    this.load.image('dogs', 'ton-ecosystem-removebe.png');
+}
+
+    / 
 }
 
 function create() {
