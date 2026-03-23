@@ -27,12 +27,9 @@ let score = 0, timeLeft = 60;
 
 function preload() {
     this.load.image('sky', 'https://labs.phaser.io/assets/skies/space3.png');
-    
     // Имена файлов ТОЧНО как на твоем скриншоте из GitHub:
     this.load.image('pepe', 'images__32_-removebg-preview.png');
     this.load.image('ton_coin', 'ton-ecosystem-removebg-preview.png');
-    
-    // Если NOT и DOGS называются так же (с removebg), проверь их в GitHub:
     this.load.image('not_coin', 'images__35_-removebg-preview.png');
     this.load.image('dogs_coin', 'images__33_-removebg-preview.png');
 }
@@ -40,22 +37,25 @@ function preload() {
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setAlpha(0.4).setScale(2);
     
-    // ПЕПЕ: Фиксированный размер 120x120 пикселей
+    // ПЕПЕ: Теперь размер задан 200 пикселей! (Был 120x120)
+    // Лицо жабы теперь будет крупным и четким.
     plane = this.add.sprite(config.width / 2, 80, 'pepe').setDepth(5);
-    plane.setDisplaySize(120, 120); 
+    plane.setDisplaySize(200, 200); // Крупный Пепе
     
-    claw = this.add.circle(config.width / 2, 160, 20, 0xffd700).setDepth(4);
+    claw = this.add.circle(config.width / 2, 170, 20, 0xffd700).setDepth(4);
     chain = this.add.graphics().setDepth(3);
     
     targets = this.physics.add.group();
     const assets = ['ton_coin', 'dogs_coin', 'not_coin'];
 
-    for(let i=0; i<12; i++) {
+    // Создаем 15 монет в нижней части экрана
+    for(let i=0; i<15; i++) {
         let x = Phaser.Math.Between(50, config.width - 50);
-        let y = Phaser.Math.Between(280, config.height - 100);
+        let y = Phaser.Math.Between(290, config.height - 100); // Опустили монеты чуть ниже
         let type = Phaser.Math.RND.pick(assets);
         let coin = targets.create(x, y, type);
         
+        // Размеры монет оставим сочными, как ты хотел
         if (type === 'ton_coin') {
             coin.setDisplaySize(50, 50); // TON чуть меньше
             coin.setData('val', 50);
@@ -65,9 +65,13 @@ function create() {
         }
     }
 
+    // Текст счета
     scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '28px', fill: '#fff', fontStyle: 'bold' });
+
+    // Таймер
     timerText = this.add.text(config.width - 150, 20, 'Time: 60', { fontSize: '28px', fill: '#ff0', fontStyle: 'bold' });
 
+    // Событие таймера
     this.time.addEvent({
         delay: 1000,
         callback: () => { if (timeLeft > 0) timeLeft--; timerText.setText('Time: ' + timeLeft); },
@@ -85,8 +89,8 @@ function update() {
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
         if (angle > 0.7 || angle < -0.7) swingSpeed = -swingSpeed;
-        claw.x = plane.x + Math.sin(angle) * 100;
-        claw.y = plane.y + Math.cos(angle) * 100;
+        claw.x = plane.x + Math.sin(angle) * 110;
+        claw.y = plane.y + Math.cos(angle) * 110;
     } else if (isLaunching) {
         claw.x += Math.sin(angle) * launchSpeed;
         claw.y += Math.cos(angle) * launchSpeed;
@@ -106,8 +110,8 @@ function update() {
             isReturning = true;
         }
     } else if (isReturning) {
-        let tx = plane.x + Math.sin(angle) * 100;
-        let ty = plane.y + Math.cos(angle) * 100;
+        let tx = plane.x + Math.sin(angle) * 110;
+        let ty = plane.y + Math.cos(angle) * 110;
         claw.x += (tx - claw.x) * returnSpeed;
         claw.y += (ty - claw.y) * returnSpeed;
         if (Phaser.Math.Distance.Between(claw.x, claw.y, tx, ty) < 10) isReturning = false;
