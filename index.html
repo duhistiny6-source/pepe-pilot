@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Farmer</title>
+    <title>Pepe Farmer</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
-        body { margin: 0; background-color: #87CEEB; overflow: hidden; touch-action: none; }
+        body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
     </style>
 </head>
 <body>
@@ -26,40 +26,33 @@ let angle = 0, swingSpeed = 0.03, launchSpeed = 15, returnSpeed = 10;
 let score = 0, timeLeft = 60;
 
 function preload() {
-    // 1. ФОН (Кукуруза) - У тебя на скриншоте .jpg
+    // Названия взяты напрямую с твоего скриншота GitHub
     this.load.image('sky', 'кукуруза-поле-урожай-производство-сельскохозяйственных-культур-акварельная-иллюстрация-генеративный-ai_739548-1591.jpg'); 
-    
-    // 2. ПЕПЕ (Самолет) - В точности как на скрине
     this.load.image('pepe', 'file_00000000224471f495fc636c04d23a98-removebg-preview (1).png');
-    
-    // 3. МОНЕТКА
     this.load.image('ton', 'ton-ecosystem-removebe.png');
 }
 
 function create() {
-    // Добавляем фон и растягиваем его
+    // Фон
     let bg = this.add.image(config.width/2, config.height/2, 'sky');
     let scale = Math.max(config.width / bg.width, config.height / bg.height);
     bg.setScale(scale);
     
-    // Создаем Пепе на биплане
+    // Пепе на биплане
     plane = this.add.sprite(config.width / 2, 120, 'pepe').setDepth(10);
     plane.setDisplaySize(240, 160); 
     
     chain = this.add.graphics().setDepth(5);
     clawGraphic = this.add.graphics().setDepth(6);
-    
     this.clawPoint = this.add.circle(config.width/2, 220, 15);
     this.physics.add.existing(this.clawPoint);
 
     targets = this.physics.add.group();
-
-    // Создаем монетки TON
     for(let i=0; i<8; i++) {
         let x = Phaser.Math.Between(50, config.width - 50);
         let y = Phaser.Math.Between(350, config.height - 100);
         let coin = targets.create(x, y, 'ton');
-        if(coin) coin.setDisplaySize(75, 75).setDepth(4);
+        if(coin) coin.setDisplaySize(70, 70).setDepth(4);
     }
 
     scoreText = this.add.text(20, 30, 'Очки: 0', { fontSize: '28px', fill: '#fff', stroke: '#000', strokeThickness: 5 });
@@ -72,20 +65,14 @@ function create() {
     });
 
     this.input.on('pointerdown', () => { if(!isLaunching && !isReturning && timeLeft > 0) isLaunching = true; });
-
     this.physics.add.overlap(this.clawPoint, targets, (c, target) => {
-        if (isLaunching && !caughtItem) {
-            caughtItem = target;
-            isLaunching = false;
-            isReturning = true;
-        }
+        if (isLaunching && !caughtItem) { caughtItem = target; isLaunching = false; isReturning = true; }
     });
 }
 
 function update() {
     if (timeLeft <= 0) return;
-    let px = plane.x;
-    let py = plane.y + 40;
+    let px = plane.x; let py = plane.y + 40;
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
@@ -96,8 +83,7 @@ function update() {
         this.clawPoint.x += Math.sin(angle) * launchSpeed;
         this.clawPoint.y += Math.cos(angle) * launchSpeed;
         if (this.clawPoint.y > config.height || this.clawPoint.x < 0 || this.clawPoint.x > config.width) {
-            isLaunching = false;
-            isReturning = true;
+            isLaunching = false; isReturning = true;
         }
     } else if (isReturning) {
         let tx = px + Math.sin(angle) * 140;
@@ -114,8 +100,7 @@ function update() {
 
     chain.clear().lineStyle(3, 0x555555).lineBetween(px, py, this.clawPoint.x, this.clawPoint.y);
     clawGraphic.clear().lineStyle(5, 0xffd700);
-    let gA = angle + Math.PI/2; 
-    let gap = caughtItem ? 0.2 : 0.8; 
+    let gA = angle + Math.PI/2; let gap = caughtItem ? 0.2 : 0.8; 
     clawGraphic.beginPath();
     clawGraphic.arc(this.clawPoint.x, this.clawPoint.y, 25, gA - gap, gA + gap);
     clawGraphic.strokePath();
@@ -126,3 +111,4 @@ function update() {
 </script>
 </body>
 </html>
+  
