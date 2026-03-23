@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -43,12 +43,12 @@ function create() {
     let scale = Math.max(config.width / bg.width, config.height / bg.height);
     bg.setScale(scale).setScrollFactor(0);
     
-    // 2. ЦЕПЬ С КЛЕШНЕЙ (Теперь смотрит вниз)
-    chainSprite = this.add.sprite(config.width / 2, 160, 'chain');
-    chainSprite.setOrigin(0.5, 0); // Закрепляем верхнюю точку
+    // 2. ЦЕПЬ (Спрайт привязан за верхний центр)
+    chainSprite = this.add.sprite(0, 0, 'chain');
+    chainSprite.setOrigin(0.5, 0); // ВАЖНО: верх по центру
     chainSprite.setDepth(5);
     
-    // Точка захвата (сделал чуть больше радиус для точности)
+    // Точка захвата
     this.clawPoint = this.add.circle(config.width/2, 300, 25);
     this.physics.add.existing(this.clawPoint);
 
@@ -88,26 +88,24 @@ function create() {
 
 function spawnCoin(scene) {
     let x = Phaser.Math.Between(70, config.width - 70);
-    let y = Phaser.Math.Between(400, config.height - 100);
+    let y = Phaser.Math.Between(450, config.height - 100);
     let randomCoin = Phaser.Utils.Array.GetRandom(coinTypes);
     let coin = targets.create(x, y, randomCoin);
     if(coin) {
-        coin.setDisplaySize(75, 75).setDepth(4); // Сделал чуть крупнее и четче
+        coin.setDisplaySize(80, 80).setDepth(4); 
     }
 }
 
 function update() {
     if (timeLeft <= 0) return;
 
-    // Точка привязки цепи к самолету
+    // Точка выхода из самолета
     let px = plane.x; 
     let py = plane.y + 40; 
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
         if (Math.abs(angle) > 0.8) swingSpeed = -swingSpeed;
-        
-        // Качание клешни (длина троса в покое 160)
         this.clawPoint.x = px + Math.sin(angle) * 160;
         this.clawPoint.y = py + Math.cos(angle) * 160;
     } else if (isLaunching) {
@@ -120,7 +118,6 @@ function update() {
         let tx = px + Math.sin(angle) * 160;
         let ty = py + Math.cos(angle) * 160;
         let dist = Phaser.Math.Distance.Between(this.clawPoint.x, this.clawPoint.y, tx, ty);
-        
         this.clawPoint.x += (tx - this.clawPoint.x) * 0.15;
         this.clawPoint.y += (ty - this.clawPoint.y) * 0.15;
         
@@ -138,16 +135,20 @@ function update() {
         }
     }
 
-    // ВИЗУАЛ ЦЕПИ
+    // ПОЗИЦИЯ И ПОВОРОТ ЦЕПИ
     chainSprite.x = px;
     chainSprite.y = py;
-    // Поворачиваем спрайт к точке захвата
-    chainSprite.rotation = -Phaser.Math.Angle.Between(px, py, this.clawPoint.x, this.clawPoint.y) - Math.PI/2;
     
-    // Растягиваем цепь (setDisplaySize: ширина 60 для массивности, длина по факту)
-    let distToClaw = Phaser.Math.Distance.Between(px, py, this.clawPoint.x, this.clawPoint.y);
-    chainSprite.setDisplaySize(60, distToClaw); 
+    // Рассчитываем угол между самолетом и точкой клешни
+    let targetAngle = Phaser.Math.Angle.Between(px, py, this.clawPoint.x, this.clawPoint.y);
+    chainSprite.rotation = targetAngle - Math.PI / 2; // Поворачиваем "головой" вниз
+    
+    // Длина цепи по расстоянию
+    let currentDist = Phaser.Math.Distance.Between(px, py, this.clawPoint.x, this.clawPoint.y);
+    chainSprite.setDisplaySize(70, currentDist + 20); // 70 - ширина клешни
 }
 </script>
 </body>
 </html>
+
+     
