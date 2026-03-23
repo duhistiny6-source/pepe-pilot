@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot</title>
+    <title>Pepe Pilot Final</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
-        body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
+        body { margin: 0; background-color: #87CEEB; overflow: hidden; touch-action: none; }
         canvas { display: block; margin: 0 auto; }
     </style>
 </head>
@@ -24,12 +24,13 @@ const game = new Phaser.Game(config);
 let plane, chainSprite, targets, scoreText, timerText;
 let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.025; 
-let launchSpeed = 14; 
+let launchSpeed = 15; 
 let returnSmoothness = 0.07; 
 let score = 0, timeLeft = 60, isGameOver = false;
 
 function preload() {
     this.load.crossOrigin = 'anonymous';
+    // ВНИМАНИЕ: Проверь, что в GitHub файл именно pg.jpeg (маленькими буквами)
     this.load.image('sky', 'pg.jpeg'); 
     this.load.image('pepe', 'pepe.png');
     this.load.image('chain', 'cep.png'); 
@@ -40,21 +41,21 @@ function preload() {
 }
 
 function create() {
-    // Отрисовка фона
-    if (this.textures.exists('sky')) {
-        let bg = this.add.image(config.width/2, config.height/2, 'sky');
+    // 1. Отрисовка фона pg.jpeg
+    let bg = this.add.image(config.width/2, config.height/2, 'sky');
+    if (bg.texture.key !== '__MISSING') {
         let scale = Math.max(config.width / bg.width, config.height / bg.height);
         bg.setScale(scale).setScrollFactor(0);
     }
 
-    // Цепь
+    // 2. Цепь (из центра)
     chainSprite = this.add.sprite(0, 0, 'chain').setOrigin(0.5, 0).setDepth(5);
     
     // Точка захвата
-    this.clawPoint = this.add.circle(config.width/2, 400, 30, 0x00ff00, 0); 
+    this.clawPoint = this.add.circle(config.width/2, 400, 35, 0xffffff, 0); 
     this.physics.add.existing(this.clawPoint);
 
-    // Самолет
+    // 3. Самолет
     plane = this.add.sprite(config.width / 2, 160, 'pepe');
     plane.setDepth(10).setDisplaySize(220, 160);
 
@@ -62,11 +63,11 @@ function create() {
         targets: plane, y: 190, duration: 2000, yoyo: true, loop: -1, ease: 'Sine.easeInOut'
     });
 
-    // Монетки
+    // 4. Монетки
     targets = this.physics.add.group();
     for(let i=0; i<7; i++) { spawnCoin(this); }
 
-    // Текст
+    // 5. Интерфейс
     scoreText = this.add.text(25, 25, 'SCORE: 0', { 
         fontSize: '24px', fill: '#0f0', fontFamily: 'Courier New', fontWeight: 'bold' 
     }).setDepth(30);
@@ -97,17 +98,19 @@ function create() {
         if(!isLaunching && !isReturning && !isGameOver) isLaunching = true; 
     });
 
-    // ОБРАБОТКА СТОЛКНОВЕНИЯ С ВИБРАЦИЕЙ
+    // ХИТБОКС И ВИБРАЦИЯ
     this.physics.add.overlap(this.clawPoint, targets, (c, target) => {
         if (isLaunching && !caughtItem) { 
             caughtItem = target; 
             isLaunching = false; 
             isReturning = true; 
 
-            // ЛЕГКАЯ ВИБРАЦИЯ (50 мс)
-            if (navigator.vibrate) {
-                navigator.vibrate(50);
-            }
+            // УЛУЧШЕННАЯ ВИБРАЦИЯ
+            try {
+                if (window.navigator && window.navigator.vibrate) {
+                    window.navigator.vibrate(70); 
+                }
+            } catch (e) { console.log("Vibration not supported"); }
         }
     });
 }
@@ -124,7 +127,7 @@ function update() {
     if (isGameOver) return;
 
     let anchorX = plane.x; 
-    let anchorY = plane.y + 35; 
+    let anchorY = plane.y + 35; // Цепь внутри корпуса
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
@@ -165,3 +168,4 @@ function update() {
 </script>
 </body>
 </html>
+ 
