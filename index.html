@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Hook Fixed</title>
+    <title>Pepe Real Extend</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
@@ -21,17 +21,17 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
-let plane, hookBody, targets, scoreText;
+let plane, fullHook, hookMask, targets, scoreText;
 let isLaunching = false, isReturning = false, caughtItem = null;
-let score = 0;
+let currentHeight = 0, score = 0;
 
-const SPEED = 15; 
+const SPEED = 14; 
 const START_Y = 160; 
 
 function preload() {
     this.load.crossOrigin = 'anonymous';
     this.load.image('sky', 'pg.jpeg'); 
-    this.load.image('pepe', 'pepe.png'); //
+    this.load.image('pepe', 'pepe.png'); // Весь твой файл
     this.load.image('ton', 'ton.png');
     this.load.image('usdt', 'usdt.png');
     this.load.image('not', 'not.png');
@@ -39,89 +39,79 @@ function preload() {
 }
 
 function create() {
-    // Фон
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
 
-    // 1. САМОЛЕТ (База)
+    // 1. ПОЛНАЯ КЛЕШНЯ С ЦЕПЬЮ (Скрыта изначально)
+    // Мы ставим её так, чтобы она начиналась под самолетом
+    fullHook = this.add.image(config.width / 2, START_Y + 20, 'pepe');
+    fullHook.setOrigin(0.5, 0).setDepth(40).setDisplaySize(160, 600);
+    // Обрезаем картинку в спрайте, чтобы видеть только "ножку" и "клешню"
+    fullHook.setCrop(300, 480, 400, 520); 
+
+    // 2. МАСКА (Она будет определять, сколько клешни выдвинуто)
+    hookMask = this.add.graphics();
+    fullHook.setMask(hookMask.createGeometryMask());
+
+    // 3. САМОЛЕТ (Сверху всего)
     plane = this.add.image(config.width / 2, START_Y, 'pepe');
-    plane.setDisplaySize(300, 260).setDepth(50);
-    plane.setCrop(0, 0, 1000, 480); // Отрезаем нижнюю часть, чтобы она не мешала
+    plane.setDisplaySize(300, 260).setDepth(50).setCrop(0, 0, 1000, 480);
 
-    // 2. ВЫДВИЖНАЯ КЛЕШНЯ
-    // Используем тот же спрайт, но будем менять его высоту
-    hookBody = this.add.sprite(config.width / 2, START_Y + 40, 'pepe');
-    hookBody.setOrigin(0.5, 0); // Фиксируем верх под самолетом
-    hookBody.setDisplaySize(120, 100); 
-    hookBody.setDepth(40);
-    // Показываем только клешню из спрайта
-    hookBody.setCrop(300, 600, 400, 400); 
+    // Физический сенсор на кончике (невидимый)
+    this.sensor = this.add.circle(config.width / 2, START_Y, 30, 0xffffff, 0);
+    this.physics.add.existing(this.sensor);
 
-    this.physics.add.existing(hookBody);
-    hookBody.body.setCircle(30, 20, 20); // Зона захвата на кончике
-
-    // Монетки
     targets = this.physics.add.group();
     for(let i=0; i<8; i++) { spawnCoin(this); }
 
     scoreText = this.add.text(25, 25, 'SCORE: 0', { fontSize: '32px', fill: '#0f0', fontWeight: 'bold' }).setDepth(60);
 
-    // Клик на экран
     this.input.on('pointerdown', () => { 
         if(!isLaunching && !isReturning) isLaunching = true; 
     });
 
-    // Захват монетки кончиком клешни
-    this.physics.add.overlap(hookBody, targets, (h, target) => {
+    this.physics.add.overlap(this.sensor, targets, (s, target) => {
         if (isLaunching && !caughtItem) { 
             caughtItem = target; 
-            isLaunching = false; 
-            isReturning = true; 
+            isLaunching = false; isReturning = true; 
         }
     });
 }
 
 function spawnCoin(scene) {
-    let x = Phaser.Math.Between(100, config.width - 100);
-    let y = Phaser.Math.Between(config.height * 0.6, config.height - 120);
+    let x = Phaser.Math.Between(80, config.width - 80);
+    let y = Phaser.Math.Between(config.height * 0.6, config.height - 100);
     let type = Phaser.Utils.Array.GetRandom(['ton', 'usdt', 'not', 'dogs']);
     let coin = targets.create(x, y, type).setDisplaySize(70, 70);
 }
 
 function update() {
+    // Обновляем маску: рисуем прямоугольник, который "открывает" клешню вниз
+    hookMask.clear();
+    hookMask.fillStyle(0xffffff);
+    hookMask.fillRect(config.width / 2 - 100, START_Y + 20, 200, currentHeight);
+
+    // Привязываем сенсор к кончику видимой части
+    this.sensor.y = START_Y + 20 + currentHeight;
+
     if (isLaunching) {
-        // КЛЕШНЯ ВЫДВИГАЕТСЯ ВНИЗ
-        hookBody.displayHeight += SPEED;
-        
-        // Предел длины
-        if (hookBody.displayHeight > config.height - START_Y - 100) {
-            isLaunching = false;
-            isReturning = true;
-        }
+        currentHeight += SPEED; // Клешня плавно "выползает"
+        if (currentHeight > 450) { isLaunching = false; isReturning = true; }
     } 
     else if (isReturning) {
-        // КЛЕШНЯ ВТЯГИВАЕТСЯ ОБРАТНО
-        hookBody.displayHeight -= SPEED;
-        
+        currentHeight -= SPEED + 4; // Клешня втягивается
         if (caughtItem) {
-            caughtItem.x = hookBody.x;
-            caughtItem.y = hookBody.y + hookBody.displayHeight - 20;
+            caughtItem.x = this.sensor.x;
+            caughtItem.y = this.sensor.y + 10;
         }
-        
-        if (hookBody.displayHeight <= 100) {
-            hookBody.displayHeight = 100;
+        if (currentHeight <= 0) {
+            currentHeight = 0;
             isReturning = false;
             if (caughtItem) {
-                score += 100;
-                scoreText.setText('SCORE: ' + score);
-                caughtItem.destroy();
-                caughtItem = null;
-                spawnCoin(this);
+                score += 100; scoreText.setText('SCORE: ' + score);
+                caughtItem.destroy(); caughtItem = null; spawnCoin(this);
             }
         }
     }
-    
-    // Самолет слегка покачивается для жизни
-    plane.y = START_Y + Math.sin(this.time.now / 600) * 5;
 }
 </script>
 </body>
