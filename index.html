@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Farmer Gold</title>
+    <title>Pepe Farmer</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
-        body { margin: 0; background-color: #87CEEB; overflow: hidden; touch-action: none; }
+        body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
     </style>
 </head>
 <body>
@@ -25,56 +25,47 @@ let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, launchSpeed = 15, returnSpeed = 10;
 let score = 0, timeLeft = 60;
 
-function preload() { function preload() {
-    // 1. ФОН (кукуруза-поле-урожай-...)
-    // У тебя в GitHub расширение может быть .jpg, проверь это!
-    this.load.image('farm_bg', 'кукуруза-поле-урожай-производство-сельскохозяйственных-культур-акварельная-иллюстрация-генеративный-ai_739548-1591.jpg'); 
-
-    // 2. ПЕПЕ (file_00000000224471f49...)
-    this.load.image('pepe_biplane', 'file_00000000224471f496181745422891366164223.png'); 
-
-    // 3. МОНЕТКА TON
-    this.load.image('ton', 'ton-ecosystem-removebe.png'); 
-
-    // Добавим заглушки для остальных, чтобы не было квадратов, если файлов нет
-    this.load.image('not', 'ton-ecosystem-removebe.png');
-    this.load.image('dogs', 'ton-ecosystem-removebe.png');
+function preload() {
+    // ВСТАВЛЯЕМ ТВОИ ДЛИННЫЕ ИМЕНА ИЗ GITHUB
+    
+    // Фон (Кукуруза)
+    this.load.image('sky', 'кукуруза-поле-урожай-производство-сельскохозяйственных-культур-акварельная-иллюстрация-генеративный-ai_739548-1591.jpg'); 
+    
+    // Пепе на самолете
+    this.load.image('pepe', 'file_00000000224471f495fc636c04d23a98-removebg-preview (1).png');
+    
+    // Монетка TON
+    this.load.image('ton', 'ton-ecosystem-removebe.png');
 }
 
-
-     }
-
 function create() {
-    // Устанавливаем фон правильно
-    let bg = this.add.image(config.width/2, config.height/2, 'farm_bg');
+    // Отрисовка фона
+    let bg = this.add.image(config.width/2, config.height/2, 'sky');
     let scale = Math.max(config.width / bg.width, config.height / bg.height);
-    bg.setScale(scale).setScrollFactor(0);
+    bg.setScale(scale);
     
-    // НОВЫЙ ПЕПЕ НА БИПЛАНЕ
-    plane = this.add.sprite(config.width / 2, 120, 'pepe_biplane').setDepth(10);
-    plane.setDisplaySize(220, 150); // Подобрал размер под биплан
+    // Отрисовка Пепе
+    plane = this.add.sprite(config.width / 2, 120, 'pepe').setDepth(10);
+    plane.setDisplaySize(240, 160); 
     
     chain = this.add.graphics().setDepth(5);
     clawGraphic = this.add.graphics().setDepth(6);
     
-    // Точка, откуда вылетает клешня (снизу самолета)
-    this.clawPoint = this.add.circle(config.width/2, 200, 10);
+    this.clawPoint = this.add.circle(config.width/2, 220, 15);
     this.physics.add.existing(this.clawPoint);
 
     targets = this.physics.add.group();
-    const assets = ['ton', 'dogs', 'not'];
 
-    // Раскидываем монетки по полю
-    for(let i=0; i<12; i++) {
+    // Создаем монетки
+    for(let i=0; i<10; i++) {
         let x = Phaser.Math.Between(50, config.width - 50);
         let y = Phaser.Math.Between(350, config.height - 100);
-        let coin = targets.create(x, y, Phaser.Math.RND.pick(assets));
+        let coin = targets.create(x, y, 'ton');
         coin.setDisplaySize(70, 70).setDepth(4);
     }
 
-    // Тексты
     scoreText = this.add.text(20, 30, 'Очки: 0', { fontSize: '28px', fill: '#fff', stroke: '#000', strokeThickness: 5 });
-    timerText = this.add.text(config.width - 160, 30, 'Время: 60', { fontSize: '28px', fill: '#ffff00', stroke: '#000', strokeThickness: 5 });
+    timerText = this.add.text(config.width - 160, 30, 'Время: 60', { fontSize: '28px', fill: '#ff0', stroke: '#000', strokeThickness: 5 });
 
     this.time.addEvent({
         delay: 1000,
@@ -95,15 +86,14 @@ function create() {
 
 function update() {
     if (timeLeft <= 0) return;
-
     let px = plane.x;
-    let py = plane.y + 30; // Цепь идет от нижней части самолета
+    let py = plane.y + 40;
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
         if (angle > 0.8 || angle < -0.8) swingSpeed = -swingSpeed;
-        this.clawPoint.x = px + Math.sin(angle) * 130;
-        this.clawPoint.y = py + Math.cos(angle) * 130;
+        this.clawPoint.x = px + Math.sin(angle) * 140;
+        this.clawPoint.y = py + Math.cos(angle) * 140;
     } else if (isLaunching) {
         this.clawPoint.x += Math.sin(angle) * launchSpeed;
         this.clawPoint.y += Math.cos(angle) * launchSpeed;
@@ -112,8 +102,8 @@ function update() {
             isReturning = true;
         }
     } else if (isReturning) {
-        let tx = px + Math.sin(angle) * 130;
-        let ty = py + Math.cos(angle) * 130;
+        let tx = px + Math.sin(angle) * 140;
+        let ty = py + Math.cos(angle) * 140;
         let dist = Phaser.Math.Distance.Between(this.clawPoint.x, this.clawPoint.y, tx, ty);
         this.clawPoint.x += (tx - this.clawPoint.x) * 0.2;
         this.clawPoint.y += (ty - this.clawPoint.y) * 0.2;
@@ -124,11 +114,8 @@ function update() {
         }
     }
 
-    // Рисуем цепь
-    chain.clear().lineStyle(3, 0x444444).lineBetween(px, py, this.clawPoint.x, this.clawPoint.y);
-    
-    // Рисуем золотую клешню (две дуги)
-    clawGraphic.clear().lineStyle(6, 0xffd700);
+    chain.clear().lineStyle(3, 0x555555).lineBetween(px, py, this.clawPoint.x, this.clawPoint.y);
+    clawGraphic.clear().lineStyle(5, 0xffd700);
     let gA = angle + Math.PI/2; 
     let gap = caughtItem ? 0.2 : 0.8; 
     clawGraphic.beginPath();
@@ -141,3 +128,6 @@ function update() {
 </script>
 </body>
 </html>
+
+
+     
