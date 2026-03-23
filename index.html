@@ -25,16 +25,22 @@ let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, launchSpeed = 15, returnSpeed = 10;
 let score = 0, timeLeft = 60;
 
-function preload() {function preload() {
-    // ЗАГРУЗКА ТВОИХ НОВЫХ PNG ФАЙЛОВ
-    this.load.image('farm_bg', '1000004148.png'); // Теперь PNG
-    this.load.image('pepe_biplane', '1000004146.png'); // Тоже PNG
-    
-    // Монетки (проверь эти имена в GitHub, они должны быть в той же папке)
-    this.load.image('ton', 'ton-ecosystem-removebg-preview.png');
-    this.load.image('not', 'images__35_-removebg-preview.png');
-    this.load.image('dogs', 'images__33_-removebg-preview.png');
+function preload() { function preload() {
+    // 1. ФОН (кукуруза-поле-урожай-...)
+    // У тебя в GitHub расширение может быть .jpg, проверь это!
+    this.load.image('farm_bg', 'кукуруза-поле-урожай-производство-сельскохозяйственных-культур-акварельная-иллюстрация-генеративный-ai_739548-1591.jpg'); 
+
+    // 2. ПЕПЕ (file_00000000224471f49...)
+    this.load.image('pepe_biplane', 'file_00000000224471f496181745422891366164223.png'); 
+
+    // 3. МОНЕТКА TON
+    this.load.image('ton', 'ton-ecosystem-removebe.png'); 
+
+    // Добавим заглушки для остальных, чтобы не было квадратов, если файлов нет
+    this.load.image('not', 'ton-ecosystem-removebe.png');
+    this.load.image('dogs', 'ton-ecosystem-removebe.png');
 }
+
 
      }
 
