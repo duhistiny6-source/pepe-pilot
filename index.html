@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Mega Claw</title>
+    <title>Pepe Pilot Mega Claw Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
@@ -20,7 +19,7 @@ const config = {
     width: window.innerWidth,
     height: window.innerHeight,
     physics: { default: 'arcade' },
-    roundPixels: true, // ФИКС: Делает монеты и текст ровными
+    roundPixels: true, // ФИКС: Делает монеты ровными
     scene: { preload: preload, create: create, update: update }
 };
 
@@ -60,7 +59,7 @@ function create() {
     clawGraphic = this.add.graphics().setDepth(6);
     
     // Точка захвата (увеличил радиус для физики мощных клешней)
-    this.clawPoint = this.add.circle(config.width/2, 220, 25);
+    this.clawPoint = this.add.circle(config.width/2, 220, 28);
     this.physics.add.existing(this.clawPoint);
 
     // 4. ГРУППА МОНЕТ
@@ -143,23 +142,39 @@ function update() {
     }
 
     // ОТРИСОВКА (Цепь коричневая, жирнее)
-    chain.clear().lineStyle(6, 0x4a2c0a).lineBetween(px, py, this.clawPoint.x, this.clawPoint.y);
+    chain.clear().lineStyle(8, 0x4a2c0a).lineBetween(px, py, this.clawPoint.x, this.clawPoint.y);
     
     // ОТРИСОВКА КЛЕШНЕЙ (Золотые дуги, СУПЕР-МОЩНЫЕ)
-    clawGraphic.clear().lineStyle(10, 0xffd700); // Увеличил толщину до 10
+    clawGraphic.clear();
+    
+    // Внутренняя золотая часть (жирная)
+    clawGraphic.lineStyle(12, 0xffd700); 
     let rot = Phaser.Math.Angle.Between(px, py, this.clawPoint.x, this.clawPoint.y) + Math.PI/2;
     let gap = caughtItem ? 0.2 : 0.8; 
+    let radius = 40; // Увеличил радиус до 40 для мощности
     
-    // Увеличил радиус дуги до 35 для мощности
     clawGraphic.beginPath();
-    clawGraphic.arc(this.clawPoint.x, this.clawPoint.y, 35, rot - gap, rot + gap);
+    clawGraphic.arc(this.clawPoint.x, this.clawPoint.y, radius, rot - gap, rot + gap);
     clawGraphic.strokePath();
     clawGraphic.beginPath();
-    clawGraphic.arc(this.clawPoint.x, this.clawPoint.y, 35, rot + Math.PI - gap, rot + Math.PI + gap);
+    clawGraphic.arc(this.clawPoint.x, this.clawPoint.y, radius, rot + Math.PI - gap, rot + Math.PI + gap);
+    clawGraphic.strokePath();
+
+    // Чёрная обводка для чёткости
+    clawGraphic.lineStyle(2, 0x000000); 
+    clawGraphic.beginPath();
+    clawGraphic.arc(this.clawPoint.x, this.clawPoint.y, radius + 6, rot - gap, rot + gap);
+    clawGraphic.strokePath();
+    clawGraphic.beginPath();
+    clawGraphic.arc(this.clawPoint.x, this.clawPoint.y, radius + 6, rot + Math.PI - gap, rot + Math.PI + gap);
+    clawGraphic.strokePath();
+    clawGraphic.beginPath();
+    clawGraphic.arc(this.clawPoint.x, this.clawPoint.y, radius - 6, rot - gap, rot + gap);
+    clawGraphic.strokePath();
+    clawGraphic.beginPath();
+    clawGraphic.arc(this.clawPoint.x, this.clawPoint.y, radius - 6, rot + Math.PI - gap, rot + Math.PI + gap);
     clawGraphic.strokePath();
 }
 </script>
 </body>
 </html>
-
-     
