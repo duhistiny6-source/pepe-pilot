@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Hook Miner</title>
+    <title>Pepe Fixed Hook</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
@@ -23,14 +23,16 @@ const config = {
 const game = new Phaser.Game(config);
 let plane, hook, targets, scoreText;
 let isLaunching = false, isReturning = false, caughtItem = null;
-let basePlaneY = 160; 
-let hookSpeed = 16; 
 let score = 0;
+
+// Настройки скоростей
+const HOOK_SPEED = 14;
+const BASE_HOOK_HEIGHT = 80; // Начальный размер клешни под самолетом
 
 function preload() {
     this.load.crossOrigin = 'anonymous';
     this.load.image('sky', 'pg.jpeg'); 
-    this.load.image('pepe', 'pepe.png'); // Твой прозрачный спрайт
+    this.load.image('pepe', 'pepe.png'); 
     this.load.image('ton', 'ton.png');
     this.load.image('usdt', 'usdt.png');
     this.load.image('not', 'not.png');
@@ -43,20 +45,22 @@ function create() {
     let scale = Math.max(config.width / bg.width, config.height / bg.height);
     bg.setScale(scale).setScrollFactor(0);
 
-    // 1. САМОЛЕТ (База) - обрезаем низ, чтобы не двоилась цепь
-    plane = this.add.sprite(config.width / 2, basePlaneY, 'pepe');
+    // 1. САМОЛЕТ (Статичный)
+    plane = this.add.image(config.width / 2, 160, 'pepe');
     plane.setDisplaySize(300, 260).setDepth(20);
-    plane.setCrop(0, 0, 1000, 500); // Оставляем только самолет
+    // Скрываем нижнюю часть оригинальной картинки самолета, чтобы она не мешала
+    plane.setCrop(0, 0, 1000, 480); 
 
-    // 2. КРЮК (Цепь) - ставим ПОД самолет
-    hook = this.add.sprite(config.width / 2, basePlaneY + 40, 'pepe');
+    // 2. КРЮК (Выдвижной)
+    // Используем ту же картинку, но для цепи
+    hook = this.add.tileSprite(config.width / 2, 185, 300, BASE_HOOK_HEIGHT, 'pepe');
     hook.setOrigin(0.5, 0).setDepth(10);
-    hook.setDisplaySize(300, 100); // В покое цепь короткая
-    hook.setCrop(0, 500, 1000, 1000); // Оставляем только цепь и клешню
+    // Показываем только нижнюю часть картинки (клешню)
+    hook.setTilePosition(0, 480); 
 
-    // Невидимый сенсор на кончике клешни
-    this.clawSensor = this.add.circle(0, 0, 30, 0xffffff, 0);
-    this.physics.add.existing(this.clawSensor);
+    // Невидимая точка захвата (физика)
+    this.clawPoint = this.add.circle(0, 0, 30, 0xffffff, 0);
+    this.physics.add.existing(this.clawPoint);
 
     // Монетки
     targets = this.physics.add.group();
@@ -70,7 +74,7 @@ function create() {
         if(!isLaunching && !isReturning) isLaunching = true; 
     });
 
-    this.physics.add.overlap(this.clawSensor, targets, (sensor, target) => {
+    this.physics.add.overlap(this.clawPoint, targets, (claw, target) => {
         if (isLaunching && !caughtItem) { 
             caughtItem = target; 
             isLaunching = false; 
@@ -89,36 +93,39 @@ function spawnCoin(scene) {
 }
 
 function update() {
-    // Самолет плавно парит на месте
-    plane.y = basePlaneY + Math.sin(this.time.now / 500) * 8;
-    hook.y = plane.y + 40; // Цепь всегда привязана к животу самолета
-
-    // Обновляем позицию сенсора на конце вытянутой цепи
-    this.clawSensor.x = hook.x;
-    this.clawSensor.y = hook.y + hook.displayHeight - 40;
+    // Привязываем сенсор к концу выдвинутой цепи
+    this.clawPoint.x = hook.x;
+    this.clawPoint.y = hook.y + hook.displayHeight - 30;
 
     if (isLaunching) {
-        // Выбрасываем цепь вниз (увеличиваем длину)
-        hook.displayHeight += hookSpeed;
-        if (this.clawSensor.y > config.height - 50) {
-            isLaunching = false; isReturning = true;
+        // Удлиняем цепь
+        hook.displayHeight += HOOK_SPEED;
+        
+        // Если промахнулись или достигли дна
+        if (this.clawPoint.y > config.height - 40) {
+            isLaunching = false; 
+            isReturning = true;
         }
     } 
     else if (isReturning) {
-        // Подтягиваем цепь обратно
-        hook.displayHeight -= hookSpeed * 0.7;
+        // Сокращаем цепь
+        hook.displayHeight -= HOOK_SPEED;
         
         if (caughtItem) { 
-            caughtItem.x = this.clawSensor.x; 
-            caughtItem.y = this.clawSensor.y; 
+            caughtItem.x = this.clawPoint.x; 
+            caughtItem.y = this.clawPoint.y; 
         }
         
-        if (hook.displayHeight <= 100) {
-            hook.displayHeight = 100;
+        // Вернулись к самолету
+        if (hook.displayHeight <= BASE_HOOK_HEIGHT) {
+            hook.displayHeight = BASE_HOOK_HEIGHT;
             isReturning = false;
             if (caughtItem) { 
-                score += 100; scoreText.setText('SCORE: ' + score); 
-                caughtItem.destroy(); caughtItem = null; spawnCoin(this); 
+                score += 100; 
+                scoreText.setText('SCORE: ' + score); 
+                caughtItem.destroy(); 
+                caughtItem = null; 
+                spawnCoin(this); 
             }
         }
     }
@@ -126,4 +133,3 @@ function update() {
 </script>
 </body>
 </html>
-       
