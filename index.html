@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Pro</title>
+    <title>Pepe Pilot Gold</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
@@ -15,20 +15,19 @@ const config = {
     type: Phaser.AUTO,
     width: window.innerWidth,
     height: window.innerHeight,
-    physics: { default: 'arcade', arcade: { debug: false } },
-    render: { pixelArt: false, antialias: true }, // Чтобы монеты были чёткими
+    physics: { default: 'arcade' },
     scene: { preload: preload, create: create, update: update }
 };
 
 const game = new Phaser.Game(config);
-let plane, clawContainer, chain, targets, scoreText;
+let plane, clawGraphic, chain, targets, scoreText;
 let isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.02, launchSpeed = 15, returnSpeed = 10;
+let angle = 0, swingSpeed = 0.02, launchSpeed = 12, returnSpeed = 8;
 let score = 0;
 
 function preload() {
     this.load.image('sky', 'https://labs.phaser.io/assets/skies/space3.png');
-    // Используем твои точные имена файлов из репозитория
+    // Используем ПРЯМЫЕ ссылки на твои картинки в GitHub (на основе твоих скринов)
     this.load.image('pepe', 'images__32_-removebg-preview.png');
     this.load.image('ton', 'ton-ecosystem-removebg-preview.png');
     this.load.image('not', 'images__35_-removebg-preview.png');
@@ -36,33 +35,29 @@ function preload() {
 }
 
 function create() {
-    this.add.image(config.width/2, config.height/2, 'sky').setAlpha(0.5).setScale(2);
+    this.add.image(config.width/2, config.height/2, 'sky').setAlpha(0.4).setScale(2);
     
-    // ПЕПЕ
-    plane = this.add.sprite(config.width / 2, 90, 'pepe').setDepth(10);
-    plane.setDisplaySize(200, 200); 
-
-    // ЦЕПЬ И КЛЕШНЯ
+    // ПЕПЕ (Крупное лицо)
+    plane = this.add.sprite(config.width / 2, 100, 'pepe').setDepth(10);
+    plane.setDisplaySize(240, 240); 
+    
+    // ГРАФИКА КЛЕШНИ И ЦЕПИ
     chain = this.add.graphics().setDepth(5);
+    clawGraphic = this.add.graphics().setDepth(6);
     
-    // Создаем контейнер для клешни (левая и правая створка)
-    clawContainer = this.add.container(config.width/2, 200);
-    let leftClaw = this.add.graphics().lineStyle(4, 0xffd700).arc(0, 0, 20, 1.5, 3.5).strokePath();
-    let rightClaw = this.add.graphics().lineStyle(4, 0xffd700).arc(0, 0, 20, -0.5, 1.5).strokePath();
-    clawContainer.add([leftClaw, rightClaw]);
-    clawContainer.setDepth(6);
-    this.physics.add.existing(clawContainer);
-    clawContainer.body.setCircle(20, -20, -20);
+    // Невидимая физическая точка для столкновений
+    this.clawPoint = this.add.circle(config.width / 2, 200, 15);
+    this.physics.add.existing(this.clawPoint);
 
-    // МОНЕТЫ
     targets = this.physics.add.group();
     const assets = ['ton', 'dogs', 'not'];
-    for(let i=0; i<10; i++) {
+
+    for(let i=0; i<12; i++) {
         let x = Phaser.Math.Between(50, config.width - 50);
         let y = Phaser.Math.Between(350, config.height - 100);
-        let coin = targets.create(x, y, Phaser.Math.RND.pick(assets));
-        coin.setDisplaySize(70, 70); // Чёткий фиксированный размер
-        coin.setDepth(4);
+        let type = Phaser.Math.RND.pick(assets);
+        let coin = targets.create(x, y, type);
+        coin.setDisplaySize(80, 80).setDepth(4);
     }
 
     scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '32px', fill: '#fff', fontStyle: 'bold' });
@@ -71,13 +66,11 @@ function create() {
         if(!isLaunching && !isReturning) isLaunching = true; 
     });
 
-    // Логика захвата
-    this.physics.add.overlap(clawContainer, targets, (claw, target) => {
+    this.physics.add.overlap(this.clawPoint, targets, (c, target) => {
         if (isLaunching && !caughtItem) {
             caughtItem = target;
             isLaunching = false;
             isReturning = true;
-            // Визуальное "захватывание" (сближаем створки можно добавить позже)
         }
     });
 }
@@ -89,31 +82,30 @@ function update() {
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
         if (angle > 0.8 || angle < -0.8) swingSpeed = -swingSpeed;
-        clawContainer.x = pivotX + Math.sin(angle) * 120;
-        clawContainer.y = pivotY + Math.cos(angle) * 120;
-        clawContainer.rotation = -angle;
+        this.clawPoint.x = pivotX + Math.sin(angle) * 140;
+        this.clawPoint.y = pivotY + Math.cos(angle) * 140;
     } else if (isLaunching) {
-        clawContainer.x += Math.sin(angle) * launchSpeed;
-        clawContainer.y += Math.cos(angle) * launchSpeed;
+        this.clawPoint.x += Math.sin(angle) * launchSpeed;
+        this.clawPoint.y += Math.cos(angle) * launchSpeed;
 
-        if (clawContainer.y > config.height || clawContainer.x < 0 || clawContainer.x > config.width) {
+        if (this.clawPoint.y > config.height || this.clawPoint.x < 0 || this.clawPoint.x > config.width) {
             isLaunching = false;
             isReturning = true;
         }
     } else if (isReturning) {
-        let tx = pivotX + Math.sin(angle) * 120;
-        let ty = pivotY + Math.cos(angle) * 120;
-        let dist = Phaser.Math.Distance.Between(clawContainer.x, clawContainer.y, tx, ty);
+        let dist = Phaser.Math.Distance.Between(this.clawPoint.x, this.clawPoint.y, pivotX + Math.sin(angle) * 140, pivotY + Math.cos(angle) * 140);
+        let tx = pivotX + Math.sin(angle) * 140;
+        let ty = pivotY + Math.cos(angle) * 140;
 
-        clawContainer.x += (tx - clawContainer.x) / dist * returnSpeed;
-        clawContainer.y += (ty - clawContainer.y) / dist * returnSpeed;
+        this.clawPoint.x += (tx - this.clawPoint.x) * 0.2;
+        this.clawPoint.y += (ty - this.clawPoint.y) * 0.2;
 
         if (caughtItem) {
-            caughtItem.x = clawContainer.x;
-            caughtItem.y = clawContainer.y;
+            caughtItem.x = this.clawPoint.x;
+            caughtItem.y = this.clawPoint.y;
         }
 
-        if (dist < 15) {
+        if (dist < 10) {
             isReturning = false;
             if (caughtItem) {
                 score += 100;
@@ -124,10 +116,22 @@ function update() {
         }
     }
 
-    // Рисуем цепь
+    // ОТРИСОВКА ЦЕПИ И КЛЕШНИ
     chain.clear();
-    chain.lineStyle(3, 0xcccccc, 1);
-    chain.lineBetween(pivotX, pivotY, clawContainer.x, clawContainer.y);
+    chain.lineStyle(3, 0xaaaaaa, 1);
+    chain.lineBetween(pivotX, pivotY, this.clawPoint.x, this.clawPoint.y);
+
+    clawGraphic.clear();
+    clawGraphic.lineStyle(5, 0xffd700, 1);
+    
+    // Рисуем две створки клешни
+    let openAngle = caughtItem ? 0.2 : 0.8; // Если схватили - закрываем
+    clawGraphic.beginPath();
+    clawGraphic.arc(this.clawPoint.x, this.clawPoint.y, 25, angle - openAngle, angle + openAngle, true);
+    clawGraphic.strokePath();
+    clawGraphic.beginPath();
+    clawGraphic.arc(this.clawPoint.x, this.clawPoint.y, 25, angle + Math.PI - openAngle, angle + Math.PI + openAngle, true);
+    clawGraphic.strokePath();
 }
 </script>
 </body>
