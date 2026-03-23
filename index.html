@@ -24,21 +24,24 @@ let plane, claw, chain, targets, scoreText, timerText;
 let isLaunching = false, isReturning = false;
 let angle = 0, score = 0, timeLeft = 60;
 
-function preload() {
+function preload() { function preload() {
     this.load.image('sky', 'https://labs.phaser.io/assets/skies/space3.png');
     
-    // ИСПОЛЬЗУЕМ ТВОИ НАЗВАНИЯ ИЗ GITHUB (как на скрине 1000004101.jpg)
-    // Если ты переименовал их в pepe.png и т.д. — просто поменяй названия в кавычках ниже
-    this.load.image('pepe', 'images (32).jpeg'); 
-    this.load.image('ton', 'ton-ecosystem.jpg'); 
-    this.load.image('dogs', 'images (33).jpeg'); 
-    this.load.image('not', 'images (35).jpeg');
+     
+    this.load.image('pepe', 'images__32_-removebg-preview.png'); 
+    this.load.image('ton_coin', 'ton-ecosystem-removebg-preview.png');
+    
+    
+    this.load.image('not_coin', 'images__35_-removebg-preview.png'); 
+    this.load.image('dogs_coin', 'images__33_-removebg-preview.png');
+}
+
+     
 }
 
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setAlpha(0.4).setScale(2);
     
-    // Пепе (размер 100 пикселей)
     plane = this.add.sprite(config.width / 2, 80, 'pepe');
     plane.setDisplaySize(100, 100); 
     plane.setDepth(5);
@@ -55,7 +58,7 @@ function create() {
         let type = Phaser.Math.RND.pick(coins);
         let coin = targets.create(x, y, type);
         
-        // Масштабируем
+        
         if (type === 'ton') {
             coin.setDisplaySize(45, 45);
             coin.setData('p', 50);
