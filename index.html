@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Matrix Edition</title>
+    <title>Pepe Pilot</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
-        body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
+        body { margin: 0; background-color: #87CEEB; overflow: hidden; touch-action: none; }
         canvas { display: block; margin: 0 auto; }
     </style>
 </head>
@@ -24,13 +24,13 @@ const game = new Phaser.Game(config);
 let plane, chainSprite, targets, scoreText, timerText;
 let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.025; 
-let launchSpeed = 14; 
+let launchSpeed = 15; 
 let returnSmoothness = 0.07; 
 let score = 0, timeLeft = 60, isGameOver = false;
 
 function preload() {
     this.load.crossOrigin = 'anonymous';
-    // ИСПРАВЛЕНО: на скриншоте GitHub файл называется pg.jpeg
+    // Загружаем фон
     this.load.image('sky', 'pg.jpeg'); 
     this.load.image('pepe', 'pepe.png');
     this.load.image('chain', 'cep.png'); 
@@ -41,24 +41,22 @@ function preload() {
 }
 
 function create() {
-    // РАБОТА С ФОНОМ
-    if (this.textures.exists('sky')) {
-        let bg = this.add.image(config.width/2, config.height/2, 'sky');
-        // Растягиваем фон, чтобы не было черных полос
-        let scaleX = config.width / bg.width;
-        let scaleY = config.height / bg.height;
-        let scale = Math.max(scaleX, scaleY);
-        bg.setScale(scale).setScrollFactor(0);
-    }
+    // Отрисовка фона с проверкой
+    let bg = this.add.image(config.width/2, config.height/2, 'sky');
+    
+    // Если картинка загрузилась, растягиваем её
+    bg.on('pointerdown', () => {}); // Фикс для некоторых браузеров
+    let scale = Math.max(config.width / bg.width, config.height / bg.height);
+    bg.setScale(scale).setScrollFactor(0);
 
-    // ЦЕПЬ
+    // Цепь
     chainSprite = this.add.sprite(0, 0, 'chain').setOrigin(0.5, 0).setDepth(5);
     
-    // Клешня
-    this.clawPoint = this.add.circle(config.width/2, 400, 30, 0x00ff00, 0); 
+    // Точка захвата (невидимая клешня)
+    this.clawPoint = this.add.circle(config.width/2, 400, 35, 0xffffff, 0); 
     this.physics.add.existing(this.clawPoint);
 
-    // САМОЛЕТ
+    // Самолет
     plane = this.add.sprite(config.width / 2, 160, 'pepe');
     plane.setDepth(10).setDisplaySize(220, 160);
 
@@ -66,11 +64,11 @@ function create() {
         targets: plane, y: 190, duration: 2000, yoyo: true, loop: -1, ease: 'Sine.easeInOut'
     });
 
-    // МОНЕТКИ (Теперь КРАСИВЫЕ и РОВНЫЕ)
+    // Монетки
     targets = this.physics.add.group();
     for(let i=0; i<8; i++) { spawnCoin(this); }
 
-    // ИНТЕРФЕЙС
+    // Текст интерфейса
     scoreText = this.add.text(25, 25, 'SCORE: 0', { 
         fontSize: '24px', fill: '#0f0', fontFamily: 'Courier New', fontWeight: 'bold' 
     }).setDepth(30);
@@ -101,43 +99,36 @@ function create() {
         if(!isLaunching && !isReturning && !isGameOver) isLaunching = true; 
     });
 
-    // ОБРАБОТКА СТОЛКНОВЕНИЯ С ВИБРАЦИЕЙ
+    // Столкновение и Вибрация
     this.physics.add.overlap(this.clawPoint, targets, (c, target) => {
         if (isLaunching && !caughtItem) { 
             caughtItem = target; 
             isLaunching = false; 
             isReturning = true; 
 
-            // ЛЕГКАЯ ВИБРАЦИЯ (50 мс)
-            if (navigator.vibrate) {
-                navigator.vibrate(50);
+            if (window.navigator && window.navigator.vibrate) {
+                window.navigator.vibrate(60); 
             }
         }
     });
 }
 
 function spawnCoin(scene) {
-    let x, y, tooClose;
-    // Проверка, чтобы монетки не лепились друг к другу
-    do {
-        x = Phaser.Math.Between(80, config.width - 80);
-        y = Phaser.Math.Between(config.height * 0.55, config.height - 100);
-        tooClose = targets.getChildren().some(c => Phaser.Math.Distance.Between(x, y, c.x, c.y) < 110);
-    } while (tooClose);
-
-    let randomCoin = Phaser.Utils.Array.GetRandom(['ton', 'usdt', 'not', 'dogs']);
-    let coin = targets.create(x, y, randomCoin);
+    let x = Phaser.Math.Between(70, config.width - 70);
+    let y = Phaser.Math.Between(config.height * 0.55, config.height - 100);
+    let type = Phaser.Utils.Array.GetRandom(['ton', 'usdt', 'not', 'dogs']);
+    let coin = targets.create(x, y, type);
     
-    // ФИКС: Делаем монетки идеально круглыми 90x90
-    coin.setDisplaySize(90, 90);
-    coin.setDepth(4).setOrigin(0.5); 
+    // ФИКС МОНЕТ: делаем их ровными 90x90
+    coin.setDisplaySize(90, 90).setOrigin(0.5).setDepth(4); 
+    coin.body.setCircle(45); // Точный хитбокс
 }
 
 function update() {
     if (isGameOver) return;
 
     let anchorX = plane.x; 
-    let anchorY = plane.y + 35; // Цепь внутри корпуса
+    let anchorY = plane.y + 35; 
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
@@ -172,9 +163,10 @@ function update() {
     chainSprite.x = anchorX;
     chainSprite.y = anchorY;
     chainSprite.rotation = Phaser.Math.Angle.Between(anchorX, anchorY, this.clawPoint.x, this.clawPoint.y) - Math.PI / 2;
-    chainSprite.displayWidth = 140; // Жирная цепь
+    chainSprite.displayWidth = 140; 
     chainSprite.displayHeight = Phaser.Math.Distance.Between(anchorX, anchorY, this.clawPoint.x, this.clawPoint.y);
 }
 </script>
 </body>
 </html>
+         
