@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Pro</title>
+    <title>Pepe Pilot Fixed</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
-        body { margin: 0; background-color: #87CEEB; overflow: hidden; touch-action: none; }
+        body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
         canvas { display: block; margin: 0 auto; }
     </style>
 </head>
@@ -25,7 +25,7 @@ let plane, chainSprite, targets, scoreText, timerText;
 let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.025; 
 let launchSpeed = 15; 
-let returnSmoothness = 0.07; 
+let returnSmoothness = 0.08; 
 let score = 0, timeLeft = 60, isGameOver = false;
 
 function preload() {
@@ -45,49 +45,36 @@ function create() {
     let scale = Math.max(config.width / bg.width, config.height / bg.height);
     bg.setScale(scale).setScrollFactor(0);
 
-    // ЦЕПЬ (Ставим слой 5)
+    // ЦЕПЬ (слой под самолетом)
     chainSprite = this.add.sprite(0, 0, 'chain').setOrigin(0.5, 0).setDepth(5);
     
-    // Клешня (Центр захвата)
+    // Точка захвата (невидимая)
     this.clawPoint = this.add.circle(config.width/2, 400, 30, 0xffffff, 0); 
     this.physics.add.existing(this.clawPoint);
 
-    // САМОЛЕТ (Слой 10 - ПОВЕРХ ЦЕПИ)
+    // САМОЛЕТ (слой выше цепи)
     plane = this.add.sprite(config.width / 2, 160, 'pepe');
     plane.setDepth(10).setDisplaySize(220, 160);
 
-    // Покачивание самолета
+    // Анимация покачивания
     this.tweens.add({
-        targets: plane, y: 180, duration: 2000, yoyo: true, loop: -1, ease: 'Sine.easeInOut'
+        targets: plane, y: 190, duration: 2000, yoyo: true, loop: -1, ease: 'Sine.easeInOut'
     });
 
-    // Группа мишеней
     targets = this.physics.add.group();
     for(let i=0; i<8; i++) { spawnCoin(this); }
 
-    // Текст
-    scoreText = this.add.text(25, 25, 'SCORE: 0', { 
-        fontSize: '24px', fill: '#0f0', fontFamily: 'Courier New', fontWeight: 'bold' 
-    }).setDepth(30);
-    
-    timerText = this.add.text(config.width - 180, 25, 'TIME: 60', { 
-        fontSize: '24px', fill: '#0f0', fontFamily: 'Courier New', fontWeight: 'bold' 
-    }).setDepth(30);
+    scoreText = this.add.text(25, 25, 'SCORE: 0', { fontSize: '24px', fill: '#0f0', fontFamily: 'Courier New' }).setDepth(30);
+    timerText = this.add.text(config.width - 180, 25, 'TIME: 60', { fontSize: '24px', fill: '#0f0', fontFamily: 'Courier New' }).setDepth(30);
 
-    // Таймер
     this.time.addEvent({
         delay: 1000,
         callback: () => { 
-            if(timeLeft > 0) { 
-                timeLeft--; 
-                timerText.setText('TIME: ' + timeLeft); 
-            } else if (!isGameOver) {
+            if(timeLeft > 0) { timeLeft--; timerText.setText('TIME: ' + timeLeft); }
+            else if (!isGameOver) {
                 isGameOver = true;
                 this.physics.pause();
-                this.add.rectangle(config.width/2, config.height/2, config.width, config.height, 0x000000, 0.7).setDepth(40);
-                this.add.text(config.width/2, config.height/2, 'GAME OVER\nSCORE: ' + score, { 
-                    fontSize: '32px', fill: '#0f0', fontFamily: 'Courier New', align: 'center'
-                }).setOrigin(0.5).setDepth(41);
+                this.add.text(config.width/2, config.height/2, 'GAME OVER', { fontSize: '40px', fill: '#f00' }).setOrigin(0.5).setDepth(50);
             }
         },
         loop: true
@@ -97,34 +84,31 @@ function create() {
         if(!isLaunching && !isReturning && !isGameOver) isLaunching = true; 
     });
 
-    // Логика поимки
     this.physics.add.overlap(this.clawPoint, targets, (c, target) => {
         if (isLaunching && !caughtItem) { 
             caughtItem = target; 
             isLaunching = false; 
             isReturning = true; 
-            if (window.navigator.vibrate) window.navigator.vibrate(60); 
+            if (navigator.vibrate) navigator.vibrate(60); 
         }
     });
 }
 
 function spawnCoin(scene) {
     let x = Phaser.Math.Between(80, config.width - 80);
-    let y = Phaser.Math.Between(config.height * 0.55, config.height - 120);
+    let y = Phaser.Math.Between(config.height * 0.55, config.height - 100);
     let type = Phaser.Utils.Array.GetRandom(['ton', 'usdt', 'not', 'dogs']);
     let coin = targets.create(x, y, type);
-    
-    // ФИКС РАЗМЕРА И ЦЕНТРА
-    coin.setDisplaySize(80, 80).setOrigin(0.5).setDepth(4); 
-    coin.body.setCircle(35); // Коллизия точно по центру
+    // ФИКС РАЗМЕРА: Строго 80x80
+    coin.setDisplaySize(80, 80).setDepth(4).setOrigin(0.5); 
 }
 
 function update() {
     if (isGameOver) return;
 
-    // ЖЕСТКАЯ ПРИВЯЗКА К ЦЕНТРУ КОРПУСА
+    // ГЛАВНЫЙ ФИКС: Привязка координат цепи к текущему положению самолета в каждом кадре
     let anchorX = plane.x; 
-    let anchorY = plane.y + 50; // Поднято выше, чтобы цепь "выходила" из самолета
+    let anchorY = plane.y + 45; // Смещение вниз, чтобы выходила из центра дна
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
@@ -147,7 +131,7 @@ function update() {
             caughtItem.y = this.clawPoint.y; 
         }
         
-        if (dist < 35) {
+        if (dist < 40) {
             isReturning = false;
             if (caughtItem) { 
                 score += 100; scoreText.setText('SCORE: ' + score); 
@@ -156,7 +140,7 @@ function update() {
         }
     }
 
-    // Отрисовка цепи от новой точки привязки
+    // Обновляем спрайт цепи
     chainSprite.x = anchorX;
     chainSprite.y = anchorY;
     chainSprite.rotation = Phaser.Math.Angle.Between(anchorX, anchorY, this.clawPoint.x, this.clawPoint.y) - Math.PI / 2;
