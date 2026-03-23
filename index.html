@@ -27,7 +27,7 @@ let score = 0, timeLeft = 60;
 
 function preload() {
     this.load.image('sky', 'https://labs.phaser.io/assets/skies/space3.png');
-    // Твои новые чистые PNG файлы
+    // Используем твои файлы. Если названия на GitHub другие — поправь их тут!
     this.load.image('pepe', 'pepe.png');
     this.load.image('ton_coin', 'ton.png');
     this.load.image('not_coin', 'not.png');
@@ -37,56 +37,44 @@ function preload() {
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setAlpha(0.3).setScale(1.5);
     
-    // ПЕПЕ: масштаб 45% (0.45)
-    plane = this.add.sprite(config.width / 2, 100, 'pepe').setScale(0.45).setDepth(5);
+    // ПЕПЕ: Делаем его маленьким (0.15 от оригинала), чтобы он не закрывал экран
+    plane = this.add.sprite(config.width / 2, 80, 'pepe').setScale(0.15).setDepth(5);
     
-    claw = this.add.circle(config.width / 2, 180, 18, 0xffd700).setDepth(4);
+    // Клешня
+    claw = this.add.circle(config.width / 2, 140, 15, 0xffd700).setDepth(4);
     chain = this.add.graphics().setDepth(3);
     
     targets = this.physics.add.group();
     const assets = ['ton_coin', 'dogs_coin', 'not_coin'];
 
+    // Генерация монет ниже Пепе
     for(let i=0; i<12; i++) {
-        let x = Phaser.Math.Between(80, config.width - 80);
-        let y = Phaser.Math.Between(300, config.height - 150);
+        let x = Phaser.Math.Between(50, config.width - 50);
+        let y = Phaser.Math.Between(250, config.height - 100);
         let type = Phaser.Math.RND.pick(assets);
         let coin = targets.create(x, y, type);
         
-        // МОНЕТКА TON: на 25% меньше (75 * 0.75 = 56)
+        // Жестко задаем размер в пикселях, чтобы не зависеть от масштаба
         if (type === 'ton_coin') {
-            coin.setDisplaySize(56, 56);
+            coin.setDisplaySize(45, 45); // TON поменьше
             coin.setData('val', 50);
         } else {
-            coin.setDisplaySize(75, 75);
+            coin.setDisplaySize(60, 60); // Остальные побольше
             coin.setData('val', 10);
         }
     }
 
-    // Текст счета
-    scoreText = this.add.text(20, 20, 'Score: 0', { 
-        fontSize: '32px', fill: '#fff', fontStyle: 'bold' 
-    });
+    scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '24px', fill: '#fff' });
+    timerText = this.add.text(config.width - 120, 20, 'Time: 60', { fontSize: '24px', fill: '#ff0' });
 
-    // Таймер
-    timerText = this.add.text(config.width - 150, 20, 'Time: 60', { 
-        fontSize: '32px', fill: '#ff0000', fontStyle: 'bold' 
-    });
-
-    // Событие таймера (раз в секунду)
     this.time.addEvent({
         delay: 1000,
         callback: () => {
             if (timeLeft > 0) {
                 timeLeft--;
                 timerText.setText('Time: ' + timeLeft);
-            } else {
-                this.physics.pause();
-                this.add.text(config.width/2, config.height/2, 'GAME OVER', { 
-                    fontSize: '64px', fill: '#fff', fontStyle: 'bold' 
-                }).setOrigin(0.5);
             }
         },
-        callbackScope: this,
         loop: true
     });
 
@@ -96,13 +84,16 @@ function create() {
 }
 
 function update() {
-    if (timeLeft <= 0) return;
+    if (timeLeft <= 0) {
+        this.physics.pause();
+        return;
+    }
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
         if (angle > 0.8 || angle < -0.8) swingSpeed = -swingSpeed;
-        claw.x = plane.x + Math.sin(angle) * 120;
-        claw.y = plane.y + Math.cos(angle) * 120;
+        claw.x = plane.x + Math.sin(angle) * 80;
+        claw.y = plane.y + Math.cos(angle) * 80;
     } else if (isLaunching) {
         claw.x += Math.sin(angle) * launchSpeed;
         claw.y += Math.cos(angle) * launchSpeed;
@@ -122,16 +113,16 @@ function update() {
             isReturning = true;
         }
     } else if (isReturning) {
-        let tx = plane.x + Math.sin(angle) * 120;
-        let ty = plane.y + Math.cos(angle) * 120;
+        let tx = plane.x + Math.sin(angle) * 80;
+        let ty = plane.y + Math.cos(angle) * 80;
         claw.x += (tx - claw.x) * returnSpeed;
         claw.y += (ty - claw.y) * returnSpeed;
         if (Phaser.Math.Distance.Between(claw.x, claw.y, tx, ty) < 10) isReturning = false;
     }
 
     chain.clear();
-    chain.lineStyle(5, 0xffd700, 0.8); 
-    chain.lineBetween(plane.x, plane.y + 20, claw.x, claw.y);
+    chain.lineStyle(4, 0xffd700, 0.8); 
+    chain.lineBetween(plane.x, plane.y + 10, claw.x, claw.y);
 }
 </script>
 </body>
