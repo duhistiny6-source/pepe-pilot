@@ -1,43 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pepe Claw PRO</title>
-<script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
-<style>
-body { margin:0; overflow:hidden; background:black; }
-#ui {
- position:fixed; top:10px; left:10px; color:#0f0; font-family:Arial;
-}
-#shop {
- position:fixed; bottom:10px; left:10px;
-}
-button {
- padding:10px; margin:5px; font-size:14px;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pepe Claw PRO Fixed</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <style>
+        body { margin:0; overflow:hidden; background:black; touch-action: none; }
+        #ui { position:fixed; top:10px; left:10px; color:#0f0; font-family:Arial; font-weight:bold; text-shadow: 1px 1px #000; z-index: 100; }
+        #shop { position:fixed; bottom:10px; left:10px; z-index: 100; }
+        button { padding:10px; margin:5px; font-size:14px; cursor: pointer; background: #222; color: #fff; border: 1px solid #0f0; }
+    </style>
 </head>
 <body>
 
 <div id="ui">
-💰 <span id="money">0</span><br>
-⚡ <span id="energy">10</span>
+    💰 <span id="money">0</span><br>
+    ⚡ <span id="energy">10</span>
 </div>
 
 <div id="shop">
-<button onclick="upgrade('chance')">Шанс</button>
-<button onclick="upgrade('speed')">Скорость</button>
-<button onclick="upgrade('power')">Сила</button>
+    <button onclick="upgrade('chance')">Шанс</button>
+    <button onclick="upgrade('speed')">Скорость</button>
+    <button onclick="upgrade('power')">Сила</button>
 </div>
 
 <script>
 const config = {
- type: Phaser.AUTO,
- width: window.innerWidth,
- height: window.innerHeight,
- physics: { default:'arcade' },
- scene: { preload, create, update }
+    type: Phaser.AUTO,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    physics: { default:'arcade' },
+    scene: { preload, create, update }
 };
 
 new Phaser.Game(config);
@@ -48,150 +42,139 @@ let angle=0, swingSpeed=0.03;
 
 let money=0;
 let energy=10;
-
-let upgrades = {
- chance: 0,
- speed: 0,
- power: 0
-};
+let upgrades = { chance: 0, speed: 0, power: 0 };
 
 const ITEMS = {
- ton:{weight:1, chance:0.9, value:50},
- usdt:{weight:2, chance:0.7, value:100},
- not:{weight:3, chance:0.5, value:200},
- dogs:{weight:5, chance:0.3, value:400}
+    ton:{weight:1, chance:0.9, value:50},
+    usdt:{weight:2, chance:0.7, value:100},
+    not:{weight:3, chance:0.5, value:200},
+    dogs:{weight:5, chance:0.3, value:400}
 };
 
 function preload(){
- this.load.image('sky','pg.jpeg');
- this.load.image('pepe','pepe.png');
- this.load.image('ton','ton.png');
- this.load.image('usdt','usdt.png');
- this.load.image('not','not.png');
- this.load.image('dogs','dogs.png');
+    this.load.image('sky','pg.jpeg');
+    this.load.image('pepe','pepe.png'); //
+    this.load.image('ton','ton.png');
+    this.load.image('usdt','usdt.png');
+    this.load.image('not','not.png');
+    this.load.image('dogs','dogs.png');
 }
 
 function create(){
- this.add.image(config.width/2,config.height/2,'sky')
-  .setDisplaySize(config.width,config.height);
+    this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
 
- plane = this.add.image(config.width/2,120,'pepe')
-  .setDisplaySize(200,160);
+    // 1. ЦЕПЬ (Вместо белой палки - берем нить из pepe.png)
+    chain = this.add.sprite(config.width/2, 150, 'pepe');
+    chain.setOrigin(0.5, 0).setDepth(30);
+    chain.setCrop(495, 480, 10, 100); // Вырезаем тонкую линию
 
- chain = this.add.rectangle(config.width/2,150,4,60,0xffffff).setOrigin(0.5,0);
- hook = this.add.circle(config.width/2,200,20,0xffff00);
+    // 2. КЛЕШНЯ (Вместо желтого круга)
+    hook = this.add.sprite(config.width/2, 200, 'pepe');
+    hook.setDepth(40).setDisplaySize(100, 90);
+    hook.setCrop(300, 600, 400, 400); // Берем желтый захват
 
- this.physics.add.existing(hook);
- hook.body.setCircle(20);
+    // 3. САМОЛЕТ
+    plane = this.add.image(config.width/2, 130, 'pepe');
+    plane.setDisplaySize(280, 240).setDepth(50).setCrop(0, 0, 1000, 480);
 
- targets = this.physics.add.group();
- for(let i=0;i<10;i++) spawn(this);
+    this.physics.add.existing(hook);
+    hook.body.setCircle(35, 15, 15);
 
- this.input.on('pointerdown', ()=>{
-  if(!isLaunching && !isReturning && energy>0){
-   isLaunching=true;
-   energy--;
-   updateUI();
-  }
- });
+    targets = this.physics.add.group();
+    for(let i=0; i<10; i++) spawn(this);
 
- this.physics.add.overlap(hook,targets,(h,item)=>{
-  if(isLaunching && !caughtItem){
-   let d = ITEMS[item.texture.key];
+    this.input.on('pointerdown', () => {
+        if(!isLaunching && !isReturning && energy > 0){
+            isLaunching = true;
+            energy--;
+            updateUI();
+        }
+    });
 
-   let finalChance = d.chance + upgrades.chance*0.05;
+    this.physics.add.overlap(hook, targets, (h, item) => {
+        if(isLaunching && !caughtItem){
+            let d = ITEMS[item.texture.key];
+            let finalChance = d.chance + upgrades.chance * 0.05;
+            if(Math.random() <= finalChance) { caughtItem = item; }
+            isLaunching = false;
+            isReturning = true;
+        }
+    });
 
-   if(Math.random() <= finalChance){
-    caughtItem=item;
-   }
-
-   isLaunching=false;
-   isReturning=true;
-  }
- });
-
- setInterval(()=>{
-  if(energy<10) energy++;
-  updateUI();
- },3000);
+    setInterval(() => { if(energy < 10) energy++; updateUI(); }, 3000);
 }
 
 function spawn(scene){
- let keys=Object.keys(ITEMS);
- let k=keys[Math.floor(Math.random()*keys.length)];
-
- let x=Phaser.Math.Between(50,config.width-50);
- let y=Phaser.Math.Between(config.height*0.6,config.height-50);
-
- targets.create(x,y,k).setDisplaySize(60,60);
+    let keys = Object.keys(ITEMS);
+    let k = keys[Math.floor(Math.random() * keys.length)];
+    let x = Phaser.Math.Between(80, config.width - 80);
+    let y = Phaser.Math.Between(config.height * 0.6, config.height - 80);
+    targets.create(x, y, k).setDisplaySize(65, 65);
 }
 
 function update(){
- let startY = plane.y+30;
+    let startY = plane.y + 35;
+    // Эффект покачивания самолета
+    plane.y = 130 + Math.sin(this.time.now / 600) * 5;
 
- if(!isLaunching && !isReturning){
-  angle+=swingSpeed;
-  if(angle>0.7||angle<-0.7) swingSpeed*=-1;
+    if(!isLaunching && !isReturning){
+        angle += swingSpeed;
+        if(angle > 0.7 || angle < -0.7) swingSpeed *= -1;
 
-  hook.x = plane.x + Math.sin(angle)*60;
-  hook.y = startY + Math.cos(angle)*60;
-  chain.height=60;
- }
- else{
-  if(isLaunching){
-   chain.height += 15 + upgrades.speed*2;
-  } else {
-   let speed = 10 + upgrades.power*2;
-   chain.height -= speed;
-
-   if(chain.height<=60){
-    isReturning=false;
-
-    if(caughtItem){
-     let type = caughtItem.texture.key;
-     money += ITEMS[type].value;
-
-     caughtItem.destroy();
-     caughtItem=null;
-     spawn(this);
-     updateUI();
+        chain.rotation = -angle;
+        chain.displayHeight = 60;
+        
+        hook.x = plane.x + Math.sin(angle) * 60;
+        hook.y = startY + Math.cos(angle) * 60;
+        hook.rotation = -angle;
     }
-   }
-  }
+    else{
+        if(isLaunching){
+            chain.displayHeight += 14 + upgrades.speed * 2;
+            if(chain.displayHeight > config.height - startY) { isLaunching = false; isReturning = true; }
+        } else {
+            let returnSpeed = 10 + upgrades.power * 2;
+            chain.displayHeight -= returnSpeed;
 
-  hook.x = plane.x + Math.sin(angle)*chain.height;
-  hook.y = startY + Math.cos(angle)*chain.height;
+            if(chain.displayHeight <= 60){
+                isReturning = false;
+                if(caughtItem){
+                    money += ITEMS[caughtItem.texture.key].value;
+                    caughtItem.destroy();
+                    caughtItem = null;
+                    spawn(this);
+                    updateUI();
+                }
+            }
+        }
 
-  if(caughtItem){
-   caughtItem.x=hook.x;
-   caughtItem.y=hook.y+20;
+        chain.rotation = -angle;
+        hook.x = plane.x + Math.sin(angle) * chain.displayHeight;
+        hook.y = startY + Math.cos(angle) * chain.displayHeight;
+        hook.rotation = -angle;
 
-   // шанс срыва
-   if(Math.random()<0.01*ITEMS[caughtItem.texture.key].weight){
-    caughtItem=null;
-   }
-  }
- }
-
- chain.x=plane.x;
- chain.y=startY;
+        if(caughtItem){
+            caughtItem.x = hook.x;
+            caughtItem.y = hook.y + 30;
+        }
+    }
+    chain.x = plane.x;
+    chain.y = startY;
 }
 
 function updateUI(){
- document.getElementById('money').innerText = money;
- document.getElementById('energy').innerText = energy;
+    document.getElementById('money').innerText = money;
+    document.getElementById('energy').innerText = energy;
 }
 
 function upgrade(type){
- let cost = 200;
-
- if(money>=cost){
-  money-=cost;
-  upgrades[type]++;
-  updateUI();
- }
+    let cost = 200;
+    if(money >= cost){
+        money -= cost;
+        upgrades[type]++;
+        updateUI();
+    }
 }
 </script>
-
 </body>
 </html>
