@@ -25,16 +25,18 @@ let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, launchSpeed = 15, returnSpeed = 10;
 let score = 0, timeLeft = 60;
 
-function preload() {
-    // ЗАГРУЗКА ТВОИХ НОВЫХ КАРТИНОК
-    this.load.image('farm_bg', '1000004148.jpg'); // Новый фон
-    this.load.image('pepe_biplane', '1000004146.png'); // Новый Пепе
+function preload() {function preload() {
+    // ЗАГРУЗКА ТВОИХ НОВЫХ PNG ФАЙЛОВ
+    this.load.image('farm_bg', '1000004148.png'); // Теперь PNG
+    this.load.image('pepe_biplane', '1000004146.png'); // Тоже PNG
     
-    // Монетки (проверь, чтобы эти файлы были в GitHub!)
+    // Монетки (проверь эти имена в GitHub, они должны быть в той же папке)
     this.load.image('ton', 'ton-ecosystem-removebg-preview.png');
     this.load.image('not', 'images__35_-removebg-preview.png');
     this.load.image('dogs', 'images__33_-removebg-preview.png');
 }
+
+     }
 
 function create() {
     // Устанавливаем фон правильно
