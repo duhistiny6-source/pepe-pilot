@@ -3,21 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Full Graphics</title>
+    <title>Pepe Pilot Gold</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
-        canvas { display: block; margin: 0 auto; }
     </style>
 </head>
 <body>
 <script>
-/**
- * СОВЕТ: Если GitHub блокирует CORS, браузер показывает "зеленые квадраты".
- * Этот код принудительно пытается загрузить файлы через прокси.
- */
-const ASSETS_URL = 'https://raw.githubusercontent.com/duhistiny6/pepe-pilot/main/';
-
 const config = {
     type: Phaser.AUTO,
     width: window.innerWidth,
@@ -29,69 +22,56 @@ const config = {
 const game = new Phaser.Game(config);
 let plane, clawGraphic, chain, targets, scoreText, timerText;
 let isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.04, launchSpeed = 18;
+let angle = 0, swingSpeed = 0.03, launchSpeed = 15;
 let score = 0, timeLeft = 60;
 
 function preload() {
-    // Убираем длинные ссылки и ищем файлы в той же папке
-    this.load.image('sky', 'bg.jpg'); 
-    this.load.image('pepe', 'pepe.png');
-    this.load.image('ton', 'ton-ecosystem-removebe.png');
+    // ЗАГРУЗКА ИЗ ЛОКАЛЬНОЙ ПАПКИ (без полных ссылок)
+    this.load.image('sky', 'bg.jpg'); // Твое кукурузное поле
+    this.load.image('pepe', 'pepe.png'); // Твой Пепе-пилот
+    // ВАЖНО: Убедись, что файл на GitHub называется ТОЧНО так же
+    this.load.image('ton', 'ton-ecosystem-removebe.png'); 
 }
 
-     
-
 function create() {
-    // 1. Создаем фон
+    // 1. ФОН
     let bg = this.add.image(config.width/2, config.height/2, 'sky');
     let scale = Math.max(config.width / bg.width, config.height / bg.height);
     bg.setScale(scale).setScrollFactor(0);
+    
+    // 2. САМОЛЕТ ПЕПЕ
+    plane = this.add.sprite(config.width / 2, 120, 'pepe');
+    plane.setDepth(10).setDisplaySize(200, 150);
 
-    // 2. Создаем самолет Пепе
-    plane = this.add.sprite(config.width / 2, 130, 'pepe');
-    plane.setDepth(10).setDisplaySize(220, 160);
-
-    // Легкое покачивание самолета
+    // Анимация покачивания самолета (как будто летит)
     this.tweens.add({
-        targets: plane,
-        y: 150,
-        duration: 1500,
-        yoyo: true,
-        loop: -1,
-        ease: 'Sine.easeInOut'
+        targets: plane, y: 135, duration: 2000, yoyo: true, loop: -1, ease: 'Sine.easeInOut'
     });
-
-    // 3. Настройка захвата
+    
+    // 3. ЦЕПЬ И КЛЕШНИ
     chain = this.add.graphics().setDepth(5);
     clawGraphic = this.add.graphics().setDepth(6);
-    this.clawPoint = this.add.circle(config.width/2, 230, 15);
+    this.clawPoint = this.add.circle(config.width/2, 220, 15);
     this.physics.add.existing(this.clawPoint);
 
-    // 4. Группа монет
+    // 4. ГРУППА МОНЕТ
     targets = this.physics.add.group();
-    for(let i=0; i<7; i++) { spawnCoin(this); }
+    for(let i=0; i<6; i++) { spawnCoin(this); }
 
-    // Интерфейс
-    scoreText = this.add.text(25, 25, '💎 Очки: 0', { 
-        fontSize: '32px', fill: '#fff', fontStyle: 'bold', stroke: '#000', strokeThickness: 6 
-    });
-    timerText = this.add.text(config.width - 180, 25, '⏱ 60', { 
-        fontSize: '32px', fill: '#ff0', fontStyle: 'bold', stroke: '#000', strokeThickness: 6 
-    });
+    // Интерфейс (жирный текст на фоне кукурузы)
+    scoreText = this.add.text(20, 30, '💎 Очки: 0', { fontSize: '28px', fill: '#fff', stroke: '#000', strokeThickness: 6 });
+    timerText = this.add.text(config.width - 180, 30, '⏱ Время: 60', { fontSize: '28px', fill: '#ff0', stroke: '#000', strokeThickness: 6 });
 
-    // Таймер
     this.time.addEvent({
         delay: 1000,
-        callback: () => { if(timeLeft > 0) { timeLeft--; timerText.setText('⏱ ' + timeLeft); } },
+        callback: () => { if(timeLeft > 0) { timeLeft--; timerText.setText('⏱ Время: ' + timeLeft); } },
         loop: true
     });
 
-    // Управление
     this.input.on('pointerdown', () => { 
         if(!isLaunching && !isReturning && timeLeft > 0) isLaunching = true; 
     });
 
-    // Физика столкновений
     this.physics.add.overlap(this.clawPoint, targets, (c, target) => {
         if (isLaunching && !caughtItem) { 
             caughtItem = target; 
@@ -102,40 +82,36 @@ function create() {
 }
 
 function spawnCoin(scene) {
-    let x = Phaser.Math.Between(60, config.width - 60);
-    let y = Phaser.Math.Between(400, config.height - 100);
+    let x = Phaser.Math.Between(50, config.width - 50);
+    let y = Phaser.Math.Between(380, config.height - 100);
     let coin = targets.create(x, y, 'ton');
-    if(coin) coin.setDisplaySize(80, 80).setDepth(4);
+    if(coin) coin.setDisplaySize(70, 70).setDepth(4);
 }
 
 function update() {
     if (timeLeft <= 0) {
-        if(timeLeft === 0) {
-            this.add.text(config.width/2, config.height/2, 'ИГРА ОКОНЧЕНА', { 
-                fontSize: '48px', fill: '#fff', stroke: '#000', strokeThickness: 8 
-            }).setOrigin(0.5);
-            timeLeft = -1;
-        }
+        timerText.setText('КОНЕЦ!').setScale(1.2);
         return;
     }
 
+    // ВЫХОД ЦЕПИ (подогнал четко под самолет)
     let px = plane.x; 
-    let py = plane.y + 40;
+    let py = plane.y + 40; // Цепь выходит четко под носом самолета
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
-        if (Math.abs(angle) > 0.9) swingSpeed = -swingSpeed;
-        this.clawPoint.x = px + Math.sin(angle) * 140;
-        this.clawPoint.y = py + Math.cos(angle) * 140;
+        if (Math.abs(angle) > 0.8) swingSpeed = -swingSpeed;
+        this.clawPoint.x = px + Math.sin(angle) * 130;
+        this.clawPoint.y = py + Math.cos(angle) * 130;
     } else if (isLaunching) {
         this.clawPoint.x += Math.sin(angle) * launchSpeed;
         this.clawPoint.y += Math.cos(angle) * launchSpeed;
-        if (this.clawPoint.y > config.height || this.clawPoint.x < 5 || this.clawPoint.x > config.width - 5) {
+        if (this.clawPoint.y > config.height || this.clawPoint.x < 0 || this.clawPoint.x > config.width) {
             isLaunching = false; isReturning = true;
         }
     } else if (isReturning) {
-        let tx = px + Math.sin(angle) * 140;
-        let ty = py + Math.cos(angle) * 140;
+        let tx = px + Math.sin(angle) * 130;
+        let ty = py + Math.cos(angle) * 130;
         let dist = Phaser.Math.Distance.Between(this.clawPoint.x, this.clawPoint.y, tx, ty);
         this.clawPoint.x += (tx - this.clawPoint.x) * 0.15;
         this.clawPoint.y += (ty - this.clawPoint.y) * 0.15;
@@ -149,16 +125,22 @@ function update() {
         }
     }
 
-    // Рисуем трос
-    chain.clear().lineStyle(3, 0x333333).lineBetween(px, py, this.clawPoint.x, this.clawPoint.y);
+    // ОТРИСОВКА (Цепь коричневая)
+    chain.clear().lineStyle(4, 0x4a2c0a).lineBetween(px, py, this.clawPoint.x, this.clawPoint.y);
     
-    // Рисуем золотой крюк
-    clawGraphic.clear().lineStyle(5, 0xFFD700);
+    // ОТРИСОВКА КЛЕШНЕЙ (Золотые дуги)
+    clawGraphic.clear().lineStyle(6, 0xffd700);
     let rot = Phaser.Math.Angle.Between(px, py, this.clawPoint.x, this.clawPoint.y) + Math.PI/2;
-    let gap = caughtItem ? 0.2 : 0.7; 
-    clawGraphic.beginPath().arc(this.clawPoint.x, this.clawPoint.y, 22, rot - gap, rot + gap).strokePath();
-    clawGraphic.beginPath().arc(this.clawPoint.x, this.clawPoint.y, 22, rot + Math.PI - gap, rot + Math.PI + gap).strokePath();
+    let gap = caughtItem ? 0.2 : 0.8; 
+    
+    clawGraphic.beginPath();
+    clawGraphic.arc(this.clawPoint.x, this.clawPoint.y, 25, rot - gap, rot + gap);
+    clawGraphic.strokePath();
+    clawGraphic.beginPath();
+    clawGraphic.arc(this.clawPoint.x, this.clawPoint.y, 25, rot + Math.PI - gap, rot + Math.PI + gap);
+    clawGraphic.strokePath();
 }
 </script>
 </body>
 </html>
+
