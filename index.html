@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Clean Version</title>
+    <title>Pepe Pilot Fixed Logic</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
@@ -25,8 +25,8 @@ let plane, hook, chain, targets, scoreText;
 let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, score = 0;
 
-const SPEED = 18;
-const PLANE_Y = 160;
+const SPEED = 16;
+const BASE_PLANE_Y = 160; // Базовая высота самолета
 
 function preload() {
     this.load.crossOrigin = 'anonymous';
@@ -41,18 +41,18 @@ function preload() {
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
 
-    // 1. ЦЕПЬ (теперь это просто спрайт, который мы будем растягивать)
-    chain = this.add.sprite(config.width / 2, PLANE_Y + 40, 'pepe');
+    // 1. ЦЕПЬ (Спрайт-нить)
+    chain = this.add.sprite(config.width / 2, BASE_PLANE_Y, 'pepe');
     chain.setOrigin(0.5, 0).setDepth(30);
-    chain.setCrop(495, 480, 10, 100); // Вырезаем только тонкую нить
+    chain.setCrop(495, 480, 10, 100); // Берем только нить из файла
 
     // 2. КЛЕШНЯ
-    hook = this.add.sprite(config.width / 2, PLANE_Y + 40, 'pepe');
+    hook = this.add.sprite(config.width / 2, BASE_PLANE_Y, 'pepe');
     hook.setOrigin(0.5, 0).setDepth(40).setDisplaySize(100, 90);
-    hook.setCrop(300, 600, 400, 400); // Только желтая клешня
+    hook.setCrop(300, 600, 400, 400); // Желтый захват
 
     // 3. САМОЛЕТ
-    plane = this.add.image(config.width / 2, PLANE_Y, 'pepe');
+    plane = this.add.image(config.width / 2, BASE_PLANE_Y, 'pepe');
     plane.setDisplaySize(300, 260).setDepth(50).setCrop(0, 0, 1000, 480);
 
     this.physics.add.existing(hook);
@@ -70,7 +70,8 @@ function create() {
     this.physics.add.overlap(hook, targets, (h, target) => {
         if (isLaunching && !caughtItem) { 
             caughtItem = target; 
-            isLaunching = false; isReturning = true; 
+            isLaunching = false; 
+            isReturning = true; 
         }
     });
 }
@@ -83,32 +84,37 @@ function spawnCoin(scene) {
 }
 
 function update() {
-    let startX = config.width / 2;
-    let startY = PLANE_Y + 40;
+    // 1. ЭФФЕКТ ПАРЕНИЯ САМОЛЕТА
+    let hover = Math.sin(this.time.now / 500) * 10;
+    plane.y = BASE_PLANE_Y + hover;
+    
+    // Начало цепи привязано к качающемуся самолету
+    let startY = plane.y + 40;
+    chain.y = startY;
 
     if (!isLaunching && !isReturning) {
-        // Качание клешни вместе с цепью
+        // 2. КАЧАНИЕ КЛЕШНИ (Маятник)
         angle += swingSpeed;
-        if (angle > 1 || angle < -1) swingSpeed = -swingSpeed;
+        if (angle > 0.8 || angle < -0.8) swingSpeed = -swingSpeed;
         
         chain.rotation = -angle;
-        chain.displayHeight = 60; // Минимальная длина
+        chain.displayHeight = 50;
         
-        hook.x = startX + Math.sin(angle) * 60;
-        hook.y = startY + Math.cos(angle) * 60;
+        hook.x = plane.x + Math.sin(angle) * 50;
+        hook.y = startY + Math.cos(angle) * 50;
         hook.rotation = -angle;
     } 
     else {
         if (isLaunching) {
-            // Выдвижение цепи
+            // Выдвижение
             chain.displayHeight += SPEED;
-            if (chain.displayHeight > config.height - PLANE_Y) { 
+            if (chain.displayHeight > config.height - startY) { 
                 isLaunching = false; isReturning = true; 
             }
         } else {
             // Втягивание
-            chain.displayHeight -= SPEED + 5;
-            if (chain.displayHeight <= 60) {
+            chain.displayHeight -= SPEED + 4;
+            if (chain.displayHeight <= 50) {
                 isReturning = false;
                 if (caughtItem) {
                     score += 100; scoreText.setText('SCORE: ' + score);
@@ -117,14 +123,15 @@ function update() {
             }
         }
 
-        // Клешня всегда на конце цепи
-        hook.x = startX + Math.sin(angle) * chain.displayHeight;
+        // Клешня строго следует за длиной цепи
+        hook.x = plane.x + Math.sin(angle) * chain.displayHeight;
         hook.y = startY + Math.cos(angle) * chain.displayHeight;
         hook.rotation = -angle;
 
+        // МОНЕТКА ПРИЛИПАЕТ К КЛЕШНЕ
         if (caughtItem) {
             caughtItem.x = hook.x;
-            caughtItem.y = hook.y + 20;
+            caughtItem.y = hook.y + 35; // Держится за "зубы" клешни
         }
     }
 }
