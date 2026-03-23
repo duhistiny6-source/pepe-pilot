@@ -28,13 +28,22 @@ let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, launchSpeed = 12;
 let score = 0, timeLeft = 60;
 
-function preload() {
+ function preload() {
     this.load.crossOrigin = 'anonymous';
-    // Загружаем через прямые ссылки
-    this.load.image('sky', ASSETS_URL + 'g..jpg'); 
-    this.load.image('pepe', ASSETS_URL + 'pepe.png');
-    this.load.image('ton', ASSETS_URL + 'ton-ecosystem-removebe.png');
+
+     
+    const base = 'https://raw.githubusercontent.com/duhistiny6/pepe-pilot/main/';
+
+    this.load.image('sky', base + 'g..jpg'); 
+    this.load.image('pepe', base + 'pepe.png');
+    this.load.image('ton', base + 'ton-ecosystem-removebe.png');
+
+     
+    this.load.on('filecomplete', (key) => {
+        console.log('Загружен файл: ' + key);
+    });
 }
+
 
 function create() {
     // Фон
