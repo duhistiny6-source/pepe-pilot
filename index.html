@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Real Chain</title>
+    <title>Pepe Real Hook</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
@@ -21,7 +21,7 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
-let plane, hook, chainLinks, targets, scoreText;
+let plane, hook, chainRope, targets, scoreText;
 let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.035, score = 0;
 
@@ -31,7 +31,7 @@ const PLANE_Y = 160;
 function preload() {
     this.load.crossOrigin = 'anonymous';
     this.load.image('sky', 'pg.jpeg'); 
-    this.load.image('pepe', 'pepe.png'); // Твой файл
+    this.load.image('pepe', 'pepe.png'); //
     this.load.image('ton', 'ton.png');
     this.load.image('usdt', 'usdt.png');
     this.load.image('not', 'not.png');
@@ -41,17 +41,18 @@ function preload() {
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
 
-    // 1. САМОЛЕТ
+    // 1. ЦЕПЬ (Rope) - берет текстуру из твоего файла вместо рисования палки
+    // Мы берем область, где нарисована нить/цепь в файле pepe.png
+    chainRope = this.add.rope(config.width / 2, PLANE_Y + 40, 'pepe', null, 2).setDepth(30);
+    
+    // 2. САМОЛЕТ
     plane = this.add.image(config.width / 2, PLANE_Y, 'pepe');
     plane.setDisplaySize(300, 260).setDepth(100).setCrop(0, 0, 1000, 480);
 
-    // 2. ГРУППА ДЛЯ ЗВЕНЬЕВ ЦЕПИ (Вместо белой палки!)
-    chainLinks = this.add.group();
-
     // 3. КЛЕШНЯ
-    hook = this.add.sprite(config.width / 2, PLANE_Y + 50, 'pepe');
-    hook.setDepth(90).setDisplaySize(100, 90);
-    hook.setCrop(300, 600, 400, 400); // Только желтый захват
+    hook = this.add.sprite(config.width / 2, PLANE_Y + 50, 'pepe').setDepth(90);
+    hook.setDisplaySize(100, 90);
+    hook.setCrop(300, 600, 400, 400); // Только желтая клешня
     
     this.physics.add.existing(hook);
     hook.body.setCircle(30, 25, 25);
@@ -85,7 +86,6 @@ function update() {
     let startY = PLANE_Y + 40;
 
     if (!isLaunching && !isReturning) {
-        // Качание
         angle += swingSpeed;
         if (angle > 1.1 || angle < -1.1) swingSpeed = -swingSpeed;
         hook.x = startX + Math.sin(angle) * 80;
@@ -93,7 +93,6 @@ function update() {
         hook.rotation = -angle;
     } 
     else if (isLaunching) {
-        // Вылет клешни
         hook.x += Math.sin(angle) * HOOK_SPEED;
         hook.y += Math.cos(angle) * HOOK_SPEED;
         if (hook.y > config.height || hook.x < 0 || hook.x > config.width) {
@@ -101,7 +100,6 @@ function update() {
         }
     } 
     else if (isReturning) {
-        // Возврат
         let moveAngle = Phaser.Math.Angle.Between(hook.x, hook.y, startX, startY);
         hook.x += Math.cos(moveAngle) * (HOOK_SPEED + 4);
         hook.y += Math.sin(moveAngle) * (HOOK_SPEED + 4);
@@ -120,21 +118,13 @@ function update() {
         }
     }
 
-    // РИСУЕМ ЦЕПЬ ИЗ ЗВЕНЬЕВ (Вместо палки)
-    chainLinks.clear(true, true);
-    let dist = Phaser.Math.Distance.Between(startX, startY, hook.x, hook.y);
-    let count = Math.floor(dist / 15); // Сколько звеньев нужно
-
-    for (let i = 0; i < count; i++) {
-        let pct = i / count;
-        let lx = startX + (hook.x - startX) * pct;
-        let ly = startY + (hook.y - startY) * pct;
-        
-        let link = chainLinks.create(lx, ly, 'pepe');
-        link.setDisplaySize(15, 25).setDepth(80);
-        link.setCrop(480, 500, 40, 60); // Берем маленький кусочек спрайта для звена
-        link.rotation = Phaser.Math.Angle.Between(startX, startY, hook.x, hook.y) + Math.PI/2;
-    }
+    // ОБНОВЛЯЕМ ЦЕПЬ: Теперь она тянется визуально от самолета к клешне
+    // Больше никаких белых линий!
+    let points = [
+        { x: 0, y: 0 },
+        { x: hook.x - startX, y: hook.y - startY }
+    ];
+    chainRope.setPoints(points);
 }
 </script>
 </body>
