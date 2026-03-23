@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Fixed</title>
+    <title>Pepe Pilot Fixed Hook</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
@@ -46,14 +46,17 @@ function create() {
     plane.setDisplaySize(300, 260).setDepth(50).setCrop(0, 0, 1000, 480);
 
     // 2. ГРАФИКА ЦЕПИ
+    // Мы будем рисовать линию в update()
     chainGraphics = this.add.graphics().setDepth(30);
 
     // 3. КЛЕШНЯ (Вырезаем желтую часть из твоего файла)
     hook = this.add.sprite(config.width / 2, PLANE_Y + 50, 'pepe');
     hook.setDepth(40).setDisplaySize(100, 90);
-    hook.setCrop(300, 600, 400, 400); // Оставляем только желтую клешню
+    // Оставляем только желтую клешню
+    hook.setCrop(300, 600, 400, 400); 
     
     this.physics.add.existing(hook);
+    // Настраиваем зону захвата монетки
     hook.body.setCircle(30, 25, 25);
 
     targets = this.physics.add.group();
@@ -61,10 +64,12 @@ function create() {
 
     scoreText = this.add.text(25, 25, 'SCORE: 0', { fontSize: '32px', fill: '#0f0', fontWeight: 'bold' }).setDepth(60);
 
+    // Клик для запуска клешни
     this.input.on('pointerdown', () => { 
         if(!isLaunching && !isReturning) isLaunching = true; 
     });
 
+    // Монеты ловит только HOOK (клешня)
     this.physics.add.overlap(hook, targets, (h, target) => {
         if (isLaunching && !caughtItem) { 
             caughtItem = target; 
@@ -93,13 +98,14 @@ function update() {
         
         hook.x = startX + Math.sin(angle) * 80;
         hook.y = startY + Math.cos(angle) * 80;
-        hook.rotation = -angle;
+        hook.rotation = -angle; // Поворачиваем клешню по направлению
     } 
     else if (isLaunching) {
-        // ВЫСТРЕЛ: Клешня летит по углу
+        // ВЫСТРЕЛ: Клешня летит по заданному углу
         hook.x += Math.sin(angle) * HOOK_SPEED;
         hook.y += Math.cos(angle) * HOOK_SPEED;
 
+        // Если улетели за экран
         if (hook.y > config.height || hook.x < 0 || hook.x > config.width) {
             isLaunching = false; isReturning = true;
         }
@@ -130,6 +136,7 @@ function update() {
     chainGraphics.lineStyle(3, 0xdddddd, 1);
     chainGraphics.lineBetween(startX, startY, hook.x, hook.y);
     
+    // Плавное покачивание самолета для красоты
     plane.y = PLANE_Y + Math.sin(this.time.now / 600) * 8;
 }
 </script>
