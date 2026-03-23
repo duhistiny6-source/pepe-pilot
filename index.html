@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Fixed</title>
+    <title>Pepe Pilot Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #87CEEB; overflow: hidden; touch-action: none; }
@@ -45,26 +45,27 @@ function create() {
     let scale = Math.max(config.width / bg.width, config.height / bg.height);
     bg.setScale(scale).setScrollFactor(0);
 
-    // ЦЕПЬ (Слой под самолетом)
+    // ЦЕПЬ (Ставим слой 5)
     chainSprite = this.add.sprite(0, 0, 'chain').setOrigin(0.5, 0).setDepth(5);
     
-    // Клешня
-    this.clawPoint = this.add.circle(config.width/2, 400, 35, 0xffffff, 0); 
+    // Клешня (Центр захвата)
+    this.clawPoint = this.add.circle(config.width/2, 400, 30, 0xffffff, 0); 
     this.physics.add.existing(this.clawPoint);
 
-    // САМОЛЕТ (Слой над цепью)
+    // САМОЛЕТ (Слой 10 - ПОВЕРХ ЦЕПИ)
     plane = this.add.sprite(config.width / 2, 160, 'pepe');
     plane.setDepth(10).setDisplaySize(220, 160);
 
+    // Покачивание самолета
     this.tweens.add({
-        targets: plane, y: 190, duration: 2000, yoyo: true, loop: -1, ease: 'Sine.easeInOut'
+        targets: plane, y: 180, duration: 2000, yoyo: true, loop: -1, ease: 'Sine.easeInOut'
     });
 
-    // Монетки
+    // Группа мишеней
     targets = this.physics.add.group();
     for(let i=0; i<8; i++) { spawnCoin(this); }
 
-    // Интерфейс
+    // Текст
     scoreText = this.add.text(25, 25, 'SCORE: 0', { 
         fontSize: '24px', fill: '#0f0', fontFamily: 'Courier New', fontWeight: 'bold' 
     }).setDepth(30);
@@ -73,6 +74,7 @@ function create() {
         fontSize: '24px', fill: '#0f0', fontFamily: 'Courier New', fontWeight: 'bold' 
     }).setDepth(30);
 
+    // Таймер
     this.time.addEvent({
         delay: 1000,
         callback: () => { 
@@ -95,6 +97,7 @@ function create() {
         if(!isLaunching && !isReturning && !isGameOver) isLaunching = true; 
     });
 
+    // Логика поимки
     this.physics.add.overlap(this.clawPoint, targets, (c, target) => {
         if (isLaunching && !caughtItem) { 
             caughtItem = target; 
@@ -106,22 +109,22 @@ function create() {
 }
 
 function spawnCoin(scene) {
-    let x = Phaser.Math.Between(70, config.width - 70);
-    let y = Phaser.Math.Between(config.height * 0.55, config.height - 100);
+    let x = Phaser.Math.Between(80, config.width - 80);
+    let y = Phaser.Math.Between(config.height * 0.55, config.height - 120);
     let type = Phaser.Utils.Array.GetRandom(['ton', 'usdt', 'not', 'dogs']);
     let coin = targets.create(x, y, type);
     
-    // ИСПРАВЛЕНИЕ ГЕОМЕТРИИ МОНЕТ
-    coin.setDisplaySize(90, 90).setOrigin(0.5).setDepth(4); 
-    coin.body.setCircle(45); 
+    // ФИКС РАЗМЕРА И ЦЕНТРА
+    coin.setDisplaySize(80, 80).setOrigin(0.5).setDepth(4); 
+    coin.body.setCircle(35); // Коллизия точно по центру
 }
 
 function update() {
     if (isGameOver) return;
 
-    // ТОЧКА КРЕПЛЕНИЯ ЦЕНТРАЛЬНО ВНУТРИ САМОЛЕТА
+    // ЖЕСТКАЯ ПРИВЯЗКА К ЦЕНТРУ КОРПУСА
     let anchorX = plane.x; 
-    let anchorY = plane.y + 45; 
+    let anchorY = plane.y + 50; // Поднято выше, чтобы цепь "выходила" из самолета
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
@@ -144,7 +147,7 @@ function update() {
             caughtItem.y = this.clawPoint.y; 
         }
         
-        if (dist < 40) {
+        if (dist < 35) {
             isReturning = false;
             if (caughtItem) { 
                 score += 100; scoreText.setText('SCORE: ' + score); 
@@ -153,14 +156,13 @@ function update() {
         }
     }
 
-    // Обновление положения цепи
+    // Отрисовка цепи от новой точки привязки
     chainSprite.x = anchorX;
     chainSprite.y = anchorY;
     chainSprite.rotation = Phaser.Math.Angle.Between(anchorX, anchorY, this.clawPoint.x, this.clawPoint.y) - Math.PI / 2;
     chainSprite.displayHeight = Phaser.Math.Distance.Between(anchorX, anchorY, this.clawPoint.x, this.clawPoint.y);
-    chainSprite.displayWidth = 140; // Ширина спрайта цепи
+    chainSprite.displayWidth = 140; 
 }
 </script>
 </body>
 </html>
-     
