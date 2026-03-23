@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+   <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -11,8 +11,12 @@
 </head>
 <body>
 <script>
-// Твой репозиторий с новыми именами файлов
-const ASSETS_URL = 'https://raw.githubusercontent.com/duhistiny6/pepe-pilot/main/';
+// Прямые ссылки на твои файлы в GitHub
+const ASSETS = {
+    bg: 'https://raw.githubusercontent.com/duhistiny6/pepe-pilot/main/bg.jpg',
+    pepe: 'https://raw.githubusercontent.com/duhistiny6/pepe-pilot/main/pepe.png',
+    ton: 'https://raw.githubusercontent.com/duhistiny6/pepe-pilot/main/ton-ecosystem-removebe.png'
+};
 
 const config = {
     type: Phaser.AUTO,
@@ -27,39 +31,36 @@ let plane, clawGraphic, chain, targets, scoreText, timerText;
 let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, launchSpeed = 15;
 let score = 0, timeLeft = 60;
-let currentBg;
 
 function preload() {
     this.load.crossOrigin = 'anonymous';
-    
-    // Загружаем файлы по твоим новым названиям
-    this.load.image('sky1', ASSETS_URL + 'bg.jpg'); // Основной фон (поле)
-    this.load.image('pepe', ASSETS_URL + 'pepe.png'); // Твой Пепе-пилот
-    this.load.image('ton', ASSETS_URL + 'ton-ecosystem-removebe.png'); // Монета
+    this.load.image('sky', ASSETS.bg);
+    this.load.image('pepe', ASSETS.pepe);
+    this.load.image('ton', ASSETS.ton);
 }
 
 function create() {
-    // 1. УСТАНОВКА ФОНА
-    if (this.textures.exists('sky1')) {
-        currentBg = this.add.image(config.width/2, config.height/2, 'sky1');
-        let scale = Math.max(config.width / currentBg.width, config.height / currentBg.height);
-        currentBg.setScale(scale).setScrollFactor(0);
+    // 1. ФОН
+    if (this.textures.exists('sky')) {
+        let bg = this.add.image(config.width/2, config.height/2, 'sky');
+        let scale = Math.max(config.width / bg.width, config.height / bg.height);
+        bg.setScale(scale).setScrollFactor(0);
     } else {
-        this.cameras.main.setBackgroundColor('#1e1e2e');
+        this.add.rectangle(0, 0, config.width, config.height, 0x87CEEB).setOrigin(0);
     }
     
-    // 2. ПЕПЕ-ПИЛОТ
-    plane = this.add.sprite(config.width / 2, 120, 'pepe').setDepth(10);
-    plane.setDisplaySize(220, 160); // Подстроил размер под картинку
+    // 2. САМОЛЕТ
+    if (this.textures.exists('pepe') && this.textures.get('pepe').key !== '__MISSING') {
+        plane = this.add.sprite(config.width / 2, 120, 'pepe');
+    } else {
+        // Запасной самолет, если картинка не нашла путь
+        plane = this.add.container(config.width / 2, 120);
+        plane.add(this.add.rectangle(0, 0, 100, 40, 0xffcc00).setStrokeStyle(2, 0x000));
+    }
+    plane.setDepth(10).setDisplaySize(200, 150);
 
-    // Анимация полета
     this.tweens.add({
-        targets: plane,
-        y: 135,
-        duration: 2000,
-        yoyo: true,
-        loop: -1,
-        ease: 'Sine.easeInOut'
+        targets: plane, y: 135, duration: 2000, yoyo: true, loop: -1, ease: 'Sine.easeInOut'
     });
     
     chain = this.add.graphics().setDepth(5);
@@ -67,17 +68,15 @@ function create() {
     this.clawPoint = this.add.circle(config.width/2, 220, 15);
     this.physics.add.existing(this.clawPoint);
 
-    // 3. МОНЕТКИ
     targets = this.physics.add.group();
     for(let i=0; i<6; i++) { spawnCoin(this); }
 
-    // Интерфейс
-    scoreText = this.add.text(20, 30, '💎 Очки: 0', { fontSize: '28px', fill: '#fff', stroke: '#000', strokeThickness: 6 });
-    timerText = this.add.text(config.width - 180, 30, '⏱ 60', { fontSize: '28px', fill: '#ff0', stroke: '#000', strokeThickness: 6 });
+    scoreText = this.add.text(20, 30, 'Очки: 0', { fontSize: '28px', fill: '#fff', stroke: '#000', strokeThickness: 5 });
+    timerText = this.add.text(config.width - 180, 30, 'Время: 60', { fontSize: '28px', fill: '#ff0', stroke: '#000', strokeThickness: 5 });
 
     this.time.addEvent({
         delay: 1000,
-        callback: () => { if(timeLeft > 0) { timeLeft--; timerText.setText('⏱ ' + timeLeft); } },
+        callback: () => { if(timeLeft > 0) { timeLeft--; timerText.setText('Время: ' + timeLeft); } },
         loop: true
     });
 
@@ -97,15 +96,20 @@ function create() {
 function spawnCoin(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
     let y = Phaser.Math.Between(380, config.height - 100);
-    let coin = targets.create(x, y, 'ton');
-    if(coin) coin.setDisplaySize(75, 75).setDepth(4);
+    let coin;
+    if (scene.textures.exists('ton') && scene.textures.get('ton').key !== '__MISSING') {
+        coin = targets.create(x, y, 'ton');
+        coin.setDisplaySize(70, 70);
+    } else {
+        // Золотая монета вместо зеленого квадрата
+        coin = scene.add.circle(x, y, 30, 0xffd700).setStrokeStyle(4, 0x000);
+        targets.add(coin);
+    }
+    coin.setDepth(4);
 }
 
 function update() {
-    if (timeLeft <= 0) {
-        timerText.setText('ФИНИШ!').setScale(1.2);
-        return;
-    }
+    if (timeLeft <= 0) return;
 
     let px = plane.x; 
     let py = plane.y + 40;
@@ -131,24 +135,20 @@ function update() {
         if (dist < 15) {
             isReturning = false;
             if (caughtItem) { 
-                score += 100; scoreText.setText('💎 Очки: ' + score); 
+                score += 100; scoreText.setText('Очки: ' + score); 
                 caughtItem.destroy(); caughtItem = null; spawnCoin(this);
             }
         }
     }
 
-    // Отрисовка троса и крюка
     chain.clear().lineStyle(4, 0x4a2c0a).lineBetween(px, py, this.clawPoint.x, this.clawPoint.y);
     clawGraphic.clear().lineStyle(6, 0xffd700);
     let rot = Phaser.Math.Angle.Between(px, py, this.clawPoint.x, this.clawPoint.y) + Math.PI/2;
     let gap = caughtItem ? 0.2 : 0.8; 
-    clawGraphic.beginPath();
-    clawGraphic.arc(this.clawPoint.x, this.clawPoint.y, 25, rot - gap, rot + gap);
-    clawGraphic.strokePath();
-    clawGraphic.beginPath();
-    clawGraphic.arc(this.clawPoint.x, this.clawPoint.y, 25, rot + Math.PI - gap, rot + Math.PI + gap);
-    clawGraphic.strokePath();
+    clawGraphic.beginPath().arc(this.clawPoint.x, this.clawPoint.y, 25, rot - gap, rot + gap).strokePath();
+    clawGraphic.beginPath().arc(this.clawPoint.x, this.clawPoint.y, 25, rot + Math.PI - gap, rot + Math.PI + gap).strokePath();
 }
 </script>
 </body>
 </html>
+   
