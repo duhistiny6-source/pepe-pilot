@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Moonbix Style</title>
+    <title>Pepe Pilot Gold</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #010103; overflow: hidden; touch-action: none; }
@@ -20,54 +20,84 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
-let plane, claw, chain, targets, scoreText;
+let plane, claw, chain, targets, scoreText, timerText;
 let isLaunching = false, isReturning = false;
 let angle = 0, swingSpeed = 0.015, launchSpeed = 8, returnSpeed = 0.15;
-let score = 0;
+let score = 0, timeLeft = 60;
 
 function preload() {
-    // Фон
     this.load.image('sky', 'https://labs.phaser.io/assets/skies/space3.png');
-    
-    // Твои картинки из GitHub (названия взяты с твоего скриншота)
-    this.load.image('pepe', 'images (32).jpeg'); 
-    this.load.image('ton_coin', 'ton-ecosystem.jpg'); 
-    this.load.image('dogs_coin', 'images (33).jpeg'); 
-    this.load.image('not_coin', 'images (35).jpeg');
+    // Твои новые чистые PNG файлы
+    this.load.image('pepe', 'pepe.png');
+    this.load.image('ton_coin', 'ton.png');
+    this.load.image('not_coin', 'not.png');
+    this.load.image('dogs_coin', 'dogs.png');
 }
 
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setAlpha(0.3).setScale(1.5);
     
-    // Пепе-пилот
-    plane = this.add.sprite(config.width / 2, 100, 'pepe').setScale(0.6).setDepth(5);
+    // ПЕПЕ: масштаб 45% (0.45)
+    plane = this.add.sprite(config.width / 2, 100, 'pepe').setScale(0.45).setDepth(5);
     
-    // Золотая клешня
     claw = this.add.circle(config.width / 2, 180, 18, 0xffd700).setDepth(4);
     chain = this.add.graphics().setDepth(3);
     
     targets = this.physics.add.group();
     const assets = ['ton_coin', 'dogs_coin', 'not_coin'];
 
-    // Генерация монет
     for(let i=0; i<12; i++) {
         let x = Phaser.Math.Between(80, config.width - 80);
         let y = Phaser.Math.Between(300, config.height - 150);
-        
         let type = Phaser.Math.RND.pick(assets);
         let coin = targets.create(x, y, type);
-        coin.setDisplaySize(70, 70); // Размер как в Moonbix
-        coin.setData('val', type === 'ton_coin' ? 50 : 10);
+        
+        // МОНЕТКА TON: на 25% меньше (75 * 0.75 = 56)
+        if (type === 'ton_coin') {
+            coin.setDisplaySize(56, 56);
+            coin.setData('val', 50);
+        } else {
+            coin.setDisplaySize(75, 75);
+            coin.setData('val', 10);
+        }
     }
 
-    scoreText = this.add.text(config.width/2, 45, '0', { 
-        fontSize: '56px', fill: '#fff', fontStyle: 'bold', fontFamily: 'Arial Black'
-    }).setOrigin(0.5);
+    // Текст счета
+    scoreText = this.add.text(20, 20, 'Score: 0', { 
+        fontSize: '32px', fill: '#fff', fontStyle: 'bold' 
+    });
 
-    this.input.on('pointerdown', () => { if(!isLaunching && !isReturning) isLaunching = true; });
+    // Таймер
+    timerText = this.add.text(config.width - 150, 20, 'Time: 60', { 
+        fontSize: '32px', fill: '#ff0000', fontStyle: 'bold' 
+    });
+
+    // Событие таймера (раз в секунду)
+    this.time.addEvent({
+        delay: 1000,
+        callback: () => {
+            if (timeLeft > 0) {
+                timeLeft--;
+                timerText.setText('Time: ' + timeLeft);
+            } else {
+                this.physics.pause();
+                this.add.text(config.width/2, config.height/2, 'GAME OVER', { 
+                    fontSize: '64px', fill: '#fff', fontStyle: 'bold' 
+                }).setOrigin(0.5);
+            }
+        },
+        callbackScope: this,
+        loop: true
+    });
+
+    this.input.on('pointerdown', () => { 
+        if(!isLaunching && !isReturning && timeLeft > 0) isLaunching = true; 
+    });
 }
 
 function update() {
+    if (timeLeft <= 0) return;
+
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
         if (angle > 0.8 || angle < -0.8) swingSpeed = -swingSpeed;
@@ -80,7 +110,7 @@ function update() {
         targets.children.iterate(child => {
             if (child && child.active && Phaser.Geom.Intersects.CircleToCircle(claw, child)) {
                 score += child.getData('val');
-                scoreText.setText(score);
+                scoreText.setText('Score: ' + score);
                 child.destroy();
                 isLaunching = false;
                 isReturning = true;
