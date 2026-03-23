@@ -21,57 +21,53 @@ const config = {
 
 const game = new Phaser.Game(config);
 let plane, claw, chain, targets, scoreText, timerText;
-let isLaunching = false, isReturning = false;
-let angle = 0, swingSpeed = 0.02, launchSpeed = 10, returnSpeed = 0.2;
+let isLaunching = false, isReturning = false, caughtItem = null;
+let angle = 0, swingSpeed = 0.02, launchSpeed = 12, returnSpeed = 8;
 let score = 0, timeLeft = 60;
 
 function preload() {
     this.load.image('sky', 'https://labs.phaser.io/assets/skies/space3.png');
-    // Имена файлов ТОЧНО как на твоем скриншоте из GitHub:
+    // Используем твои точные названия из GitHub
     this.load.image('pepe', 'images__32_-removebg-preview.png');
-    this.load.image('ton_coin', 'ton-ecosystem-removebg-preview.png');
-    this.load.image('not_coin', 'images__35_-removebg-preview.png');
-    this.load.image('dogs_coin', 'images__33_-removebg-preview.png');
+    this.load.image('ton', 'ton-ecosystem-removebg-preview.png');
+    this.load.image('not', 'images__35_-removebg-preview.png');
+    this.load.image('dogs', 'images__33_-removebg-preview.png');
 }
 
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setAlpha(0.4).setScale(2);
     
-    // ПЕПЕ: Теперь размер задан 200 пикселей! (Был 120x120)
-    // Лицо жабы теперь будет крупным и четким.
-    plane = this.add.sprite(config.width / 2, 80, 'pepe').setDepth(5);
-    plane.setDisplaySize(200, 200); // Крупный Пепе
+    // ПЕПЕ (Твой большой пилот)
+    plane = this.add.sprite(config.width / 2, 90, 'pepe').setDepth(5);
+    plane.setDisplaySize(220, 220); 
     
-    claw = this.add.circle(config.width / 2, 170, 20, 0xffd700).setDepth(4);
+    claw = this.add.circle(config.width / 2, 180, 20, 0xffd700).setDepth(4);
+    this.physics.add.existing(claw);
+    
     chain = this.add.graphics().setDepth(3);
     
     targets = this.physics.add.group();
-    const assets = ['ton_coin', 'dogs_coin', 'not_coin'];
+    const assets = ['ton', 'dogs', 'not'];
 
-    // Создаем 15 монет в нижней части экрана
-    for(let i=0; i<15; i++) {
-        let x = Phaser.Math.Between(50, config.width - 50);
-        let y = Phaser.Math.Between(290, config.height - 100); // Опустили монеты чуть ниже
+    for(let i=0; i<12; i++) {
+        let x = Phaser.Math.Between(60, config.width - 60);
+        let y = Phaser.Math.Between(320, config.height - 120);
         let type = Phaser.Math.RND.pick(assets);
         let coin = targets.create(x, y, type);
         
-        // Размеры монет оставим сочными, как ты хотел
-        if (type === 'ton_coin') {
-            coin.setDisplaySize(50, 50); // TON чуть меньше
-            coin.setData('val', 50);
+        if (type === 'ton') {
+            coin.setDisplaySize(60, 60);
+            coin.setData('val', 100);
         } else {
-            coin.setDisplaySize(70, 70); 
-            coin.setData('val', 10);
+            coin.setDisplaySize(80, 80); 
+            coin.setData('val', 20);
         }
+        coin.setCircle(30); // Хитбокс для монеты
     }
 
-    // Текст счета
     scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '28px', fill: '#fff', fontStyle: 'bold' });
-
-    // Таймер
     timerText = this.add.text(config.width - 150, 20, 'Time: 60', { fontSize: '28px', fill: '#ff0', fontStyle: 'bold' });
 
-    // Событие таймера
     this.time.addEvent({
         delay: 1000,
         callback: () => { if (timeLeft > 0) timeLeft--; timerText.setText('Time: ' + timeLeft); },
@@ -81,45 +77,69 @@ function create() {
     this.input.on('pointerdown', () => { 
         if(!isLaunching && !isReturning && timeLeft > 0) isLaunching = true; 
     });
+
+    // Проверка столкновения
+    this.physics.add.overlap(claw, targets, (c, target) => {
+        if (isLaunching && !caughtItem) {
+            caughtItem = target;
+            isLaunching = false;
+            isReturning = true;
+        }
+    });
 }
 
 function update() {
-    if (timeLeft <= 0) { this.physics.pause(); return; }
+    if (timeLeft <= 0) { 
+        if (timeLeft === 0) {
+            this.add.text(config.width/2 - 100, config.height/2, 'GAME OVER', { fontSize: '40px', fill: '#f00' });
+            timeLeft = -1;
+        }
+        return; 
+    }
+
+    let targetX = plane.x + Math.sin(angle) * 120;
+    let targetY = plane.y + Math.cos(angle) * 120;
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
-        if (angle > 0.7 || angle < -0.7) swingSpeed = -swingSpeed;
-        claw.x = plane.x + Math.sin(angle) * 110;
-        claw.y = plane.y + Math.cos(angle) * 110;
+        if (angle > 0.8 || angle < -0.8) swingSpeed = -swingSpeed;
+        claw.x = targetX;
+        claw.y = targetY;
     } else if (isLaunching) {
         claw.x += Math.sin(angle) * launchSpeed;
         claw.y += Math.cos(angle) * launchSpeed;
-        
-        targets.children.iterate(child => {
-            if (child && child.active && Phaser.Geom.Intersects.CircleToCircle(claw, child)) {
-                score += child.getData('val');
-                scoreText.setText('Score: ' + score);
-                child.destroy();
-                isLaunching = false;
-                isReturning = true;
-            }
-        });
 
         if (claw.y > config.height || claw.x < 0 || claw.x > config.width) {
             isLaunching = false;
             isReturning = true;
         }
     } else if (isReturning) {
-        let tx = plane.x + Math.sin(angle) * 110;
-        let ty = plane.y + Math.cos(angle) * 110;
-        claw.x += (tx - claw.x) * returnSpeed;
-        claw.y += (ty - claw.y) * returnSpeed;
-        if (Phaser.Math.Distance.Between(claw.x, claw.y, tx, ty) < 10) isReturning = false;
+        let dist = Phaser.Math.Distance.Between(claw.x, claw.y, targetX, targetY);
+        let moveX = (targetX - claw.x) / dist * returnSpeed;
+        let moveY = (targetY - claw.y) / dist * returnSpeed;
+
+        claw.x += moveX;
+        claw.y += moveY;
+
+        if (caughtItem) {
+            caughtItem.x = claw.x;
+            caughtItem.y = claw.y;
+        }
+
+        if (dist < 15) {
+            isReturning = false;
+            if (caughtItem) {
+                score += caughtItem.getData('val');
+                scoreText.setText('Score: ' + score);
+                caughtItem.destroy();
+                caughtItem = null;
+            }
+        }
     }
 
     chain.clear();
     chain.lineStyle(4, 0xffd700, 1); 
-    chain.lineBetween(plane.x, plane.y + 25, claw.x, claw.y);
+    chain.lineBetween(plane.x, plane.y + 30, claw.x, claw.y);
 }
 </script>
 </body>
