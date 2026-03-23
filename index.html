@@ -22,18 +22,15 @@ const config = {
 const game = new Phaser.Game(config);
 let plane, chainSprite, targets, scoreText, timerText;
 let isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.025, launchSpeed = 16;
+let angle = 0, swingSpeed = 0.03, launchSpeed = 18;
 let score = 0, timeLeft = 60;
-// Список твоих новых монет из GitHub
 const coinTypes = ['ton', 'usdt', 'not', 'dogs'];
 
 function preload() {
-    // Загрузка всех твоих файлов
+    this.load.crossOrigin = 'anonymous';
     this.load.image('sky', 'bg.jpg');
     this.load.image('pepe', 'pepe.png');
-    this.load.image('chain', 'cep.png'); // Твоя новая цепь
-    
-    // Загружаем монетки
+    this.load.image('chain', 'cep.png'); 
     this.load.image('ton', 'ton.png');
     this.load.image('usdt', 'usdt.png');
     this.load.image('not', 'not.png');
@@ -46,20 +43,20 @@ function create() {
     let scale = Math.max(config.width / bg.width, config.height / bg.height);
     bg.setScale(scale).setScrollFactor(0);
     
-    // 2. ЦЕПЬ (теперь это спрайт)
+    // 2. ЦЕПЬ С КЛЕШНЕЙ (Теперь смотрит вниз)
     chainSprite = this.add.sprite(config.width / 2, 160, 'chain');
-    chainSprite.setOrigin(0.5, 0); // Тянется сверху вниз
+    chainSprite.setOrigin(0.5, 0); // Закрепляем верхнюю точку
     chainSprite.setDepth(5);
     
-    // Точка захвата (невидимая для физики)
-    this.clawPoint = this.add.circle(config.width/2, 280, 20);
+    // Точка захвата (сделал чуть больше радиус для точности)
+    this.clawPoint = this.add.circle(config.width/2, 300, 25);
     this.physics.add.existing(this.clawPoint);
 
-    // 3. ПЕПЕ
+    // 3. САМОЛЕТ
     plane = this.add.sprite(config.width / 2, 120, 'pepe');
     plane.setDepth(10).setDisplaySize(200, 150);
     this.tweens.add({
-        targets: plane, y: 130, duration: 2000, yoyo: true, loop: -1, ease: 'Sine.easeInOut'
+        targets: plane, y: 135, duration: 2000, yoyo: true, loop: -1, ease: 'Sine.easeInOut'
     });
 
     // 4. МОНЕТКИ
@@ -67,12 +64,12 @@ function create() {
     for(let i=0; i<7; i++) { spawnCoin(this); }
 
     // Интерфейс
-    scoreText = this.add.text(20, 30, '💎 Очки: 0', { fontSize: '28px', fill: '#fff', stroke: '#000', strokeThickness: 6 });
-    timerText = this.add.text(config.width - 180, 30, '⏱ 00:' + timeLeft, { fontSize: '28px', fill: '#ff0', stroke: '#000', strokeThickness: 6 });
+    scoreText = this.add.text(25, 30, '💎 Очки: 0', { fontSize: '30px', fill: '#fff', stroke: '#000', strokeThickness: 6 });
+    timerText = this.add.text(config.width - 200, 30, '⏱ Время: 60', { fontSize: '30px', fill: '#ff0', stroke: '#000', strokeThickness: 6 });
 
     this.time.addEvent({
         delay: 1000,
-        callback: () => { if(timeLeft > 0) { timeLeft--; timerText.setText('⏱ 00:' + (timeLeft < 10 ? '0' : '') + timeLeft); } },
+        callback: () => { if(timeLeft > 0) { timeLeft--; timerText.setText('⏱ Время: ' + timeLeft); } },
         loop: true
     });
 
@@ -90,28 +87,29 @@ function create() {
 }
 
 function spawnCoin(scene) {
-    let x = Phaser.Math.Between(50, config.width - 50);
+    let x = Phaser.Math.Between(70, config.width - 70);
     let y = Phaser.Math.Between(400, config.height - 100);
     let randomCoin = Phaser.Utils.Array.GetRandom(coinTypes);
     let coin = targets.create(x, y, randomCoin);
     if(coin) {
-        coin.setDisplaySize(65, 65).setDepth(4);
-        coin.rotation = Phaser.Math.Between(-1, 1); // Немного хаоса
+        coin.setDisplaySize(75, 75).setDepth(4); // Сделал чуть крупнее и четче
     }
 }
 
 function update() {
     if (timeLeft <= 0) return;
 
+    // Точка привязки цепи к самолету
     let px = plane.x; 
-    let py = plane.y + 45; // Точка выхода цепи из-под носа
+    let py = plane.y + 40; 
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
-        if (Math.abs(angle) > 0.7) swingSpeed = -swingSpeed;
+        if (Math.abs(angle) > 0.8) swingSpeed = -swingSpeed;
         
-        this.clawPoint.x = px + Math.sin(angle) * 150;
-        this.clawPoint.y = py + Math.cos(angle) * 150;
+        // Качание клешни (длина троса в покое 160)
+        this.clawPoint.x = px + Math.sin(angle) * 160;
+        this.clawPoint.y = py + Math.cos(angle) * 160;
     } else if (isLaunching) {
         this.clawPoint.x += Math.sin(angle) * launchSpeed;
         this.clawPoint.y += Math.cos(angle) * launchSpeed;
@@ -119,8 +117,8 @@ function update() {
             isLaunching = false; isReturning = true;
         }
     } else if (isReturning) {
-        let tx = px + Math.sin(angle) * 150;
-        let ty = py + Math.cos(angle) * 150;
+        let tx = px + Math.sin(angle) * 160;
+        let ty = py + Math.cos(angle) * 160;
         let dist = Phaser.Math.Distance.Between(this.clawPoint.x, this.clawPoint.y, tx, ty);
         
         this.clawPoint.x += (tx - this.clawPoint.x) * 0.15;
@@ -140,14 +138,15 @@ function update() {
         }
     }
 
-    // Обновляем визуальную цепь
+    // ВИЗУАЛ ЦЕПИ
     chainSprite.x = px;
     chainSprite.y = py;
+    // Поворачиваем спрайт к точке захвата
     chainSprite.rotation = -Phaser.Math.Angle.Between(px, py, this.clawPoint.x, this.clawPoint.y) - Math.PI/2;
     
-    // Растягиваем цепь до точки захвата
+    // Растягиваем цепь (setDisplaySize: ширина 60 для массивности, длина по факту)
     let distToClaw = Phaser.Math.Distance.Between(px, py, this.clawPoint.x, this.clawPoint.y);
-    chainSprite.setDisplaySize(40, distToClaw); 
+    chainSprite.setDisplaySize(60, distToClaw); 
 }
 </script>
 </body>
