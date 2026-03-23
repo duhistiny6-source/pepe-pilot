@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Real Extend</title>
+    <title>Pepe Pilot Fixed</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
@@ -21,17 +21,17 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
-let plane, fullHook, hookMask, targets, scoreText;
+let plane, hook, chainGraphics, targets, scoreText;
 let isLaunching = false, isReturning = false, caughtItem = null;
-let currentHeight = 0, score = 0;
+let angle = 0, swingSpeed = 0.03, score = 0;
 
-const SPEED = 14; 
-const START_Y = 160; 
+const HOOK_SPEED = 16;
+const PLANE_Y = 160; 
 
 function preload() {
     this.load.crossOrigin = 'anonymous';
     this.load.image('sky', 'pg.jpeg'); 
-    this.load.image('pepe', 'pepe.png'); // Весь твой файл
+    this.load.image('pepe', 'pepe.png'); //
     this.load.image('ton', 'ton.png');
     this.load.image('usdt', 'usdt.png');
     this.load.image('not', 'not.png');
@@ -41,24 +41,20 @@ function preload() {
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
 
-    // 1. ПОЛНАЯ КЛЕШНЯ С ЦЕПЬЮ (Скрыта изначально)
-    // Мы ставим её так, чтобы она начиналась под самолетом
-    fullHook = this.add.image(config.width / 2, START_Y + 20, 'pepe');
-    fullHook.setOrigin(0.5, 0).setDepth(40).setDisplaySize(160, 600);
-    // Обрезаем картинку в спрайте, чтобы видеть только "ножку" и "клешню"
-    fullHook.setCrop(300, 480, 400, 520); 
-
-    // 2. МАСКА (Она будет определять, сколько клешни выдвинуто)
-    hookMask = this.add.graphics();
-    fullHook.setMask(hookMask.createGeometryMask());
-
-    // 3. САМОЛЕТ (Сверху всего)
-    plane = this.add.image(config.width / 2, START_Y, 'pepe');
+    // 1. САМОЛЕТ
+    plane = this.add.image(config.width / 2, PLANE_Y, 'pepe');
     plane.setDisplaySize(300, 260).setDepth(50).setCrop(0, 0, 1000, 480);
 
-    // Физический сенсор на кончике (невидимый)
-    this.sensor = this.add.circle(config.width / 2, START_Y, 30, 0xffffff, 0);
-    this.physics.add.existing(this.sensor);
+    // 2. ГРАФИКА ЦЕПИ
+    chainGraphics = this.add.graphics().setDepth(30);
+
+    // 3. КЛЕШНЯ (Вырезаем желтую часть из твоего файла)
+    hook = this.add.sprite(config.width / 2, PLANE_Y + 50, 'pepe');
+    hook.setDepth(40).setDisplaySize(100, 90);
+    hook.setCrop(300, 600, 400, 400); // Оставляем только желтую клешню
+    
+    this.physics.add.existing(hook);
+    hook.body.setCircle(30, 25, 25);
 
     targets = this.physics.add.group();
     for(let i=0; i<8; i++) { spawnCoin(this); }
@@ -69,42 +65,59 @@ function create() {
         if(!isLaunching && !isReturning) isLaunching = true; 
     });
 
-    this.physics.add.overlap(this.sensor, targets, (s, target) => {
+    this.physics.add.overlap(hook, targets, (h, target) => {
         if (isLaunching && !caughtItem) { 
             caughtItem = target; 
-            isLaunching = false; isReturning = true; 
+            isLaunching = false; 
+            isReturning = true; 
         }
     });
 }
 
 function spawnCoin(scene) {
-    let x = Phaser.Math.Between(80, config.width - 80);
-    let y = Phaser.Math.Between(config.height * 0.6, config.height - 100);
+    let x = Phaser.Math.Between(100, config.width - 100);
+    let y = Phaser.Math.Between(config.height * 0.6, config.height - 120);
     let type = Phaser.Utils.Array.GetRandom(['ton', 'usdt', 'not', 'dogs']);
     let coin = targets.create(x, y, type).setDisplaySize(70, 70);
 }
 
 function update() {
-    // Обновляем маску: рисуем прямоугольник, который "открывает" клешню вниз
-    hookMask.clear();
-    hookMask.fillStyle(0xffffff);
-    hookMask.fillRect(config.width / 2 - 100, START_Y + 20, 200, currentHeight);
+    chainGraphics.clear();
+    let startX = config.width / 2;
+    let startY = PLANE_Y + 30; // Точка под пузом самолета
 
-    // Привязываем сенсор к кончику видимой части
-    this.sensor.y = START_Y + 20 + currentHeight;
+    if (!isLaunching && !isReturning) {
+        // МАЯТНИК: Клешня качается влево-вправо
+        angle += swingSpeed;
+        if (angle > 1.1 || angle < -1.1) swingSpeed = -swingSpeed;
+        
+        hook.x = startX + Math.sin(angle) * 80;
+        hook.y = startY + Math.cos(angle) * 80;
+        hook.rotation = -angle;
+    } 
+    else if (isLaunching) {
+        // ВЫСТРЕЛ: Клешня летит по углу
+        hook.x += Math.sin(angle) * HOOK_SPEED;
+        hook.y += Math.cos(angle) * HOOK_SPEED;
 
-    if (isLaunching) {
-        currentHeight += SPEED; // Клешня плавно "выползает"
-        if (currentHeight > 450) { isLaunching = false; isReturning = true; }
+        if (hook.y > config.height || hook.x < 0 || hook.x > config.width) {
+            isLaunching = false; isReturning = true;
+        }
     } 
     else if (isReturning) {
-        currentHeight -= SPEED + 4; // Клешня втягивается
+        // ВОЗВРАТ: Тянем к самолету
+        let dist = Phaser.Math.Distance.Between(hook.x, hook.y, startX, startY);
+        let moveAngle = Phaser.Math.Angle.Between(hook.x, hook.y, startX, startY);
+        
+        hook.x += Math.cos(moveAngle) * (HOOK_SPEED + 5);
+        hook.y += Math.sin(moveAngle) * (HOOK_SPEED + 5);
+
         if (caughtItem) {
-            caughtItem.x = this.sensor.x;
-            caughtItem.y = this.sensor.y + 10;
+            caughtItem.x = hook.x;
+            caughtItem.y = hook.y + 20;
         }
-        if (currentHeight <= 0) {
-            currentHeight = 0;
+
+        if (dist < 20) {
             isReturning = false;
             if (caughtItem) {
                 score += 100; scoreText.setText('SCORE: ' + score);
@@ -112,6 +125,12 @@ function update() {
             }
         }
     }
+
+    // РИСУЕМ ЦЕПЬ (Линия от самолета до клешни)
+    chainGraphics.lineStyle(3, 0xdddddd, 1);
+    chainGraphics.lineBetween(startX, startY, hook.x, hook.y);
+    
+    plane.y = PLANE_Y + Math.sin(this.time.now / 600) * 8;
 }
 </script>
 </body>
