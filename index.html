@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Real Hook</title>
+    <title>Pepe Real Chain Hook</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
@@ -21,7 +21,7 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
-let plane, hook, chainRope, targets, scoreText;
+let plane, hook, chainGroup, targets, scoreText;
 let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.035, score = 0;
 
@@ -31,7 +31,7 @@ const PLANE_Y = 160;
 function preload() {
     this.load.crossOrigin = 'anonymous';
     this.load.image('sky', 'pg.jpeg'); 
-    this.load.image('pepe', 'pepe.png'); //
+    this.load.image('pepe', 'pepe.png'); // Используем твой файл
     this.load.image('ton', 'ton.png');
     this.load.image('usdt', 'usdt.png');
     this.load.image('not', 'not.png');
@@ -41,16 +41,15 @@ function preload() {
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
 
-    // 1. ЦЕПЬ (Rope) - берет текстуру из твоего файла вместо рисования палки
-    // Мы берем область, где нарисована нить/цепь в файле pepe.png
-    chainRope = this.add.rope(config.width / 2, PLANE_Y + 40, 'pepe', null, 2).setDepth(30);
-    
-    // 2. САМОЛЕТ
+    // Группа для звеньев цепи (вместо белой палки)
+    chainGroup = this.add.group();
+
+    // 1. САМОЛЕТ
     plane = this.add.image(config.width / 2, PLANE_Y, 'pepe');
     plane.setDisplaySize(300, 260).setDepth(100).setCrop(0, 0, 1000, 480);
 
-    // 3. КЛЕШНЯ
-    hook = this.add.sprite(config.width / 2, PLANE_Y + 50, 'pepe').setDepth(90);
+    // 2. КЛЕШНЯ
+    hook = this.add.sprite(config.width / 2, PLANE_Y + 50, 'pepe').setDepth(95);
     hook.setDisplaySize(100, 90);
     hook.setCrop(300, 600, 400, 400); // Только желтая клешня
     
@@ -118,13 +117,22 @@ function update() {
         }
     }
 
-    // ОБНОВЛЯЕМ ЦЕПЬ: Теперь она тянется визуально от самолета к клешне
-    // Больше никаких белых линий!
-    let points = [
-        { x: 0, y: 0 },
-        { x: hook.x - startX, y: hook.y - startY }
-    ];
-    chainRope.setPoints(points);
+    // ОТРИСОВКА ЦЕПИ ИЗ ЗВЕНЬЕВ (ВМЕСТО ПАЛКИ)
+    chainGroup.clear(true, true);
+    let dist = Phaser.Math.Distance.Between(startX, startY, hook.x, hook.y);
+    let linkCount = Math.floor(dist / 12); // Шаг звеньев
+
+    for (let i = 0; i < linkCount; i++) {
+        let t = i / linkCount;
+        let lx = startX + (hook.x - startX) * t;
+        let ly = startY + (hook.y - startY) * t;
+        
+        let link = chainGroup.create(lx, ly, 'pepe');
+        link.setDisplaySize(12, 20).setDepth(80);
+        // Вырезаем кусочек нити/цепи из твоего файла pepe.png
+        link.setCrop(490, 480, 20, 100); 
+        link.rotation = Phaser.Math.Angle.Between(startX, startY, hook.x, hook.y) + Math.PI/2;
+    }
 }
 </script>
 </body>
