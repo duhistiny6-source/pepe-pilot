@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Chain Hook</title>
+    <title>Pepe Pendulum Miner</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
@@ -25,13 +25,16 @@ let plane, hook, graphics, targets, scoreText;
 let isLaunching = false, isReturning = false, caughtItem = null;
 let score = 0;
 
-const HOOK_SPEED = 18;
-const START_Y = 180; // Позиция самолета
+// Настройки маятника и цепи
+let angle = 0; // Текущий угол
+let swingSpeed = 0.025; // Скорость раскачивания
+const HOOK_SPEED = 16;
+const PLANE_Y = 150; 
 
 function preload() {
     this.load.crossOrigin = 'anonymous';
     this.load.image('sky', 'pg.jpeg'); 
-    this.load.image('pepe', 'pepe.png'); // Твой спрайт
+    this.load.image('pepe', 'pepe.png'); //
     this.load.image('ton', 'ton.png');
     this.load.image('usdt', 'usdt.png');
     this.load.image('not', 'not.png');
@@ -44,25 +47,22 @@ function create() {
     let scale = Math.max(config.width / bg.width, config.height / bg.height);
     bg.setScale(scale).setScrollFactor(0);
 
-    // 1. САМОЛЕТ (База) - всегда на месте
-    plane = this.add.image(config.width / 2, START_Y, 'pepe');
-    plane.setDisplaySize(320, 280).setDepth(30);
-    // Обрезаем только до самолета, чтобы цепь не торчала
-    plane.setCrop(0, 0, 1000, 480); 
+    // 1. САМОЛЕТ (База) - парит на месте
+    plane = this.add.image(config.width / 2, PLANE_Y, 'pepe');
+    plane.setDisplaySize(300, 260).setDepth(30);
+    plane.setCrop(0, 0, 1000, 480); // Только верхняя часть с самолетом
 
-    // 2. ГРАФИКА ДЛЯ ЦЕПИ (Рисуем линию)
+    // 2. ГРАФИКА ЦЕПИ
     graphics = this.add.graphics().setDepth(10);
 
-    // 3. КЛЕШНЯ (Кончик, который ловит)
-    hook = this.add.sprite(config.width / 2, START_Y + 30, 'pepe');
-    hook.setDepth(20).setDisplaySize(120, 100);
-    // Показываем только самую нижнюю часть картинки (клешню)
-    hook.setCrop(300, 600, 400, 400); 
-    hook.setVisible(false);
-
-    // Физика для клешни
+    // 3. КЛЕШНЯ (Хваталка)
+    hook = this.add.sprite(config.width / 2, PLANE_Y + 50, 'pepe');
+    hook.setDepth(25).setDisplaySize(100, 90);
+    hook.setCrop(300, 600, 400, 400); // Берем только желтую клешню из спрайта
+    
+    // Физика клешни
     this.physics.add.existing(hook);
-    hook.body.setCircle(30, 30, 30);
+    hook.body.setCircle(25, 35, 35);
 
     // Монетки
     targets = this.physics.add.group();
@@ -72,12 +72,9 @@ function create() {
         fontSize: '32px', fill: '#0f0', fontFamily: 'Courier New', fontWeight: 'bold'
     }).setDepth(40);
 
+    // Клик для выстрела
     this.input.on('pointerdown', () => { 
-        if(!isLaunching && !isReturning) {
-            isLaunching = true;
-            hook.setVisible(true);
-            hook.y = START_Y + 30;
-        }
+        if(!isLaunching && !isReturning) isLaunching = true; 
     });
 
     this.physics.add.overlap(hook, targets, (h, target) => {
@@ -90,51 +87,71 @@ function create() {
 }
 
 function spawnCoin(scene) {
-    let x = Phaser.Math.Between(80, config.width - 80);
-    let y = Phaser.Math.Between(config.height * 0.6, config.height - 100);
+    let x = Phaser.Math.Between(100, config.width - 100);
+    let y = Phaser.Math.Between(config.height * 0.6, config.height - 120);
     let type = Phaser.Utils.Array.GetRandom(['ton', 'usdt', 'not', 'dogs']);
     let coin = targets.create(x, y, type);
-    coin.setDisplaySize(80, 80).setOrigin(0.5).setDepth(5); 
+    coin.setDisplaySize(70, 70).setOrigin(0.5);
+    coin.body.setCircle(30);
 }
 
 function update() {
     graphics.clear();
     let startX = config.width / 2;
-    let startY = START_Y + 40;
+    let startY = PLANE_Y + 40;
 
-    if (isLaunching || isReturning) {
-        // Рисуем цепь (линию)
-        graphics.lineStyle(4, 0x555555, 1);
-        graphics.lineBetween(startX, startY, hook.x, hook.y);
+    if (!isLaunching && !isReturning) {
+        // РЕЖИМ МАЯТНИКА: клешня крутится влево-вправо
+        angle += swingSpeed;
+        if (angle > 1.2 || angle < -1.2) swingSpeed = -swingSpeed;
+        
+        // Позиция клешни в режиме ожидания (короткая дистанция)
+        hook.x = startX + Math.sin(angle) * 80;
+        hook.y = startY + Math.cos(angle) * 80;
+        hook.rotation = -angle; // Поворачиваем клешню по направлению
+    } 
+    else if (isLaunching) {
+        // ВЫСТРЕЛ: клешня летит по заданному углу
+        hook.x += Math.sin(angle) * HOOK_SPEED;
+        hook.y += Math.cos(angle) * HOOK_SPEED;
 
-        if (isLaunching) {
-            hook.y += HOOK_SPEED;
-            if (hook.y > config.height - 50) {
-                isLaunching = false;
-                isReturning = true;
-            }
-        } else if (isReturning) {
-            hook.y -= HOOK_SPEED;
+        // Если улетели за экран
+        if (hook.y > config.height || hook.x < 0 || hook.x > config.width) {
+            isLaunching = false; 
+            isReturning = true;
+        }
+    } 
+    else if (isReturning) {
+        // ВОЗВРАТ: тянем клешню обратно к точке под самолетом
+        let dist = Phaser.Math.Distance.Between(hook.x, hook.y, startX, startY);
+        let moveAngle = Phaser.Math.Angle.Between(hook.x, hook.y, startX, startY);
+        
+        hook.x += Math.cos(moveAngle) * (HOOK_SPEED + 5);
+        hook.y += Math.sin(moveAngle) * (HOOK_SPEED + 5);
+
+        if (caughtItem) {
+            caughtItem.x = hook.x;
+            caughtItem.y = hook.y + 15;
+        }
+
+        if (dist < 20) {
+            isReturning = false;
             if (caughtItem) {
-                caughtItem.x = hook.x;
-                caughtItem.y = hook.y + 20;
-            }
-            if (hook.y <= startY) {
-                isReturning = false;
-                hook.setVisible(false);
-                if (caughtItem) {
-                    score += 100;
-                    scoreText.setText('SCORE: ' + score);
-                    caughtItem.destroy();
-                    caughtItem = null;
-                    spawnCoin(this);
-                }
+                score += 100;
+                scoreText.setText('SCORE: ' + score);
+                caughtItem.destroy();
+                caughtItem = null;
+                spawnCoin(this);
             }
         }
-    } else {
-        // Покачивание самолета для красоты
-        plane.y = START_Y + Math.sin(this.time.now / 500) * 5;
     }
+
+    // РИСУЕМ ЦЕПЬ (Линия от самолета до клешни)
+    graphics.lineStyle(3, 0xcccccc, 1);
+    graphics.lineBetween(startX, startY, hook.x, hook.y);
+    
+    // Плавное покачивание самолета для красоты
+    plane.y = PLANE_Y + Math.sin(this.time.now / 600) * 8;
 }
 </script>
 </body>
