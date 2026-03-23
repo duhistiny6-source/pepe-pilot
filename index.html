@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot New Generation</title>
+    <title>Pepe Classic Hook</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
-        body { margin: 0; background-color: #87CEEB; overflow: hidden; touch-action: none; }
+        body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
         canvas { display: block; margin: 0 auto; }
     </style>
 </head>
@@ -21,16 +21,17 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
-let plane, targets, scoreText;
+let plane, chain, targets, scoreText;
 let isLaunching = false, isReturning = false, caughtItem = null;
-let launchDistance = 0, maxDistance = 450; 
-let launchSpeed = 18; 
+let angle = 0, swingSpeed = 0.03; 
+let launchSpeed = 15; 
+let returnSpeed = 10;
 let score = 0;
 
 function preload() {
     this.load.crossOrigin = 'anonymous';
     this.load.image('sky', 'pg.jpeg'); 
-    this.load.image('pepe', 'pepe.png'); // Твой новый спрайт с прикрепленной цепью
+    this.load.image('pepe', 'pepe.png'); // Твоя картинка
     this.load.image('ton', 'ton.png');
     this.load.image('usdt', 'usdt.png');
     this.load.image('not', 'not.png');
@@ -43,81 +44,110 @@ function create() {
     let scale = Math.max(config.width / bg.width, config.height / bg.height);
     bg.setScale(scale).setScrollFactor(0);
 
-    // САМОЛЕТ С ЦЕПЬЮ (Origin ставим сверху, чтобы он "вытягивался" вниз)
-    plane = this.add.sprite(config.width / 2, 150, 'pepe');
-    plane.setOrigin(0.5, 0).setDepth(10);
-    // Устанавливаем размер, чтобы цепь была видна
-    plane.setDisplaySize(280, 240); 
+    // ЦЕПЬ (вылетающая часть)
+    // Используем ту же картинку, но будем её растягивать
+    chain = this.add.sprite(0, 0, 'pepe').setOrigin(0.5, 0).setDepth(5);
+    chain.setVisible(false); // Прячем, пока не нажали
+    
+    // Точка захвата на конце цепи
+    this.clawPoint = this.add.circle(0, 0, 30, 0xffffff, 0); 
+    this.physics.add.existing(this.clawPoint);
 
-    // Невидимый сенсор клешни (находится на самом кончике нарисованной цепи)
-    this.clawSensor = this.add.circle(0, 0, 35, 0xffffff, 0);
-    this.physics.add.existing(this.clawSensor);
+    // САМОЛЕТ (стоит на месте)
+    plane = this.add.sprite(config.width / 2, 180, 'pepe');
+    plane.setDepth(10).setDisplaySize(300, 260);
+    // Обрезаем картинку самолета, чтобы не было видно "запасную" цепь в покое
+    plane.setCrop(0, 0, 1000, 550); 
+
+    // Покачивание самолета
+    this.tweens.add({
+        targets: plane, y: 200, duration: 2000, yoyo: true, loop: -1, ease: 'Sine.easeInOut'
+    });
 
     // Монетки
     targets = this.physics.add.group();
     for(let i=0; i<8; i++) { spawnCoin(this); }
 
     scoreText = this.add.text(25, 25, 'SCORE: 0', { 
-        fontSize: '28px', fill: '#0f0', fontFamily: 'Courier New', fontWeight: 'bold',
-        stroke: '#000', strokeThickness: 4
+        fontSize: '32px', fill: '#0f0', fontFamily: 'Courier New', fontWeight: 'bold'
     }).setDepth(30);
 
     this.input.on('pointerdown', () => { 
-        if(!isLaunching && !isReturning) isLaunching = true; 
+        if(!isLaunching && !isReturning) {
+            isLaunching = true;
+            chain.setVisible(true);
+        }
     });
 
-    this.physics.add.overlap(this.clawSensor, targets, (sensor, target) => {
+    this.physics.add.overlap(this.clawPoint, targets, (claw, target) => {
         if (isLaunching && !caughtItem) { 
             caughtItem = target; 
             isLaunching = false; 
             isReturning = true; 
-            if (window.navigator.vibrate) window.navigator.vibrate(50); 
         }
     });
 }
 
 function spawnCoin(scene) {
-    let x = Phaser.Math.Between(70, config.width - 70);
+    let x = Phaser.Math.Between(80, config.width - 80);
     let y = Phaser.Math.Between(config.height * 0.6, config.height - 100);
     let type = Phaser.Utils.Array.GetRandom(['ton', 'usdt', 'not', 'dogs']);
     let coin = targets.create(x, y, type);
-    coin.setDisplaySize(80, 80).setOrigin(0.5).setDepth(5); 
+    coin.setDisplaySize(80, 80).setOrigin(0.5).setDepth(6); 
     coin.body.setCircle(35); 
 }
 
 function update() {
-    // Позиция сенсора всегда на кончике нарисованной цепи
-    // 210 - это примерная длина от верха самолета до клешни на твоем фото
-    this.clawSensor.x = plane.x;
-    this.clawSensor.y = plane.y + plane.displayHeight - 30;
+    let startX = plane.x; 
+    let startY = plane.y + 60; // Точка вылета из-под самолета
 
     if (!isLaunching && !isReturning) {
-        // Просто летим (можно добавить покачивание)
-        plane.y = 150 + Math.sin(this.time.now / 500) * 10;
+        // Клешня просто покачивается под самолетом
+        angle += swingSpeed;
+        if (Math.abs(angle) > 0.7) swingSpeed = -swingSpeed;
+        
+        chain.setVisible(false);
+        this.clawPoint.x = startX + Math.sin(angle) * 100;
+        this.clawPoint.y = startY + Math.cos(angle) * 100;
     } 
     else if (isLaunching) {
-        // "Вытягиваем" самолет вниз (эффект полета за монетой)
-        plane.y += launchSpeed;
-        if (plane.y > config.height - 100) {
+        chain.setVisible(true);
+        this.clawPoint.x += Math.sin(angle) * launchSpeed;
+        this.clawPoint.y += Math.cos(angle) * launchSpeed;
+        
+        if (this.clawPoint.y > config.height || this.clawPoint.x < 0 || this.clawPoint.x > config.width) {
             isLaunching = false; isReturning = true;
         }
     } 
     else if (isReturning) {
-        plane.y -= launchSpeed * 0.7;
+        let dist = Phaser.Math.Distance.Between(this.clawPoint.x, this.clawPoint.y, startX, startY);
+        let angleToPlane = Phaser.Math.Angle.Between(this.clawPoint.x, this.clawPoint.y, startX, startY);
+        
+        this.clawPoint.x += Math.cos(angleToPlane) * returnSpeed;
+        this.clawPoint.y += Math.sin(angleToPlane) * returnSpeed;
         
         if (caughtItem) { 
-            caughtItem.x = this.clawSensor.x; 
-            caughtItem.y = this.clawSensor.y; 
+            caughtItem.x = this.clawPoint.x; 
+            caughtItem.y = this.clawPoint.y; 
         }
         
-        if (plane.y <= 150) {
-            plane.y = 150;
+        if (dist < 20) {
             isReturning = false;
+            chain.setVisible(false);
             if (caughtItem) { 
                 score += 100; scoreText.setText('SCORE: ' + score); 
                 caughtItem.destroy(); caughtItem = null; spawnCoin(this); 
             }
         }
+    }
+
+    // Отрисовка цепи
+    if (chain.visible) {
+        chain.x = startX;
+        chain.y = startY;
+        chain.rotation = Phaser.Math.Angle.Between(startX, startY, this.clawPoint.x, this.clawPoint.y) - Math.PI / 2;
+        chain.displayHeight = Phaser.Math.Distance.Between(startX, startY, this.clawPoint.x, this.clawPoint.y);
+        chain.displayWidth = 160; 
     }
 }
 </script>
