@@ -1,4 +1,4 @@
-   <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -11,7 +11,7 @@
 </head>
 <body>
 <script>
-// Прямые ссылки на твои файлы в GitHub
+// ВАЖНО: Используем прямые RAW ссылки для обхода блокировок
 const ASSETS = {
     bg: 'https://raw.githubusercontent.com/duhistiny6/pepe-pilot/main/bg.jpg',
     pepe: 'https://raw.githubusercontent.com/duhistiny6/pepe-pilot/main/pepe.png',
@@ -33,6 +33,7 @@ let angle = 0, swingSpeed = 0.03, launchSpeed = 15;
 let score = 0, timeLeft = 60;
 
 function preload() {
+    // Устанавливаем crossorigin, чтобы GitHub позволил загрузить файлы
     this.load.crossOrigin = 'anonymous';
     this.load.image('sky', ASSETS.bg);
     this.load.image('pepe', ASSETS.pepe);
@@ -40,23 +41,13 @@ function preload() {
 }
 
 function create() {
-    // 1. ФОН
-    if (this.textures.exists('sky')) {
-        let bg = this.add.image(config.width/2, config.height/2, 'sky');
-        let scale = Math.max(config.width / bg.width, config.height / bg.height);
-        bg.setScale(scale).setScrollFactor(0);
-    } else {
-        this.add.rectangle(0, 0, config.width, config.height, 0x87CEEB).setOrigin(0);
-    }
+    // 1. ФОН (Твое кукурузное поле)
+    let bg = this.add.image(config.width/2, config.height/2, 'sky');
+    let scale = Math.max(config.width / bg.width, config.height / bg.height);
+    bg.setScale(scale).setScrollFactor(0);
     
-    // 2. САМОЛЕТ
-    if (this.textures.exists('pepe') && this.textures.get('pepe').key !== '__MISSING') {
-        plane = this.add.sprite(config.width / 2, 120, 'pepe');
-    } else {
-        // Запасной самолет, если картинка не нашла путь
-        plane = this.add.container(config.width / 2, 120);
-        plane.add(this.add.rectangle(0, 0, 100, 40, 0xffcc00).setStrokeStyle(2, 0x000));
-    }
+    // 2. САМОЛЕТ (Твой Пепе)
+    plane = this.add.sprite(config.width / 2, 120, 'pepe');
     plane.setDepth(10).setDisplaySize(200, 150);
 
     this.tweens.add({
@@ -68,6 +59,7 @@ function create() {
     this.clawPoint = this.add.circle(config.width/2, 220, 15);
     this.physics.add.existing(this.clawPoint);
 
+    // 3. МОНЕТКИ (Твой TON)
     targets = this.physics.add.group();
     for(let i=0; i<6; i++) { spawnCoin(this); }
 
@@ -96,23 +88,15 @@ function create() {
 function spawnCoin(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
     let y = Phaser.Math.Between(380, config.height - 100);
-    let coin;
-    if (scene.textures.exists('ton') && scene.textures.get('ton').key !== '__MISSING') {
-        coin = targets.create(x, y, 'ton');
-        coin.setDisplaySize(70, 70);
-    } else {
-        // Золотая монета вместо зеленого квадрата
-        coin = scene.add.circle(x, y, 30, 0xffd700).setStrokeStyle(4, 0x000);
-        targets.add(coin);
-    }
-    coin.setDepth(4);
+    let coin = targets.create(x, y, 'ton');
+    if(coin) coin.setDisplaySize(70, 70).setDepth(4);
 }
 
 function update() {
     if (timeLeft <= 0) return;
 
     let px = plane.x; 
-    let py = plane.y + 40;
+    let py = plane.y + 45;
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
@@ -151,4 +135,4 @@ function update() {
 </script>
 </body>
 </html>
-   
+
