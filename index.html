@@ -1,9 +1,9 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Crypto Miner</title>
+    <title>Pepe Pilot Crypto Miner FIX</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
@@ -43,9 +43,9 @@ function create() {
     let scale = Math.max(config.width / bg.width, config.height / bg.height);
     bg.setScale(scale).setScrollFactor(0);
     
-    // 2. ЦЕПЬ (Спрайт привязан за верхний центр)
+    // 2. ЦЕПЬ
     chainSprite = this.add.sprite(0, 0, 'chain');
-    chainSprite.setOrigin(0.5, 0); // ВАЖНО: верх по центру
+    chainSprite.setOrigin(0.5, 0); // Верхняя точка - центр вращения
     chainSprite.setDepth(5);
     
     // Точка захвата
@@ -55,21 +55,17 @@ function create() {
     // 3. САМОЛЕТ
     plane = this.add.sprite(config.width / 2, 120, 'pepe');
     plane.setDepth(10).setDisplaySize(200, 150);
-    this.tweens.add({
-        targets: plane, y: 135, duration: 2000, yoyo: true, loop: -1, ease: 'Sine.easeInOut'
-    });
 
     // 4. МОНЕТКИ
     targets = this.physics.add.group();
-    for(let i=0; i<7; i++) { spawnCoin(this); }
+    for(let i=0; i<8; i++) { spawnCoin(this); }
 
-    // Интерфейс
     scoreText = this.add.text(25, 30, '💎 Очки: 0', { fontSize: '30px', fill: '#fff', stroke: '#000', strokeThickness: 6 });
-    timerText = this.add.text(config.width - 200, 30, '⏱ Время: 60', { fontSize: '30px', fill: '#ff0', stroke: '#000', strokeThickness: 6 });
+    timerText = this.add.text(config.width - 200, 30, '⏱ 00:' + timeLeft, { fontSize: '30px', fill: '#ff0', stroke: '#000', strokeThickness: 6 });
 
     this.time.addEvent({
         delay: 1000,
-        callback: () => { if(timeLeft > 0) { timeLeft--; timerText.setText('⏱ Время: ' + timeLeft); } },
+        callback: () => { if(timeLeft > 0) { timeLeft--; timerText.setText('⏱ 00:' + (timeLeft < 10 ? '0' : '') + timeLeft); } },
         loop: true
     });
 
@@ -91,17 +87,14 @@ function spawnCoin(scene) {
     let y = Phaser.Math.Between(450, config.height - 100);
     let randomCoin = Phaser.Utils.Array.GetRandom(coinTypes);
     let coin = targets.create(x, y, randomCoin);
-    if(coin) {
-        coin.setDisplaySize(80, 80).setDepth(4); 
-    }
+    if(coin) coin.setDisplaySize(85, 85).setDepth(4); 
 }
 
 function update() {
     if (timeLeft <= 0) return;
 
-    // Точка выхода из самолета
     let px = plane.x; 
-    let py = plane.y + 40; 
+    let py = plane.y + 50; // Смещение под самолет
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
@@ -120,12 +113,7 @@ function update() {
         let dist = Phaser.Math.Distance.Between(this.clawPoint.x, this.clawPoint.y, tx, ty);
         this.clawPoint.x += (tx - this.clawPoint.x) * 0.15;
         this.clawPoint.y += (ty - this.clawPoint.y) * 0.15;
-        
-        if (caughtItem) { 
-            caughtItem.x = this.clawPoint.x; 
-            caughtItem.y = this.clawPoint.y; 
-        }
-        
+        if (caughtItem) { caughtItem.x = this.clawPoint.x; caughtItem.y = this.clawPoint.y; }
         if (dist < 20) {
             isReturning = false;
             if (caughtItem) { 
@@ -135,20 +123,23 @@ function update() {
         }
     }
 
-    // ПОЗИЦИЯ И ПОВОРОТ ЦЕПИ
+    // --- ФИКС ЦЕПИ ---
     chainSprite.x = px;
     chainSprite.y = py;
     
-    // Рассчитываем угол между самолетом и точкой клешни
-    let targetAngle = Phaser.Math.Angle.Between(px, py, this.clawPoint.x, this.clawPoint.y);
-    chainSprite.rotation = targetAngle - Math.PI / 2; // Поворачиваем "головой" вниз
+    // Вычисляем угол в градусах
+    let angleRad = Phaser.Math.Angle.Between(px, py, this.clawPoint.x, this.clawPoint.y);
+    let angleDeg = Phaser.Math.RadToDeg(angleRad);
     
-    // Длина цепи по расстоянию
-    let currentDist = Phaser.Math.Distance.Between(px, py, this.clawPoint.x, this.clawPoint.y);
-    chainSprite.setDisplaySize(70, currentDist + 20); // 70 - ширина клешни
+    // Поворачиваем на +270 градусов, чтобы "низ" картинки смотрел на цель
+    chainSprite.setAngle(angleDeg - 90); 
+    
+    // Растягиваем
+    let dist = Phaser.Math.Distance.Between(px, py, this.clawPoint.x, this.clawPoint.y);
+    chainSprite.setDisplaySize(80, dist + 30); // 80 - ширина клешни
 }
 </script>
 </body>
 </html>
-
+ 
      
