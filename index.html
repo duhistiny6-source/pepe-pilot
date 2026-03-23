@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Fix</title>
+    <title>Pepe Pilot Gold Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
@@ -22,12 +22,12 @@ const config = {
 const game = new Phaser.Game(config);
 let plane, clawGraphic, chain, targets, scoreText, timerText;
 let isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.025, launchSpeed = 14, returnSpeed = 9;
+let angle = 0, swingSpeed = 0.025, launchSpeed = 15, returnSpeed = 10;
 let score = 0, timeLeft = 60;
 
 function preload() {
     this.load.image('sky', 'https://labs.phaser.io/assets/skies/space3.png');
-    // ПРОВЕРЬ ЭТИ ИМЕНА В GITHUB! Если они другие - замени тут.
+    // ВАЖНО: Проверь эти имена в GitHub завтра!
     this.load.image('pepe', 'images__32_-removebg-preview.png');
     this.load.image('ton', 'ton-ecosystem-removebg-preview.png');
     this.load.image('not', 'images__35_-removebg-preview.png');
@@ -37,29 +37,29 @@ function preload() {
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setAlpha(0.4).setScale(2);
     
+    // ПЕПЕ
     plane = this.add.sprite(config.width / 2, 100, 'pepe').setDepth(10);
     plane.setDisplaySize(200, 200); 
     
     chain = this.add.graphics().setDepth(5);
     clawGraphic = this.add.graphics().setDepth(6);
     
-    // Невидимая точка захвата
     this.clawPoint = this.add.circle(config.width/2, 200, 15);
     this.physics.add.existing(this.clawPoint);
 
     targets = this.physics.add.group();
     const assets = ['ton', 'dogs', 'not'];
 
-    // Равномерно расставляем монетки, чтобы не было кучи
-    for(let i=0; i<10; i++) {
-        let x = 60 + (i * (config.width - 120) / 9); // Равномерно по ширине
-        let y = Phaser.Math.Between(350, config.height - 100);
+    // РАССТАВЛЯЕМ МОНЕТЫ (не в кучу!)
+    for(let i=0; i<8; i++) {
+        let x = Phaser.Math.Between(50, config.width - 50);
+        let y = Phaser.Math.Between(380, config.height - 100);
         let coin = targets.create(x, y, Phaser.Math.RND.pick(assets));
-        coin.setDisplaySize(70, 70).setDepth(4);
+        coin.setDisplaySize(80, 80).setDepth(4);
     }
 
-    scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '24px', fill: '#fff', fontStyle: 'bold' });
-    timerText = this.add.text(config.width - 140, 20, 'Time: 60', { fontSize: '24px', fill: '#ff0', fontStyle: 'bold' });
+    scoreText = this.add.text(20, 30, 'Score: 0', { fontSize: '28px', fill: '#fff', fontStyle: 'bold' });
+    timerText = this.add.text(config.width - 160, 30, 'Time: 60', { fontSize: '28px', fill: '#ff0', fontStyle: 'bold' });
 
     this.time.addEvent({
         delay: 1000,
@@ -87,8 +87,8 @@ function update() {
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
         if (angle > 0.8 || angle < -0.8) swingSpeed = -swingSpeed;
-        this.clawPoint.x = px + Math.sin(angle) * 130;
-        this.clawPoint.y = py + Math.cos(angle) * 130;
+        this.clawPoint.x = px + Math.sin(angle) * 140;
+        this.clawPoint.y = py + Math.cos(angle) * 140;
     } else if (isLaunching) {
         this.clawPoint.x += Math.sin(angle) * launchSpeed;
         this.clawPoint.y += Math.cos(angle) * launchSpeed;
@@ -97,11 +97,11 @@ function update() {
             isReturning = true;
         }
     } else if (isReturning) {
-        let tx = px + Math.sin(angle) * 130;
-        let ty = py + Math.cos(angle) * 130;
+        let tx = px + Math.sin(angle) * 140;
+        let ty = py + Math.cos(angle) * 140;
         let dist = Phaser.Math.Distance.Between(this.clawPoint.x, this.clawPoint.y, tx, ty);
-        this.clawPoint.x += (tx - this.clawPoint.x) * 0.2;
-        this.clawPoint.y += (ty - this.clawPoint.y) * 0.2;
+        this.clawPoint.x += (tx - this.clawPoint.x) * 0.15;
+        this.clawPoint.y += (ty - this.clawPoint.y) * 0.15;
         if (caughtItem) { caughtItem.x = this.clawPoint.x; caughtItem.y = this.clawPoint.y; }
         if (dist < 15) {
             isReturning = false;
@@ -109,20 +109,17 @@ function update() {
         }
     }
 
-    // РИСУЕМ ЦЕПЬ
-    chain.clear().lineStyle(2, 0xaaaaaa).lineBetween(px, py, this.clawPoint.x, this.clawPoint.y);
-
-    // РИСУЕМ НАСТОЯЩУЮ КЛЕШНЮ
-    clawGraphic.clear().lineStyle(4, 0xffd700);
-    let size = 25;
+    chain.clear().lineStyle(3, 0xcccccc).lineBetween(px, py, this.clawPoint.x, this.clawPoint.y);
+    
+    // КЛЕШНЯ: Две дуги, которые выглядят как захват
+    clawGraphic.clear().lineStyle(5, 0xffd700);
     let gA = angle + Math.PI/2; 
-    // Левый "зуб"
+    let gap = caughtItem ? 0.2 : 0.7; // Сжимается при поимке
     clawGraphic.beginPath();
-    clawGraphic.arc(this.clawPoint.x, this.clawPoint.y, size, gA - 0.5, gA + 0.5);
+    clawGraphic.arc(this.clawPoint.x, this.clawPoint.y, 25, gA - gap, gA + gap);
     clawGraphic.strokePath();
-    // Правый "зуб"
     clawGraphic.beginPath();
-    clawGraphic.arc(this.clawPoint.x, this.clawPoint.y, size, gA + Math.PI - 0.5, gA + Math.PI + 0.5);
+    clawGraphic.arc(this.clawPoint.x, this.clawPoint.y, 25, gA + Math.PI - gap, gA + Math.PI + gap);
     clawGraphic.strokePath();
 }
 </script>
