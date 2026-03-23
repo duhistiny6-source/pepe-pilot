@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Ultra Fix</title>
+    <title>Pepe Pilot Matrix Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
@@ -23,9 +23,8 @@ const config = {
 const game = new Phaser.Game(config);
 let plane, chainSprite, targets, scoreText, timerText;
 let isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.025, launchSpeed = 12; // ЗАМЕДЛИЛИ СКОРОСТЬ
-let score = 0, timeLeft = 60;
-const coinTypes = ['ton', 'usdt', 'not', 'dogs'];
+let angle = 0, swingSpeed = 0.025, launchSpeed = 14; 
+let score = 0, timeLeft = 60, isGameOver = false;
 
 function preload() {
     this.load.crossOrigin = 'anonymous';
@@ -44,45 +43,44 @@ function create() {
     let scale = Math.max(config.width / bg.width, config.height / bg.height);
     bg.setScale(scale).setScrollFactor(0);
 
-    // 2. ЦЕПЬ (Сделали ЖИРНОЙ и ПРИВЯЗАЛИ)
+    // 2. ЦЕПЬ (ЖИРНАЯ И ПРИВЯЗАННАЯ)
     chainSprite = this.add.sprite(0, 0, 'chain');
     chainSprite.setOrigin(0.5, 0); 
     chainSprite.setDepth(5);
     
-    // Точка захвата
     this.clawPoint = this.add.circle(config.width/2, 300, 35);
     this.physics.add.existing(this.clawPoint);
 
-    // 3. САМОЛЕТ
+    // 3. САМОЛЕТ (Плавное покачивание)
     plane = this.add.sprite(config.width / 2, 140, 'pepe');
     plane.setDepth(10).setDisplaySize(220, 160);
-
-    // Плавное покачивание самолета
     this.tweens.add({
-        targets: plane,
-        y: 160,
-        duration: 2500,
-        yoyo: true,
-        loop: -1,
-        ease: 'Sine.easeInOut'
+        targets: plane, y: 170, duration: 2000, yoyo: true, loop: -1, ease: 'Sine.easeInOut'
     });
 
-    // 4. МОНЕТКИ (Теперь КРАСИВЫЕ и РОВНЫЕ)
+    // 4. МОНЕТКИ (Все одного размера 90x90)
     targets = this.physics.add.group();
-    for(let i=0; i<7; i++) { spawnCoin(this); }
+    for(let i=0; i<8; i++) { spawnCoin(this); }
 
-    // Интерфейс
-    scoreText = this.add.text(25, 30, '💎 Очки: 0', { fontSize: '30px', fill: '#fff', stroke: '#000', strokeThickness: 6 });
-    timerText = this.add.text(config.width - 200, 30, '⏱ 00:' + timeLeft, { fontSize: '30px', fill: '#ff0', stroke: '#000', strokeThickness: 6 });
+    // 5. МАТРИЧНЫЙ ТАЙМЕР
+    scoreText = this.add.text(20, 20, 'SCORE: 0', { fontSize: '28px', fill: '#0f0', fontFamily: 'Courier New', fontWeight: 'bold' });
+    timerText = this.add.text(config.width - 180, 20, 'TIME: 60', { fontSize: '28px', fill: '#0f0', fontFamily: 'Courier New', fontWeight: 'bold' });
 
     this.time.addEvent({
         delay: 1000,
-        callback: () => { if(timeLeft > 0) { timeLeft--; timerText.setText('⏱ 00:' + (timeLeft < 10 ? '0' : '') + timeLeft); } },
+        callback: () => { 
+            if(timeLeft > 0) { 
+                timeLeft--; 
+                timerText.setText('TIME: ' + timeLeft); 
+            } else if (!isGameOver) {
+                endGame(this);
+            }
+        },
         loop: true
     });
 
     this.input.on('pointerdown', () => { 
-        if(!isLaunching && !isReturning && timeLeft > 0) isLaunching = true; 
+        if(!isLaunching && !isReturning && !isGameOver) isLaunching = true; 
     });
 
     this.physics.add.overlap(this.clawPoint, targets, (c, target) => {
@@ -96,27 +94,31 @@ function create() {
 
 function spawnCoin(scene) {
     let x, y, tooClose;
-    // Проверка, чтобы монетки не лепились друг к другу
     do {
-        x = Phaser.Math.Between(100, config.width - 100);
-        y = Phaser.Math.Between(config.height * 0.6, config.height - 120);
-        tooClose = targets.getChildren().some(c => Phaser.Math.Distance.Between(x, y, c.x, c.y) < 100);
+        x = Phaser.Math.Between(80, config.width - 80);
+        y = Phaser.Math.Between(config.height * 0.6, config.height - 100);
+        tooClose = targets.getChildren().some(c => Phaser.Math.Distance.Between(x, y, c.x, c.y) < 110);
     } while (tooClose);
 
-    let randomCoin = Phaser.Utils.Array.GetRandom(coinTypes);
+    let randomCoin = Phaser.Utils.Array.GetRandom(['ton', 'usdt', 'not', 'dogs']);
     let coin = targets.create(x, y, randomCoin);
-    
-    // ФИКС: Делаем монетки идеально круглыми 90x90
-    coin.setDisplaySize(90, 90);
-    coin.setDepth(4).setOrigin(0.5); 
+    coin.setDisplaySize(90, 90).setDepth(4).setOrigin(0.5); 
+}
+
+function endGame(scene) {
+    isGameOver = true;
+    scene.physics.pause();
+    scene.add.rectangle(config.width/2, config.height/2, config.width, config.height, 0x000000, 0.7).setDepth(20);
+    scene.add.text(config.width/2, config.height/2 - 50, 'GAME OVER', { fontSize: '64px', fill: '#0f0', fontFamily: 'Courier New' }).setOrigin(0.5).setDepth(21);
+    scene.add.text(config.width/2, config.height/2 + 50, 'COINS: ' + score, { fontSize: '32px', fill: '#fff' }).setOrigin(0.5).setDepth(21);
 }
 
 function update() {
-    if (timeLeft <= 0) return;
+    if (isGameOver) return;
 
-    // ПРИВЯЗКА К НОСУ (ЧЕТКО ПОД ВИНТОМ)
+    // ПРИВЯЗКА К НОСУ: Центрируем трос по винту
     let px = plane.x; 
-    let py = plane.y + 70; // Координата выхода цепи из носа
+    let py = plane.y + 85; 
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
@@ -130,35 +132,23 @@ function update() {
             isLaunching = false; isReturning = true;
         }
     } else if (isReturning) {
-        let tx = px + Math.sin(angle) * 160;
-        let ty = py + Math.cos(angle) * 160;
-        let dist = Phaser.Math.Distance.Between(this.clawPoint.x, this.clawPoint.y, tx, ty);
-        this.clawPoint.x += (tx - this.clawPoint.x) * 0.12;
-        this.clawPoint.y += (ty - this.clawPoint.y) * 0.12;
+        let dist = Phaser.Math.Distance.Between(this.clawPoint.x, this.clawPoint.y, px, py + 160);
+        this.clawPoint.x += (px + Math.sin(angle)*160 - this.clawPoint.x) * 0.15;
+        this.clawPoint.y += (py + Math.cos(angle)*160 - this.clawPoint.y) * 0.15;
         
-        if (caughtItem) { 
-            caughtItem.x = this.clawPoint.x; 
-            caughtItem.y = this.clawPoint.y; 
-        }
-        
-        if (dist < 15) {
+        if (caughtItem) { caughtItem.x = this.clawPoint.x; caughtItem.y = this.clawPoint.y; }
+        if (dist < 30) {
             isReturning = false;
-            if (caughtItem) { 
-                score += 100; scoreText.setText('💎 Очки: ' + score); 
-                caughtItem.destroy(); caughtItem = null; spawnCoin(this);
-            }
+            if (caughtItem) { score += 100; scoreText.setText('SCORE: ' + score); caughtItem.destroy(); caughtItem = null; spawnCoin(this); }
         }
     }
 
-    // ВИЗУАЛ ЦЕПИ (ФИКС: ТОЛЩИНА 150 И ПРИВЯЗКА)
+    // ВИЗУАЛ ЦЕПИ (ЖИРНЫЙ ТРОС)
     chainSprite.x = px;
     chainSprite.y = py;
-    let angleRad = Phaser.Math.Angle.Between(px, py, this.clawPoint.x, this.clawPoint.y);
-    chainSprite.rotation = angleRad - Math.PI / 2; 
-    
-    let dist = Phaser.Math.Distance.Between(px, py, this.clawPoint.x, this.clawPoint.y);
-    chainSprite.displayWidth = 150; // Жирный трос
-    chainSprite.displayHeight = dist + 40; 
+    chainSprite.rotation = Phaser.Math.Angle.Between(px, py, this.clawPoint.x, this.clawPoint.y) - Math.PI / 2; 
+    chainSprite.displayWidth = 160; 
+    chainSprite.displayHeight = Phaser.Math.Distance.Between(px, py, this.clawPoint.x, this.clawPoint.y) + 40; 
 }
 </script>
 </body>
