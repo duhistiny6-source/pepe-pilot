@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Gold</title>
+    <title>Pepe Pilot Gold - Фикс</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #000; overflow: hidden; touch-action: none; }
@@ -26,12 +26,12 @@ let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, score = 0;
 
 const HOOK_SPEED = 18;
-const PLANE_Y = 160; // Самолет вверху
+const PLANE_Y = 160;
 
 function preload() {
     this.load.crossOrigin = 'anonymous';
     this.load.image('sky', 'pg.jpeg'); 
-    this.load.image('pepe', 'pepe.png'); // Твой основной файл
+    this.load.image('pepe', 'pepe.png'); 
     this.load.image('ton', 'ton.png');
     this.load.image('usdt', 'usdt.png');
     this.load.image('not', 'not.png');
@@ -44,22 +44,23 @@ function create() {
     let scale = Math.max(config.width / bg.width, config.height / bg.height);
     bg.setScale(scale).setScrollFactor(0);
 
-    // 1. Самолет (стоит на месте)
+    // 1. Самолет
     plane = this.add.image(config.width / 2, PLANE_Y, 'pepe');
     plane.setDisplaySize(300, 260).setDepth(30);
-    plane.setCrop(0, 0, 1000, 480); // Оставляем только кабину с пилотом
+    plane.setCrop(0, 0, 1000, 480); 
 
-    // 2. Линия цепи
+    // 2. Линия цепи (теперь только визуальная)
     chainGraphics = this.add.graphics().setDepth(10);
 
-    // 3. Та самая КЛЕШНЯ
+    // 3. КЛЕШНЯ - с физикой
     hook = this.add.sprite(config.width / 2, PLANE_Y + 40, 'pepe');
     hook.setDepth(20).setDisplaySize(110, 100);
-    // Вырезаем именно желтую клешню из нижней части твоего рисунка
     hook.setCrop(300, 600, 400, 400); 
 
+    // Добавляем физику К КЛЕШНЕ
     this.physics.add.existing(hook);
-    hook.body.setCircle(25, 30, 30);
+    // Настраиваем размер физического тела, чтобы он соответствовал клешне
+    hook.body.setCircle(25, 30, 30); 
 
     // Монетки
     targets = this.physics.add.group();
@@ -73,6 +74,7 @@ function create() {
         if(!isLaunching && !isReturning) isLaunching = true; 
     });
 
+    // Устанавливаем overlap для КЛЕШНИ и монет
     this.physics.add.overlap(hook, targets, (h, target) => {
         if (isLaunching && !caughtItem) { 
             caughtItem = target; 
@@ -94,10 +96,10 @@ function spawnCoin(scene) {
 function update() {
     chainGraphics.clear();
     let pivotX = config.width / 2;
-    let pivotY = PLANE_Y + 40; // Точка, откуда вылетает цепь
+    let pivotY = PLANE_Y + 40; 
 
     if (!isLaunching && !isReturning) {
-        // Качаемся как маятник
+        // Режим маятника
         angle += swingSpeed;
         if (angle > 1.1 || angle < -1.1) swingSpeed = -swingSpeed;
         
@@ -106,7 +108,7 @@ function update() {
         hook.rotation = -angle;
     } 
     else if (isLaunching) {
-        // Летим за монетой
+        // Запуск клешни
         hook.x += Math.sin(angle) * HOOK_SPEED;
         hook.y += Math.cos(angle) * HOOK_SPEED;
 
@@ -115,7 +117,7 @@ function update() {
         }
     } 
     else if (isReturning) {
-        // Тащим обратно
+        // Возврат
         let moveAngle = Phaser.Math.Angle.Between(hook.x, hook.y, pivotX, pivotY);
         hook.x += Math.cos(moveAngle) * (HOOK_SPEED + 4);
         hook.y += Math.sin(moveAngle) * (HOOK_SPEED + 4);
@@ -134,11 +136,11 @@ function update() {
         }
     }
 
-    // Рисуем цепь (одну!)
+    // Отрисовка визуальной цепи (теперь она не хватает монетки)
     chainGraphics.lineStyle(3, 0x999999, 1);
     chainGraphics.lineBetween(pivotX, pivotY, hook.x, hook.y);
     
-    // Самолет просто парит
+    // Самолет парит
     plane.y = PLANE_Y + Math.sin(this.time.now / 600) * 10;
 }
 </script>
