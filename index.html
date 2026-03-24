@@ -3,70 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Energy Boost</title>
+    <title>Pepe Pilot</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
-        body { margin:0; overflow:hidden; background:#000; touch-action: none; }
+        body { margin:0; overflow:hidden; background:#000; touch-action: none; font-family: Arial, sans-serif; }
+        
+        /* Верхний интерфейс */
         #ui { 
-            position:fixed; top:12px; left:12px; color:#0f0; font-family: Arial; font-weight:bold; 
+            position:fixed; top:12px; left:12px; color:#0f0; font-weight:bold; 
             z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000;
             display: flex; flex-direction: column; gap: 5px;
         }
-        #timer-display { color: #ff3333; font-size: 13px; display: none; }
-        
-        #ad-button { 
-            display: none; pointer-events: auto; background: #ffcc00; color: #000; 
-            border: 1px solid #fff; padding: 4px 8px; font-size: 11px; font-weight: bold; 
-            border-radius: 4px; cursor: pointer; width: fit-content;
-        }
 
-        /* Кнопка настроек - теперь она видна и кликабельна */
+        /* Кнопка настроек */
         #settings-btn {
             position: fixed; top: 12px; right: 12px; font-size: 24px; 
             z-index: 1001; cursor: pointer; pointer-events: auto;
-            background: rgba(0,0,0,0.5); border-radius: 50%; width: 40px; height: 40px;
-            display: flex; align-items: center; justify-content: center; border: 1px solid #0f0;
+            background: rgba(0,255,0,0.1); border-radius: 50%; width: 45px; height: 45px;
+            display: flex; align-items: center; justify-content: center; border: 2px solid #0f0;
         }
 
-        /* Модальное окно */
+        /* Модальное окно настроек */
         #settings-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 2000; color: #fff;
-            justify-content: center; align-items: center; flex-direction: column; font-family: Arial;
+            background: rgba(0,0,0,0.9); z-index: 2000; color: #fff;
+            justify-content: center; align-items: center; flex-direction: column;
         }
         .modal-box {
-            background: #111; border: 2px solid #0f0; padding: 25px; border-radius: 15px; text-align: center;
+            background: #111; border: 2px solid #0f0; padding: 30px; border-radius: 15px; text-align: center;
         }
         .lang-option {
-            background: #222; color: #0f0; border: 1px solid #0f0; padding: 12px 25px;
-            margin: 10px; cursor: pointer; border-radius: 8px; font-weight: bold; display: block;
+            background: #222; color: #0f0; border: 1px solid #0f0; padding: 12px 30px;
+            margin: 10px 0; cursor: pointer; border-radius: 8px; font-weight: bold;
         }
 
-        #ad-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; color: #fff; justify-content: center; align-items: center; flex-direction: column; font-family: Arial; }
-        
-        #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 82%; height: 50px; background: rgba(0, 0, 0, 0.9); border: 1px solid #0f0; border-radius: 12px; display: flex; justify-content: space-around; align-items: center; z-index: 200; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #0f0; font-size: 8px; font-weight: bold; }
-        .nav-item span { font-size: 18px; }
+        /* Нижнее меню (Исправлено слипание) */
+        #nav-bar { 
+            position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); 
+            width: 90%; height: 60px; background: rgba(0, 0, 0, 0.9); 
+            border: 1px solid #0f0; border-radius: 12px; 
+            display: flex; justify-content: space-around; align-items: center; z-index: 200; 
+        }
+        .nav-item { 
+            display: flex; flex-direction: column; align-items: center; 
+            color: #0f0; font-size: 9px; font-weight: bold; min-width: 60px;
+        }
+        .nav-item span { font-size: 20px; margin-bottom: 2px; }
+
+        /* Реклама */
+        #ad-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
+        #ad-button { pointer-events: auto; background: #ffcc00; color: #000; border: none; padding: 8px 12px; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="settings-btn" onclick="openSettings()">⚙️</div>
 
-<div id="settings-modal" onclick="closeSettings(event)">
-    <div class="modal-box" onclick="event.stopPropagation()">
+<div id="settings-modal">
+    <div class="modal-box">
         <h2 id="set-title">Настройки</h2>
         <div class="lang-option" onclick="setLanguage('ru')">Русский</div>
         <div class="lang-option" onclick="setLanguage('en')">English</div>
-        <div style="margin-top:15px; font-size:12px; color:#666; cursor:pointer;" onclick="closeSettings()">[ Закрыть ]</div>
+        <div style="margin-top:20px; color:#aaa; cursor:pointer;" onclick="closeSettings()">[ Закрыть ]</div>
     </div>
 </div>
 
 <div id="ui">
     <div>💰 <span id="money">0.000</span></div>
     <div>⚡ <span id="energy">100</span>/100</div>
-    <div id="timer-display"><span id="rec-text">Восстановление</span>: <span id="time-left">03:00:00</span></div>
-    <button id="ad-button" onclick="startAd()">📺 СМОТРЕТЬ РЕКЛАМУ (+50 ⚡)</button>
+    <div id="timer-display" style="display:none; color:#ff3333; font-size:12px;">
+        <span id="rec-text">Восстановление</span>: <span id="time-left">03:00:00</span>
+        <br><button id="ad-button" onclick="startAd()">📺 REW (AD)</button>
+    </div>
 </div>
 
 <div id="ad-overlay">
@@ -75,30 +83,26 @@
 </div>
 
 <div id="nav-bar">
-    <div class="nav-item"><span>🛒</span><span id="nav-1">МАГАЗИН</span></div>
-    <div class="nav-item"><span>📜</span><span id="nav-2">ЗАДАНИЯ</span></div>
-    <div class="nav-item"><span>👥</span><span id="nav-3">ДРУЗЬЯ</span></div>
-    <div class="nav-item"><span>👛</span><span id="nav-4">КОШЕЛЕК</span></div>
+    <div class="nav-item"><span>🛒</span><div id="nav-1">МАГАЗИН</div></div>
+    <div class="nav-item"><span>📜</span><div id="nav-2">ЗАДАНИЯ</div></div>
+    <div class="nav-item"><span>👥</span><div id="nav-3">ДРУЗЬЯ</div></div>
+    <div class="nav-item"><span>👛</span><div id="nav-4">КОШЕЛЕК</div></div>
 </div>
 
 <script>
-// --- Система языков ---
 const langData = {
-    ru: { title: "Настройки", rec: "Восстановление", ad: "📺 СМОТРЕТЬ РЕКЛАМУ (+50 ⚡)", n1: "МАГАЗИН", n2: "ЗАДАНИЯ", n3: "ДРУЗЬЯ", n4: "КОШЕЛЕК", adT: "СМОТРИМ РОЛИК...", rem: "Осталось" },
-    en: { title: "Settings", rec: "Recovery", ad: "📺 WATCH AD (+50 ⚡)", n1: "SHOP", n2: "TASKS", n3: "FRIENDS", n4: "WALLET", adT: "WATCHING AD...", rem: "Left" }
+    ru: { title: "Настройки", rec: "Восстановление", n1: "МАГАЗИН", n2: "ЗАДАНИЯ", n3: "ДРУЗЬЯ", n4: "КОШЕЛЕК", adT: "СМОТРИМ РОЛИК...", rem: "Осталось" },
+    en: { title: "Settings", rec: "Recovery", n1: "SHOP", n2: "TASKS", n3: "FRIENDS", n4: "WALLET", adT: "WATCHING AD...", rem: "Left" }
 };
 
 let currentLang = 'ru';
-
 function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; }
 function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
-
 function setLanguage(lang) {
     currentLang = lang;
     const d = langData[lang];
     document.getElementById('set-title').innerText = d.title;
     document.getElementById('rec-text').innerText = d.rec;
-    document.getElementById('ad-button').innerText = d.ad;
     document.getElementById('nav-1').innerText = d.n1;
     document.getElementById('nav-2').innerText = d.n2;
     document.getElementById('nav-3').innerText = d.n3;
@@ -107,7 +111,6 @@ function setLanguage(lang) {
     closeSettings();
 }
 
-// --- Игра ---
 const config = {
     type: Phaser.AUTO,
     width: window.innerWidth,
@@ -117,63 +120,30 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
-
-let plane, hook, rope, targets, bgMusic;
-let isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.03, distance = 25; 
-let money = 0, energy = 100;
-let recoveryTime = 0;
-
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playCustomBeep(frequency) {
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    oscillator.frequency.value = frequency; 
-    oscillator.type = 'triangle'; 
-    gainNode.gain.setValueAtTime(0.005, audioCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.08);
-    oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.08);
-}
-
-function showPopUp(scene, x, y) {
-    let txt = scene.add.text(x, y, '+0.001', { font: 'bold 24px Arial', fill: '#00ff00', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5).setDepth(100);
-    scene.tweens.add({ targets: txt, y: y - 100, alpha: 0, duration: 1000, ease: 'Power2', onComplete: () => txt.destroy() });
-}
+let plane, hook, rope, targets, money=0, energy=100, isLaunching=false, isReturning=false, caughtItem=null, angle=0, distance=25;
 
 function preload() {
+    // ВАЖНО: Если экран черный, проверь эти названия файлов!
     this.load.image('sky', 'pg.jpeg');
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
     this.load.image('plane', 'pepe.png');
-    this.load.audio('theme', 'music.mp3');
 }
 
 function create() {
-    this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
-    try { bgMusic = this.sound.add('theme', { volume: 0.005, loop: true }); } catch (e) {}
-    this.input.once('pointerdown', () => {
-        if (bgMusic && !bgMusic.isPlaying) bgMusic.play();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-    });
-
+    this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
     targets = this.physics.add.group();
-    for(let i = 0; i < 6; i++) spawn(this);
+    for(let i=0; i<6; i++) spawn(this);
+    
     rope = this.add.graphics().setDepth(30);
-    hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(60, 60); 
+    hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(60, 60);
     this.physics.add.existing(hook);
-    hook.body.setCircle(25); 
-    plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
+    plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.input.on('pointerdown', (p) => {
-        // Игнорируем нажатия в области кнопки настроек
-        if (p.x > config.width - 60 && p.y < 60) return;
-        
-        if (p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
+        if (p.y > 80 && p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
             isLaunching = true;
             energy--;
-            if (energy <= 0) startRecovery();
             updateUI();
         }
     });
@@ -182,75 +152,60 @@ function create() {
         if (isLaunching && !caughtItem) {
             caughtItem = item;
             caughtItem.body.enable = false;
-            playCustomBeep(700); isLaunching = false; isReturning = true;
+            isLaunching = false; isReturning = true;
         }
     });
-    setInterval(tick, 1000);
-}
-
-function startRecovery() {
-    recoveryTime = 3 * 60 * 60; 
-    document.getElementById('timer-display').style.display = 'block';
-    document.getElementById('ad-button').style.display = 'block';
-}
-
-function startAd() {
-    const overlay = document.getElementById('ad-overlay');
-    const adTimerText = document.getElementById('ad-timer');
-    overlay.style.display = 'flex';
-    let count = 5;
-    const interval = setInterval(() => {
-        count--;
-        adTimerText.innerText = `${langData[currentLang].rem}: ${count} сек.`;
-        if (count <= 0) { clearInterval(interval); overlay.style.display = 'none'; addEnergyBoost(); }
-    }, 1000);
-}
-
-function addEnergyBoost() {
-    energy = Math.min(energy + 50, 100);
-    if (energy > 0) {
-        recoveryTime = 0;
-        document.getElementById('timer-display').style.display = 'none';
-        document.getElementById('ad-button').style.display = 'none';
-    }
-    updateUI();
-}
-
-function tick() {
-    if (recoveryTime > 0) {
-        recoveryTime--;
-        let h = Math.floor(recoveryTime / 3600).toString().padStart(2, '0');
-        let m = Math.floor((recoveryTime % 3600) / 60).toString().padStart(2, '0');
-        let s = (recoveryTime % 60).toString().padStart(2, '0');
-        document.getElementById('time-left').innerText = `${h}:${m}:${s}`;
-        if (recoveryTime === 0) { energy = 100; updateUI(); }
-    }
 }
 
 function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
-    let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
-    let coin = targets.create(x, y, 'usdt').setDepth(40);
-    if (coin) {
-        coin.setScale(0.12);
-        coin.pulse = scene.tweens.add({ targets: coin, scale: 0.14, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-    }
+    let y = Phaser.Math.Between(config.height * 0.4, config.height - 150);
+    let coin = targets.create(x, y, 'usdt').setScale(0.12).setDepth(40);
 }
 
 function update() {
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
-    let startX = plane.x - 5; let startY = plane.y + 15; 
+    let startX = plane.x - 5; let startY = plane.y + 15;
+
     if (!isLaunching && !isReturning) {
-        angle += swingSpeed;
-        if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
+        angle += 0.03;
+        if (angle > 0.8 || angle < -0.8) angle = (angle > 0) ? 0.8 : -0.8; // Заглушка для теста
         distance = 25;
     } else if (isLaunching) {
-        distance += 16; 
+        distance += 15;
         if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        distance -= 4; 
+        distance -= 6;
         if (distance <= 25) {
             isReturning = false;
-            if (caughtItem) {
-                money += 0.001; playCustomBeep(900); showPopUp(this, plane.x, plane.y);
-                caughtItem.
+            if (caughtItem) { 
+                money += 0.001; caughtItem.destroy(); caughtItem = null; spawn(this); updateUI(); 
+            }
+        }
+    }
+
+    hook.x = startX + Math.sin(Math.sin(this.time.now/500)) * distance; // Качание
+    hook.y = startY + Math.cos(Math.sin(this.time.now/500)) * distance;
+    rope.clear().lineStyle(2, 0xffffff, 0.5).lineBetween(startX, startY, hook.x, hook.y);
+    
+    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 10; }
+}
+
+function updateUI() {
+    document.getElementById('money').innerText = money.toFixed(3);
+    document.getElementById('energy').innerText = energy;
+}
+
+function startAd() {
+    const overlay = document.getElementById('ad-overlay');
+    overlay.style.display = 'flex';
+    let count = 5;
+    let timer = setInterval(() => {
+        count--;
+        document.getElementById('ad-timer').innerText = `${langData[currentLang].rem}: ${count} сек.`;
+        if(count <= 0) { clearInterval(timer); overlay.style.display='none'; energy = 100; updateUI(); }
+    }, 1000);
+}
+</script>
+</body>
+</html>
