@@ -157,9 +157,56 @@ function update(){
     }
 }
 
-function updateUI(){
-    document.getElementById('money').innerText = money;
-    document.getElementById('energy').innerText = energy;
+ function update() {
+    // 1. Плавное покачивание самолета
+    plane.y = 120 + Math.sin(this.time.now / 600) * 8;
+    
+    // Точка, откуда ВЫЛЕТАЕТ нить (центр под самолетом)
+    let startX = plane.x;
+    let startY = plane.y + 45; 
+
+    // 2. Логика движения клешни (маятник или полет)
+    if (!isLaunching && !isReturning) {
+        angle += swingSpeed;
+        if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
+        distance = 45; // Клешня спрятана под самолетом
+    } else if (isLaunching) {
+        distance += 15 + (upgrades.speed * 2.5);
+        if (distance > config.height - 120) { isLaunching = false; isReturning = true; }
+    } else if (isReturning) {
+        distance -= (12 + upgrades.power * 2.5);
+        if (distance <= 45) {
+            isReturning = false;
+            if (caughtItem) {
+                money += ITEMS[caughtItem.texture.key].value;
+                caughtItem.destroy();
+                caughtItem = null;
+                spawn(this);
+                updateUI();
+            }
+        }
+    }
+
+    // 3. Установка координат клешни (строго по математике)
+    hook.x = startX + Math.sin(angle) * distance;
+    hook.y = startY + Math.cos(angle) * distance;
+    hook.rotation = -angle;
+
+    // 4. Отрисовка НИТИ (Moonbix Style)
+    // ВАЖНО: Мы сначала ВСЁ стираем, а потом рисуем только ОДНУ линию
+    rope.clear(); 
+    rope.lineStyle(2, 0xffffff, 1); // Тонкая белая нить
+    
+    // Рисуем линию ОТ точки под самолетом ДО центра клешни
+    rope.lineBetween(startX, startY, hook.x, hook.y);
+
+    // Тянем пойманный предмет
+    if (caughtItem) {
+        caughtItem.x = hook.x;
+        caughtItem.y = hook.y + 25;
+    }
+}
+
 }
 
 window.upgrade = function(type){
