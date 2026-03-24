@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Moonbix Style</title>
+    <title>Pepe One Body</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:black; touch-action: none; }
@@ -38,16 +38,16 @@ new Phaser.Game(config);
 
 let plane, hook, rope, targets;
 let isLaunching=false, isReturning=false, caughtItem=null;
-let angle=0, swingSpeed=0.025, distance = 60;
+let angle=0, swingSpeed=0.03, distance = 70;
 
 let money=0, energy=10;
 let upgrades = { chance: 0, speed: 0, power: 0 };
 
 const ITEMS = {
-    ton:{weight:1, chance:0.9, value:50},
-    usdt:{weight:2, chance:0.7, value:100},
-    not:{weight:3, chance:0.5, value:200},
-    dogs:{weight:5, chance:0.3, value:400}
+    ton:{chance:0.9, value:50},
+    usdt:{chance:0.7, value:100},
+    not:{chance:0.5, value:200},
+    dogs:{chance:0.3, value:400}
 };
 
 function preload(){
@@ -62,20 +62,21 @@ function preload(){
 function create(){
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
 
-    // 1. ЛИНИЯ-ТРОС (Graphics) - рисуем как в Moonbix
+    // 1. ТРОС (Graphics) - теперь он только рисуется вслед за клешней
     rope = this.add.graphics().setDepth(30);
 
-    // 2. КЛЕШНЯ
+    // 2. САМА КЛЕШНЯ (Теперь это и есть главный объект захвата)
     hook = this.add.sprite(config.width/2, 200, 'pepe');
-    hook.setDepth(40).setDisplaySize(90, 80);
-    hook.setCrop(300, 600, 400, 400); // Желтая часть
+    hook.setDepth(40).setDisplaySize(95, 85);
+    hook.setCrop(300, 600, 400, 400); // Берем желтую часть
 
     // 3. САМОЛЕТ
     plane = this.add.image(config.width/2, 120, 'pepe');
-    plane.setDisplaySize(260, 220).setDepth(50).setCrop(0, 0, 1000, 480);
+    plane.setDisplaySize(280, 240).setDepth(50).setCrop(0, 0, 1000, 480);
 
+    // Включаем физику ТОЛЬКО для картинки клешни
     this.physics.add.existing(hook);
-    hook.body.setCircle(30, 20, 20);
+    hook.body.setCircle(35, 15, 15);
 
     targets = this.physics.add.group();
     for(let i=0; i<8; i++) spawn(this);
@@ -88,6 +89,7 @@ function create(){
         }
     });
 
+    // Монетка ловится КАРТИНКОЙ клешни
     this.physics.add.overlap(hook, targets, (h, item) => {
         if(isLaunching && !caughtItem){
             let d = ITEMS[item.texture.key];
@@ -106,29 +108,28 @@ function create(){
 function spawn(scene){
     let keys = Object.keys(ITEMS);
     let k = keys[Phaser.Math.Between(0, keys.length - 1)];
-    let x = Phaser.Math.Between(60, config.width - 60);
-    let y = Phaser.Math.Between(config.height * 0.6, config.height - 60);
-    targets.create(x, y, k).setDisplaySize(60, 60);
+    let x = Phaser.Math.Between(80, config.width - 80);
+    let y = Phaser.Math.Between(config.height * 0.6, config.height - 80);
+    targets.create(x, y, k).setDisplaySize(65, 65);
 }
 
 function update(){
-    // САМОЛЕТ ПЛАВНО КАЧАЕТСЯ
-    plane.y = 120 + Math.sin(this.time.now / 800) * 6;
-    let startY = plane.y + 40; // Точка вылета нити
+    // Плавное парение самолета
+    plane.y = 120 + Math.sin(this.time.now / 700) * 7;
+    let startY = plane.y + 40; 
 
     if(!isLaunching && !isReturning){
-        // Свободное качание как в Moonbix
         angle += swingSpeed;
-        if(angle > 0.75 || angle < -0.75) swingSpeed *= -1;
-        distance = 60;
+        if(angle > 0.7 || angle < -0.7) swingSpeed *= -1;
+        distance = 70;
     }
     else if(isLaunching){
-        distance += 12 + (upgrades.speed * 2);
+        distance += 14 + (upgrades.speed * 2);
         if(distance > config.height - 100) { isLaunching = false; isReturning = true; }
     }
     else if(isReturning){
-        distance -= (10 + upgrades.power * 2);
-        if(distance <= 60){
+        distance -= (11 + upgrades.power * 2);
+        if(distance <= 70){
             isReturning = false;
             if(caughtItem){
                 money += ITEMS[caughtItem.texture.key].value;
@@ -140,19 +141,19 @@ function update(){
         }
     }
 
-    // РАСЧЕТ ПОЗИЦИИ КЛЕШНИ
+    // КЛЕШНЯ СТРОГО СЛЕДУЕТ ЗА ДЛИННОЙ
     hook.x = plane.x + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // РИСОВАНИЕ ОДНОЙ ЧИСТОЙ НИТИ
+    // НИТЬ РИСУЕТСЯ СТРОГО ОТ САМОЛЕТА ДО ЦЕНТРА КЛЕШНИ
     rope.clear();
-    rope.lineStyle(2, 0xcccccc, 1); // Тонкая серая нить
+    rope.lineStyle(2, 0xeeeeee, 1); 
     rope.lineBetween(plane.x, startY, hook.x, hook.y);
 
     if(caughtItem){
         caughtItem.x = hook.x;
-        caughtItem.y = hook.y + 25;
+        caughtItem.y = hook.y + 35; // Монетка "внутри" клешни
     }
 }
 
