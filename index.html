@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Final Fix</title>
+    <title>Pepe Pilot: Preloader & Clean Hook</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
-        body { margin:0; overflow:hidden; background:#111; touch-action: none; }
+        body { margin:0; overflow:hidden; background:#000; touch-action: none; }
         #ui { position:fixed; top:12px; left:12px; color:#0f0; font-family: Arial; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; }
         #timer-display { color: #fff; font-size: 14px; display: none; margin-top: 4px; }
         #nav-bar { 
@@ -49,54 +49,35 @@ let planeContainer, hook, rope, targets, bgMusic;
 let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, distance = 25; 
 let money = 0, energy = 100;
-let recoveryTime = 0; 
-
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playCustomBeep(frequency) {
-    if (audioCtx.state === 'suspended') return;
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    oscillator.frequency.value = frequency; 
-    oscillator.type = 'triangle'; 
-    gainNode.gain.setValueAtTime(0.005, audioCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.08);
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 0.08);
-}
-
-function showPopUp(scene, x, y) {
-    let txt = scene.add.text(x, y, '+0.001', { 
-        font: 'bold 24px Arial', fill: '#00ff00', stroke: '#000', strokeThickness: 4
-    }).setOrigin(0.5).setDepth(100);
-    scene.tweens.add({
-        targets: txt, y: y - 100, alpha: 0, duration: 1000, ease: 'Power2', onComplete: () => txt.destroy()
-    });
-}
+let recoveryTime = 0;
 
 function preload() {
-    // ВОЗВРАЩАЕМ ЗАГРУЗКУ (PRELOADER)
     let width = this.cameras.main.width;
     let height = this.cameras.main.height;
+
+    // Фон загрузочного экрана
+    let bgLoad = this.add.graphics().fillStyle(0x000000, 1).fillRect(0, 0, width, height);
     
-    let progressBox = this.add.graphics();
+    // Рамка прогресс-бара
+    let progressBox = this.add.graphics().fillStyle(0x222222, 0.8).fillRect(width/2 - 110, height/2 - 15, 220, 30);
     let progressBar = this.add.graphics();
-    progressBox.fillStyle(0x222222, 0.8);
-    progressBox.fillRect(width / 2 - 110, height / 2 - 10, 220, 20);
+    
+    let loadingText = this.add.text(width/2, height/2 - 40, 'ЗАГРУЗКА ПЕПЕ...', { 
+        font: '18px Arial', fill: '#00ff00' 
+    }).setOrigin(0.5);
 
     this.load.on('progress', (value) => {
-        progressBar.clear();
-        progressBar.fillStyle(0x00ff00, 1);
-        progressBar.fillRect(width / 2 - 105, height / 2 - 5, 210 * value, 10);
+        progressBar.clear().fillStyle(0x00ff00, 1).fillRect(width/2 - 105, height/2 - 10, 210 * value, 20);
     });
 
     this.load.on('complete', () => {
         progressBar.destroy();
         progressBox.destroy();
+        loadingText.destroy();
+        bgLoad.destroy();
     });
 
-    // Загрузка ресурсов
+    // Загрузка
     this.load.image('sky', 'pg.jpeg');
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
@@ -106,27 +87,14 @@ function preload() {
 
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
-
-    try { bgMusic = this.sound.add('theme', { volume: 0.005, loop: true }); } catch (e) {}
-    this.input.once('pointerdown', () => {
-        if (bgMusic && !bgMusic.isPlaying) bgMusic.play();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-    });
-
-    targets = this.physics.add.group();
-    for(let i = 0; i < 6; i++) spawn(this);
-
-    // Веревка (rope)
+    
     rope = this.add.graphics().setDepth(30);
     
-    // Контейнер самолета
-    planeContainer = this.add.container(config.width / 2, 120);
-    planeContainer.setDepth(60);
-
+    planeContainer = this.add.container(config.width / 2, 120).setDepth(60);
     let pepeBody = this.add.image(0, 0, 'plane').setDisplaySize(280, 180);
     planeContainer.add(pepeBody);
 
-    // Моргание
+    // Веки
     planeContainer.leftEyelid = this.add.graphics().fillStyle(0xffffff, 1).fillCircle(-14, -28, 9).setScale(0.01);
     planeContainer.rightEyelid = this.add.graphics().fillStyle(0xffffff, 1).fillCircle(14, -28, 9).setScale(0.01);
     planeContainer.add([planeContainer.leftEyelid, planeContainer.rightEyelid]);
@@ -138,14 +106,15 @@ function create() {
                 targets: [planeContainer.leftEyelid, planeContainer.rightEyelid],
                 scaleY: 1, duration: 100, yoyo: true, hold: 80
             });
-        },
-        loop: true
+        }, loop: true
     });
 
-    // Клешня
     hook = this.add.sprite(config.width / 2, 135, 'hook').setDepth(50).setDisplaySize(60, 60); 
     this.physics.add.existing(hook);
     hook.body.setCircle(25); 
+
+    targets = this.physics.add.group();
+    for(let i = 0; i < 6; i++) spawn(this);
 
     this.input.on('pointerdown', (p) => {
         if (p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
@@ -156,22 +125,7 @@ function create() {
         }
     });
 
-    this.physics.add.overlap(hook, targets, (h, item) => {
-        if (isLaunching && !caughtItem) {
-            caughtItem = item;
-            caughtItem.body.enable = false;
-            playCustomBeep(700); 
-            isLaunching = false;
-            isReturning = true;
-        }
-    });
-
     setInterval(tick, 1000);
-}
-
-function startRecovery() {
-    recoveryTime = 3 * 60 * 60; 
-    document.getElementById('timer-display').style.display = 'block';
 }
 
 function tick() {
@@ -180,8 +134,7 @@ function tick() {
         let h = Math.floor(recoveryTime / 3600).toString().padStart(2, '0');
         let m = Math.floor((recoveryTime % 3600) / 60).toString().padStart(2, '0');
         let s = (recoveryTime % 60).toString().padStart(2, '0');
-        let timerEl = document.getElementById('time-left');
-        if(timerEl) timerEl.innerText = `${h}:${m}:${s}`;
+        document.getElementById('time-left').innerText = `${h}:${m}:${s}`;
         if (recoveryTime === 0) { energy = 100; document.getElementById('timer-display').style.display = 'none'; updateUI(); }
     }
 }
@@ -189,14 +142,12 @@ function tick() {
 function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
     let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
-    let coin = targets.create(x, y, 'usdt').setDepth(40);
-    coin.setScale(0.12);
+    let coin = targets.create(x, y, 'usdt').setDepth(40).setScale(0.12);
     scene.tweens.add({ targets: coin, scale: 0.14, duration: 1500, yoyo: true, repeat: -1 });
 }
 
 function update() {
     planeContainer.y = 120 + Math.sin(this.time.now / 600) * 8;
-    
     let startX = planeContainer.x - 5; 
     let startY = planeContainer.y + 15; 
 
@@ -204,7 +155,7 @@ function update() {
         angle += swingSpeed;
         if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
         distance = 25;
-        rope.clear(); // СКРЫВАЕМ НИТКУ, когда клешня не в полете
+        rope.clear(); // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Нить полностью стирается, пока нет броска
     } else {
         if (isLaunching) {
             distance += 16; 
@@ -215,16 +166,11 @@ function update() {
                 isReturning = false;
                 if (caughtItem) {
                     money += 0.001; 
-                    playCustomBeep(900); 
-                    showPopUp(this, planeContainer.x, planeContainer.y);
-                    caughtItem.destroy();
-                    caughtItem = null;
-                    spawn(this);
-                    updateUI();
+                    caughtItem.destroy(); caughtItem = null; spawn(this); updateUI();
                 }
             }
         }
-        // РИСУЕМ НИТКУ только во время полета
+        // Отрисовка нити ТОЛЬКО при движении
         rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, hook.x, hook.y);
     }
 
@@ -233,15 +179,18 @@ function update() {
     hook.rotation = -angle;
 
     if (caughtItem) {
-        caughtItem.x = hook.x;
-        caughtItem.y = hook.y + 15; 
-        caughtItem.rotation = hook.rotation;
+        caughtItem.x = hook.x; caughtItem.y = hook.y + 15; caughtItem.rotation = hook.rotation;
     }
 }
 
 function updateUI() {
     document.getElementById('money').innerText = money.toFixed(3);
     document.getElementById('energy').innerText = energy;
+}
+
+function startRecovery() {
+    recoveryTime = 3 * 60 * 60;
+    document.getElementById('timer-display').style.display = 'block';
 }
 </script>
 </body>
