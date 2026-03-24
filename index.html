@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Bix Style</title>
+    <title>Pepe Final Bix</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:black; touch-action: none; }
@@ -38,7 +38,7 @@ const game = new Phaser.Game(config);
 
 let plane, hook, rope, targets;
 let isLaunching=false, isReturning=false, caughtItem=null;
-let angle=0, swingSpeed=0.03, distance = 40; // Начальная дистанция меньше
+let angle=0, swingSpeed=0.03, distance = 30; 
 
 let money=0, energy=10;
 let upgrades = { chance: 0, speed: 0, power: 0 };
@@ -52,7 +52,9 @@ const ITEMS = {
 
 function preload(){
     this.load.image('sky','pg.jpeg');
-    this.load.image('pepe','pepe.png'); //
+    this.load.image('plane','pepe.png'); 
+    // Если у тебя есть отдельные файлы claw.png и rope.png - замени пути ниже
+    this.load.image('hook','https://labs.phaser.io/assets/sprites/clown.png'); // Заглушка, замени на свою клешню
     this.load.image('ton','ton.png');
     this.load.image('usdt','usdt.png');
     this.load.image('not','not.png');
@@ -62,20 +64,20 @@ function preload(){
 function create(){
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
 
-    // 1. Рисуем трос ПЕРЕД клешней
+    // 1. Создаем графический слой для НИТИ (Rope)
     rope = this.add.graphics().setDepth(35);
 
-    // 2. КЛЕШНЯ
-    hook = this.add.sprite(config.width/2, 160, 'pepe');
-    hook.setDepth(40).setDisplaySize(90, 80);
-    hook.setCrop(300, 600, 400, 400); // Желтый захват
-
-    // 3. САМОЛЕТ
-    plane = this.add.image(config.width/2, 120, 'pepe');
+    // 2. САМОЛЕТ
+    plane = this.add.image(config.width/2, 120, 'plane');
     plane.setDisplaySize(280, 240).setDepth(50).setCrop(0, 0, 1000, 480);
 
+    // 3. ОТДЕЛЬНАЯ КЛЕШНЯ
+    // Теперь это отдельный спрайт 'hook', а не часть 'pepe'
+    hook = this.add.sprite(config.width/2, 160, 'hook');
+    hook.setDepth(40).setDisplaySize(50, 50); // Настрой размер под свою картинку
+
     this.physics.add.existing(hook);
-    hook.body.setCircle(35, 15, 15);
+    hook.body.setCircle(20);
 
     targets = this.physics.add.group();
     for(let i=0; i<8; i++) spawn(this);
@@ -90,8 +92,7 @@ function create(){
 
     this.physics.add.overlap(hook, targets, (h, item) => {
         if(isLaunching && !caughtItem){
-            let d = ITEMS[item.texture.key];
-            if(Math.random() <= (d.chance + upgrades.chance * 0.05)) { 
+            if(Math.random() <= (ITEMS[item.texture.key].chance + upgrades.chance * 0.05)) { 
                 caughtItem = item;
                 caughtItem.body.enable = false; 
             }
@@ -112,23 +113,22 @@ function spawn(scene){
 }
 
 function update(){
-    // Плавное движение самолета
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
     let startX = plane.x;
-    let startY = plane.y + 45; // Точка крепления под фюзеляжем
+    let startY = plane.y + 40; 
 
     if(!isLaunching && !isReturning){
         angle += swingSpeed;
         if(angle > 0.8 || angle < -0.8) swingSpeed *= -1;
-        distance = 45; // Клешня прижата к самолету
+        distance = 35; 
     }
     else if(isLaunching){
-        distance += 15 + (upgrades.speed * 2.5);
+        distance += 12 + (upgrades.speed * 2.5);
         if(distance > config.height - 120) { isLaunching = false; isReturning = true; }
     }
     else if(isReturning){
-        distance -= (12 + upgrades.power * 2.5);
-        if(distance <= 45){
+        distance -= (10 + upgrades.power * 2.5);
+        if(distance <= 35){
             isReturning = false;
             if(caughtItem){
                 money += ITEMS[caughtItem.texture.key].value;
@@ -140,19 +140,20 @@ function update(){
         }
     }
 
-    // Позиция клешни СТРОГО по формуле
+    // Позиция клешни
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // РИСУЕМ ТРОС ТОЛЬКО ТУТ
+    // РИСУЕМ НИТЬ (И только её!)
     rope.clear();
-    rope.lineStyle(2, 0xcccccc, 1); // Тонкая серая нить как в Bix
+    rope.lineStyle(2, 0xffffff, 1); 
+    // Рисуем строго от самолета до клешни
     rope.lineBetween(startX, startY, hook.x, hook.y);
 
     if(caughtItem){
         caughtItem.x = hook.x;
-        caughtItem.y = hook.y + 30;
+        caughtItem.y = hook.y + 20;
     }
 }
 
@@ -171,4 +172,3 @@ window.upgrade = function(type){
 </script>
 </body>
 </html>
-
