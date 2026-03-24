@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Pro Claw</title>
+    <title>Pepe Pilot: Fast Music</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#000; touch-action: none; }
         #ui { position:fixed; top:12px; left:12px; color:#0f0; font-family: Arial; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; }
         #nav-bar { 
             position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); 
-            width: 80%; height: 50px; background: rgba(0, 0, 0, 0.9); 
+            width: 82%; height: 52px; background: rgba(0, 0, 0, 0.95); 
             border: 1px solid #0f0; border-radius: 12px; display: flex; 
             justify-content: space-around; align-items: center; z-index: 200;
         }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #0f0; font-size: 8px; font-weight: bold; }
-        .nav-item span { font-size: 18px; }
+        .nav-item span { font-size: 19px; }
     </style>
 </head>
 <body>
@@ -38,6 +38,8 @@ const config = {
     width: window.innerWidth,
     height: window.innerHeight,
     physics: { default: 'arcade' },
+    // Важно для мобильных: разблокировка звука при нажатии
+    audio: { disableWebAudio: false },
     scene: { preload, create, update }
 };
 
@@ -49,11 +51,13 @@ let angle = 0, swingSpeed = 0.03, distance = 25;
 let money = 0, energy = 10;
 
 function preload() {
-    this.load.on('loaderror', (file) => console.warn('Ошибка:', file.key));
+    // Используем правильное расширение из твоего репозитория
     this.load.image('sky', 'pg.jpeg'); 
     this.load.image('plane', 'pepe.png');
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
+    
+    // Загружаем музыку
     this.load.audio('theme', 'music.mp3');
 }
 
@@ -62,16 +66,25 @@ function create() {
         this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
     }
 
-    try {
-        bgMusic = this.sound.add('theme', { volume: 0.3, loop: true });
-    } catch (e) {}
+    // Создаем объект звука заранее
+    bgMusic = this.sound.add('theme', { volume: 0.4, loop: true });
+
+    // СЛУШАТЕЛЬ ДЛЯ МГНОВЕННОГО ВКЛЮЧЕНИЯ МУЗЫКИ
+    // Это сработает при самом первом касании экрана в любом месте
+    this.input.once('pointerdown', () => {
+        if (bgMusic && !bgMusic.isPlaying) {
+            bgMusic.play();
+            // Плавное нарастание громкости для красоты
+            this.tweens.add({ targets: bgMusic, volume: 0.4, duration: 1000 });
+        }
+    });
 
     targets = this.physics.add.group();
     for(let i = 0; i < 6; i++) spawn(this);
 
     rope = this.add.graphics().setDepth(30);
     
-    // Создаем клешню с фиксированным размером
+    // Клешня с фиксированным размером (чтобы не растягивалась)
     hook = this.add.sprite(0, 0, 'hook').setDepth(50);
     hook.setDisplaySize(60, 60); 
     this.physics.add.existing(hook);
@@ -80,11 +93,13 @@ function create() {
     plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.input.on('pointerdown', (pointer) => {
-        if (bgMusic && !bgMusic.isPlaying) bgMusic.play();
-        if (pointer.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
-            isLaunching = true;
-            energy--;
-            updateUI();
+        // Проверка клика вне меню
+        if (pointer.y < config.height - 80) {
+            if (!isLaunching && !isReturning && energy > 0) {
+                isLaunching = true;
+                energy--;
+                updateUI();
+            }
         }
     });
 
@@ -92,8 +107,7 @@ function create() {
         if (isLaunching && !caughtItem) {
             caughtItem = item;
             caughtItem.body.enable = false; 
-            // Останавливаем пульсацию монеты при захвате
-            if(caughtItem.breath) caughtItem.breath.stop();
+            if(caughtItem.breath) caughtItem.breath.stop(); // Остановка анимации при захвате
             caughtItem.setDepth(45); 
             isLaunching = false;
             isReturning = true;
@@ -105,12 +119,12 @@ function create() {
 
 function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
-    let y = Phaser.Math.Between(config.height * 0.5, config.height - 150);
+    let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
     let coin = targets.create(x, y, 'usdt').setDepth(40);
     if (coin) {
         coin.setDisplaySize(50, 50);
         coin.breath = scene.tweens.add({
-            targets: coin, scale: coin.scaleX * 1.05, duration: 1000, yoyo: true, repeat: -1
+            targets: coin, scale: coin.scaleX * 1.03, duration: 1200, yoyo: true, repeat: -1
         });
     }
 }
@@ -125,7 +139,7 @@ function update() {
         if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
         distance = 25;
     } else if (isLaunching) {
-        distance += 15;
+        distance += 16;
         if (distance > config.height - 100) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
         distance -= 8; 
@@ -141,23 +155,22 @@ function update() {
         }
     }
 
-    // ЖЕСТКАЯ ФИКСАЦИЯ: Клешня всегда 60x60, без растяжений
+    // ФИКСАЦИЯ РАЗМЕРА: предотвращаем любое растягивание
     hook.setDisplaySize(60, 60);
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    let endX = startX + Math.sin(angle) * (distance - 15);
-    let endY = startY + Math.cos(angle) * (distance - 15);
+    let endX = startX + Math.sin(angle) * (distance - 20);
+    let endY = startY + Math.cos(angle) * (distance - 20);
     rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
 
     if (caughtItem) {
         caughtItem.x = hook.x;
-        // Помещаем монету в центр клешни для реализма
-        caughtItem.y = hook.y + 15; 
+        // Монета сидит глубоко в «лапах» клешни для реализма
+        caughtItem.y = hook.y + 14; 
         caughtItem.rotation = hook.rotation;
-        // Дополнительная проверка, чтобы монета не меняла размер в руках
-        caughtItem.setDisplaySize(50, 50);
+        caughtItem.setDisplaySize(50, 50); // Монета тоже не должна растягиваться
     }
 }
 
