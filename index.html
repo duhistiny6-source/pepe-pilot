@@ -3,21 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Settings Fixed</title>
+    <title>Pepe Pilot: Final Polish</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#000; touch-action: none; font-family: Arial, sans-serif; }
-        
-        /* Интерфейс */
         #ui { position:fixed; top:12px; left:12px; color:#0f0; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; display: flex; flex-direction: column; gap: 5px; }
-        #settings-btn { position: fixed; top: 12px; right: 12px; font-size: 28px; cursor: pointer; z-index: 1001; filter: drop-shadow(1px 1px 2px #000); }
-        
-        /* Окно настроек */
+        #settings-btn { position: fixed; top: 12px; right: 12px; font-size: 28px; cursor: pointer; z-index: 1001; }
         #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
         .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 240px; }
         .lang-btn { background: #333; color: #0f0; border: 1px solid #0f0; padding: 12px 20px; margin: 10px 0; cursor: pointer; border-radius: 10px; font-weight: bold; width: 100%; }
-        
-        /* Нижняя панель */
         #nav-bar { 
             position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); 
             width: 90%; height: 50px; background: rgba(0, 0, 0, 0.95); 
@@ -40,101 +34,64 @@
 
 <div id="settings-modal">
     <div class="modal-content">
-        <h3 id="txt-settings-title">НАСТРОЙКИ</h3>
+        <h3>НАСТРОЙКИ</h3>
         <button class="lang-btn" onclick="changeLanguage('ru')">РУССКИЙ</button>
         <button class="lang-btn" onclick="changeLanguage('en')">ENGLISH</button>
-        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleSettings()" id="txt-close">Закрыть</div>
+        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleSettings()">Закрыть</div>
     </div>
 </div>
 
 <div id="nav-bar">
-    <div class="nav-item"><span>🛒</span><div class="nav-text" id="nav-shop">МАГАЗИН</div></div>
-    <div class="nav-item"><span>📜</span><div class="nav-text" id="nav-tasks">ЗАДАНИЯ</div></div>
-    <div class="nav-item"><span>👥</span><div class="nav-text" id="nav-friends">ДРУЗЬЯ</div></div>
-    <div class="nav-item"><span>👛</span><div class="nav-text" id="nav-wallet">КОШЕЛЕК</div></div>
+    <div class="nav-item"><span>🛒</span><div class="nav-text">МАГАЗИН</div></div>
+    <div class="nav-item"><span>📜</span><div class="nav-text">ЗАДАНИЯ</div></div>
+    <div class="nav-item"><span>👥</span><div class="nav-text">ДРУЗЬЯ</div></div>
+    <div class="nav-item"><span>👛</span><div class="nav-text">КОШЕЛЕК</div></div>
 </div>
 
 <script>
-// --- ЛОГИКА ИНТЕРФЕЙСА (Настройки и Языки) ---
-const translations = {
-    ru: { settings: "НАСТРОЙКИ", close: "Закрыть", shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК" },
-    en: { settings: "SETTINGS", close: "Close", shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET" }
-};
-
 function toggleSettings() {
-    const modal = document.getElementById('settings-modal');
-    modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+    const m = document.getElementById('settings-modal');
+    m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
 }
 
-function changeLanguage(lang) {
-    const t = translations[lang];
-    document.getElementById('txt-settings-title').innerText = t.settings;
-    document.getElementById('txt-close').innerText = t.close;
-    document.getElementById('nav-shop').innerText = t.shop;
-    document.getElementById('nav-tasks').innerText = t.tasks;
-    document.getElementById('nav-friends').innerText = t.friends;
-    document.getElementById('nav-wallet').innerText = t.wallet;
-    toggleSettings();
-}
-
-// --- ИГРОВАЯ ЛОГИКА ---
 const config = {
-    type: Phaser.AUTO,
-    width: window.innerWidth,
-    height: window.innerHeight,
+    type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight,
     backgroundColor: '#002200',
     physics: { default: 'arcade' },
     scene: { preload, create, update }
 };
 
 const game = new Phaser.Game(config);
-let plane, hook, rope, targets, isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.03, distance = 25, money = 0;
+let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
+let angle = 0, swingSpeed = 0.03, distance = 35, money = 0;
 const COIN_VALUE = 0.0005;
 
 function preload() {
-    let width = this.cameras.main.width;
-    let height = this.cameras.main.height;
-    let progressBar = this.add.graphics();
-    this.load.on('progress', (value) => {
-        progressBar.clear();
-        progressBar.fillStyle(0x00ff00, 1);
-        progressBar.fillRect(width / 2 - 100, height / 2, 200 * value, 10);
-    });
-    this.load.on('complete', () => { progressBar.destroy(); });
-
     this.load.image('sky', 'pg.jpeg');
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
     this.load.image('plane', 'pepe.png');
+    this.load.audio('theme', 'music.mp3');
 }
 
 function create() {
-    if (this.textures.exists('sky')) {
-        this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
-    }
+    this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
     
+    // Звук (активация по клику)
+    bgMusic = this.sound.add('theme', { volume: 0.1, loop: true });
+    this.input.once('pointerdown', () => { if (!bgMusic.isPlaying) bgMusic.play(); });
+
     targets = this.physics.add.group();
     for(let i = 0; i < 6; i++) spawnCoin(this);
 
-    // СЛОИ: Нитка (5), Клешня (10), Монетки (15), Самолёт (20)
     rope = this.add.graphics().setDepth(5);
-
-    if (this.textures.exists('hook')) {
-        hook = this.physics.add.sprite(0, 0, 'hook').setDisplaySize(60, 60).setDepth(10);
-    } else {
-        hook = this.add.circle(0, 0, 20, 0xff0000).setDepth(10);
-        this.physics.add.existing(hook);
-    }
-
-    if (this.textures.exists('plane')) {
-        plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(20);
-    }
+    hook = this.physics.add.sprite(0, 0, 'hook').setDisplaySize(65, 65).setDepth(10);
+    plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(20);
 
     this.input.on('pointerdown', (p) => {
-        // Запуск только если не нажали на UI
         if (p.y > 100 && p.y < config.height - 100 && !isLaunching && !isReturning) {
             isLaunching = true;
+            this.sound.play('theme', { volume: 0.05, seek: 0.5, duration: 0.1 }); // Короткий звук запуска
         }
     });
 
@@ -142,6 +99,7 @@ function create() {
         if (isLaunching && !caughtItem) {
             caughtItem = item;
             caughtItem.body.enable = false;
+            if (caughtItem.pulse) caughtItem.pulse.stop();
             isLaunching = false;
             isReturning = true;
         }
@@ -152,25 +110,34 @@ function spawnCoin(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
     let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
     let coin = targets.create(x, y, 'usdt').setScale(0.12).setDepth(15);
+    
+    // ПУЛЬСАЦИЯ МОНЕТОК
+    coin.pulse = scene.tweens.add({
+        targets: coin,
+        scale: 0.15,
+        duration: 800,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+    });
 }
 
 function update() {
-    if (!plane || !hook) return;
-
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
+    // Точка старта нитки смещена вниз под фюзеляж
     let startX = plane.x - 5; 
-    let startY = plane.y + 10; 
+    let startY = plane.y + 40; 
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
-        if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
-        distance = 25;
+        if (angle > 0.7 || angle < -0.7) swingSpeed *= -1;
+        distance = 35; // Клешня не прячется глубоко
     } else if (isLaunching) {
         distance += 12;
         if (distance > config.height - 150) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        distance -= 8;
-        if (distance <= 25) {
+        distance -= 9;
+        if (distance <= 35) {
             isReturning = false;
             if (caughtItem) {
                 money += COIN_VALUE;
@@ -186,13 +153,13 @@ function update() {
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // Отрисовка нитки (под самолётом)
-    rope.clear().lineStyle(1.5, 0xffffff, 0.5);
+    // НИТКА: Тёмно-серая и тонкая
+    rope.clear().lineStyle(2, 0x444444, 0.8);
     rope.lineBetween(startX, startY, hook.x, hook.y);
 
     if (caughtItem) {
         caughtItem.x = hook.x;
-        caughtItem.y = hook.y + 10;
+        caughtItem.y = hook.y + 15;
         caughtItem.rotation = hook.rotation;
     }
 }
