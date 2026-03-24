@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Gray Edition</title>
+    <title>Pepe Pilot: Yellow Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#000; touch-action: none; font-family: Arial, sans-serif; }
@@ -12,18 +12,18 @@
         #ad-button { display: none; pointer-events: auto; background: #ffcc00; color: #000; border: 1px solid #fff; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor: pointer; width: fit-content; margin-top: 5px; }
         #settings-btn { position: fixed; top: 12px; right: 12px; font-size: 28px; cursor: pointer; z-index: 1001; filter: drop-shadow(1px 1px 2px #000); }
         
-        /* Панель управления цветом как шестерёнка */
+        /* Панель управления стала жёлтой */
         #nav-bar { 
             position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); 
-            width: 90%; height: 60px; 
-            background: rgba(120, 135, 145, 0.85); /* Серый металлик как шестерня */
-            border: 1px solid #ffffff; border-radius: 15px; 
+            width: 92%; height: 65px; 
+            background: #ffcc00; /* Ярко-жёлтый */
+            border: 2px solid #333; border-radius: 18px; 
             display: flex; justify-content: space-around; align-items: center; z-index: 200; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
         }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #1a1a1a; font-weight: bold; flex: 1; }
-        .nav-item span { font-size: 20px; filter: drop-shadow(1px 1px 1px rgba(255,255,255,0.5)); }
-        .nav-text { font-size: 9px; margin-top: 2px; color: #000; text-shadow: 0 0 1px rgba(255,255,255,0.5); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #000; font-weight: bold; flex: 1; cursor: pointer; }
+        .nav-item span { font-size: 22px; margin-bottom: 2px; }
+        .nav-text { font-size: 9px; color: #1a1a1a; text-transform: uppercase; letter-spacing: 0.5px; }
 
         #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
         .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 240px; }
@@ -105,7 +105,7 @@ const config = {
 const game = new Phaser.Game(config);
 let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, distance = 25, money = 0, energy = 100, recoveryTime = 0;
-const COIN_VALUE = 0.0005; // Твой новый номинал
+const COIN_VALUE = 0.0005; 
 
 function preload() {
     let progressBar = this.add.graphics();
@@ -139,7 +139,7 @@ function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
     
     try {
-        bgMusic = this.sound.add('theme', { volume: 0.004, loop: true }); // Громкость 0.004
+        bgMusic = this.sound.add('theme', { volume: 0.004, loop: true }); 
     } catch (e) {}
 
     this.input.once('pointerdown', () => { 
@@ -179,67 +179,4 @@ function spawn(scene) {
 }
 
 function showValue(scene) {
-    let txt = scene.add.text(plane.x, plane.y - 40, `+${COIN_VALUE}`, { font: 'bold 24px Arial', fill: '#0f0', stroke: '#000', strokeThickness: 4 }).setDepth(100).setOrigin(0.5);
-    scene.tweens.add({ targets: txt, y: txt.y - 100, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
-}
-
-function update() {
-    plane.y = 120 + Math.sin(this.time.now / 600) * 8;
-    let startX = plane.x - 5; let startY = plane.y + 15; 
-
-    if (!isLaunching && !isReturning) {
-        angle += swingSpeed; if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
-        distance = 25;
-    } else if (isLaunching) {
-        distance += 16; if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
-    } else if (isReturning) {
-        distance -= 6; 
-        if (distance <= 25) {
-            isReturning = false;
-            if (caughtItem) {
-                money += COIN_VALUE; playBeep(900, 0.12); 
-                showValue(this); caughtItem.destroy(); caughtItem = null; spawn(this); updateUI();
-            }
-        }
-    }
-
-    hook.x = startX + Math.sin(angle) * distance;
-    hook.y = startY + Math.cos(angle) * distance;
-    hook.rotation = -angle;
-
-    let endX = startX + Math.sin(angle) * (distance - 30);
-    let endY = startY + Math.cos(angle) * (distance - 30);
-    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
-
-    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; caughtItem.rotation = hook.rotation; }
-}
-
-function updateUI() {
-    document.getElementById('money').innerText = money.toFixed(4); // 4 знака для 0.0005
-    document.getElementById('energy').innerText = energy;
-    const isOutOfEnergy = energy <= 0;
-    document.getElementById('timer-display').style.display = isOutOfEnergy ? 'block' : 'none';
-    document.getElementById('ad-button').style.display = isOutOfEnergy ? 'block' : 'none';
-}
-
-function tick() {
-    if (recoveryTime > 0) {
-        recoveryTime--;
-        let m = Math.floor(recoveryTime / 60).toString().padStart(2, '0'), s = (recoveryTime % 60).toString().padStart(2, '0');
-        document.getElementById('time-left').innerText = `00:${m}:${s}`;
-        if (recoveryTime === 0) { energy = 100; updateUI(); }
-    }
-}
-
-function startAd() {
-    document.getElementById('ad-overlay').style.display = 'flex';
-    let c = 5;
-    let i = setInterval(() => {
-        c--; document.getElementById('ad-timer').innerText = `Осталось: ${c} сек.`;
-        if (c <= 0) { clearInterval(i); document.getElementById('ad-overlay').style.display = 'none'; energy = 100; recoveryTime = 0; updateUI(); }
-    }, 1000);
-}
-function startRecovery() { recoveryTime = 180; }
-</script>
-</body>
-</html>
+    let txt = scene.add.text(plane.x, plane.y - 40, `+${COIN_VALUE}`, { font: 'bold 24px Arial', fill: '#0f0', stroke
