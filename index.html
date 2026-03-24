@@ -3,12 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Energy & Timer</title>
+    <title>Pepe Pilot: Energy & Ad Recovery</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#111; touch-action: none; }
         #ui { position:fixed; top:12px; left:12px; color:#0f0; font-family: Arial; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; }
-        #timer-display { color: #ff3333; font-size: 14px; display: none; }
+        
+        /* Таймер теперь белый и интерактивный для кнопки */
+        #timer-display { color: #ffffff; font-size: 14px; display: none; pointer-events: auto; margin-top: 5px; }
+        
+        #ad-button { 
+            display: block; margin-top: 8px; background: #0f0; color: #000; 
+            border: none; padding: 6px 10px; border-radius: 6px; font-weight: bold; 
+            cursor: pointer; font-size: 11px; text-transform: uppercase;
+        }
+        #ad-button:active { transform: scale(0.95); background: #0c0; }
+
         #nav-bar { 
             position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); 
             width: 82%; height: 50px; background: rgba(0, 0, 0, 0.9); 
@@ -24,7 +34,10 @@
 <div id="ui">
     💰 <span id="money">0.000</span><br>
     ⚡ <span id="energy">100</span>/100
-    <div id="timer-display">Восстановление: <span id="time-left">03:00:00</span></div>
+    <div id="timer-display">
+        Восстановление: <span id="time-left">03:00:00</span>
+        <button id="ad-button" onclick="watchAd()">Восстановить сейчас (ADS)</button>
+    </div>
 </div>
 
 <div id="nav-bar">
@@ -49,7 +62,7 @@ let plane, hook, rope, targets, bgMusic;
 let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, distance = 25; 
 let money = 0, energy = 100;
-let recoveryTime = 0; // Время до восстановления в секундах
+let recoveryTime = 0; 
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playCustomBeep(frequency) {
@@ -63,6 +76,24 @@ function playCustomBeep(frequency) {
     gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.08);
     oscillator.start();
     oscillator.stop(audioCtx.currentTime + 0.08);
+}
+
+// РЕКЛАМНАЯ ЛОГИКА
+function watchAd() {
+    let btn = document.getElementById('ad-button');
+    btn.disabled = true;
+    btn.innerText = "ЗАГРУЗКА...";
+    
+    // Имитация просмотра рекламы (2 секунды)
+    setTimeout(() => {
+        energy = 100;
+        recoveryTime = 0;
+        document.getElementById('timer-display').style.display = 'none';
+        btn.disabled = false;
+        btn.innerText = "Восстановить сейчас (ADS)";
+        updateUI();
+        playCustomBeep(800);
+    }, 2000);
 }
 
 function showPopUp(scene, x, y) {
@@ -112,16 +143,10 @@ function create() {
     plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.input.on('pointerdown', (p) => {
-        // Запуск только если есть энергия и не идет восстановление
         if (p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
             isLaunching = true;
             energy--;
-            
-            // Если энергия кончилась, запускаем таймер на 3 часа
-            if (energy === 0) {
-                startRecovery();
-            }
-            
+            if (energy === 0) startRecovery();
             updateUI();
         }
     });
@@ -136,20 +161,17 @@ function create() {
         }
     });
 
-    // Таймер обратного отсчета (раз в секунду)
     setInterval(tick, 1000);
 }
 
 function startRecovery() {
-    recoveryTime = 3 * 60 * 60; // 3 часа в секундах
+    recoveryTime = 3 * 60 * 60; 
     document.getElementById('timer-display').style.display = 'block';
 }
 
 function tick() {
     if (recoveryTime > 0) {
         recoveryTime--;
-        
-        // Форматирование времени HH:MM:SS
         let h = Math.floor(recoveryTime / 3600).toString().padStart(2, '0');
         let m = Math.floor((recoveryTime % 3600) / 60).toString().padStart(2, '0');
         let s = (recoveryTime % 60).toString().padStart(2, '0');
@@ -184,6 +206,7 @@ function update() {
         angle += swingSpeed;
         if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
         distance = 25;
+        rope.clear(); // Нить скрыта, когда не летит
     } else if (isLaunching) {
         distance += 16; 
         if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
@@ -203,13 +226,16 @@ function update() {
         }
     }
 
-    hook.x = startX + Math.sin(angle) * distance;
-    hook.y = startY + Math.cos(angle) * distance;
-    hook.rotation = -angle;
-
-    let endX = startX + Math.sin(angle) * (distance - 15);
-    let endY = startY + Math.cos(angle) * (distance - 15);
-    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
+    if (isLaunching || isReturning) {
+        hook.x = startX + Math.sin(angle) * distance;
+        hook.y = startY + Math.cos(angle) * distance;
+        hook.rotation = -angle;
+        rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, hook.x, hook.y);
+    } else {
+        hook.x = startX + Math.sin(angle) * 25;
+        hook.y = startY + Math.cos(angle) * 25;
+        hook.rotation = -angle;
+    }
 
     if (caughtItem) {
         caughtItem.setScale(0.12);
