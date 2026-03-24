@@ -3,39 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Fixed Mechanics</title>
+    <title>Pepe Pilot: Final Fix</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#000; touch-action: none; font-family: Arial, sans-serif; }
-        #ui { position:fixed; top:12px; left:12px; color:#0f0; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; display: flex; flex-direction: column; gap: 5px; }
-        #settings-btn { position: fixed; top: 12px; right: 12px; font-size: 28px; cursor: pointer; z-index: 1001; }
+        #ui { position:fixed; top:12px; left:12px; color:#0f0; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; }
+        
+        /* Кнопка настроек */
+        #settings-btn { position: fixed; top: 12px; right: 12px; font-size: 30px; cursor: pointer; z-index: 2000; }
+        
+        /* Окно настроек */
+        #settings-modal { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.9); z-index: 3000; color: #fff; 
+            justify-content: center; align-items: center; flex-direction: column; 
+        }
+        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 30px; border-radius: 20px; text-align: center; }
+        .lang-btn { background: #333; color: #0f0; border: 1px solid #0f0; padding: 15px; margin: 10px 0; cursor: pointer; border-radius: 10px; width: 100%; font-weight: bold; }
+
         #nav-bar { 
             position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); 
-            width: 90%; height: 50px; background: rgba(0, 0, 0, 0.95); 
+            width: 90%; height: 55px; background: rgba(0, 0, 0, 0.95); 
             border: 1px solid #0f0; border-radius: 12px; 
             display: flex; justify-content: space-around; align-items: center; z-index: 200; 
         }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #0f0; font-weight: bold; flex: 1; }
-        .nav-text { font-size: 8px; text-transform: uppercase; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #0f0; font: bold 10px Arial; }
     </style>
 </head>
 <body>
 
-<div id="settings-btn">⚙️</div>
+<div id="settings-btn" onclick="openSettings()">⚙️</div>
 
 <div id="ui">
     <div>💰 <span id="money">0.0000</span></div>
     <div>⚡ <span id="energy">100</span>/100</div>
 </div>
 
+<div id="settings-modal" onclick="closeSettings()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <h3>НАСТРОЙКИ</h3>
+        <button class="lang-btn" onclick="alert('RU selected')">РУССКИЙ</button>
+        <button class="lang-btn" onclick="alert('EN selected')">ENGLISH</button>
+        <p onclick="closeSettings()" style="cursor:pointer; color:#888; margin-top:15px;">Закрыть</p>
+    </div>
+</div>
+
 <div id="nav-bar">
-    <div class="nav-item"><span>🛒</span><div class="nav-text">МАГАЗИН</div></div>
-    <div class="nav-item"><span>📜</span><div class="nav-text">ЗАДАНИЯ</div></div>
-    <div class="nav-item"><span>👥</span><div class="nav-text">ДРУЗЬЯ</div></div>
-    <div class="nav-item"><span>👛</span><div class="nav-text">КОШЕЛЕК</div></div>
+    <div class="nav-item"><span>🛒</span><div>МАГАЗИН</div></div>
+    <div class="nav-item"><span>📜</span><div>ЗАДАНИЯ</div></div>
+    <div class="nav-item"><span>👥</span><div>ДРУЗЬЯ</div></div>
+    <div class="nav-item"><span>👛</span><div>КОШЕЛЕК</div></div>
 </div>
 
 <script>
+// Функции для шестерёнки
+function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; }
+function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+
 const config = {
     type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight,
     backgroundColor: '#002200',
@@ -44,10 +68,9 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
-let plane, hook, rope, targets, bgMusic, musicStarted = false;
+let plane, hook, rope, targets, bgMusic;
 let isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.03, distance = 0, money = 0;
-const COIN_VALUE = 0.0005;
+let angle = 0, swingSpeed = 0.025, distance = 0, money = 0;
 
 function preload() {
     this.load.image('sky', 'pg.jpeg');
@@ -58,26 +81,18 @@ function preload() {
 }
 
 function create() {
-    this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
-    
-    // ИНИЦИАЛИЗАЦИЯ ЗВУКА (без автозапуска)
+    this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
     bgMusic = this.sound.add('theme', { volume: 0.1, loop: true });
-
+    
     targets = this.physics.add.group();
     for(let i = 0; i < 6; i++) spawnCoin(this);
 
-    // СЛОИ: Сначала нитка (низ), потом клешня (выше)
     rope = this.add.graphics().setDepth(5);
     hook = this.physics.add.sprite(0, 0, 'hook').setDisplaySize(60, 60).setDepth(10);
-    plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(20);
+    plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(280, 180).setDepth(20);
 
     this.input.on('pointerdown', (p) => {
-        // Запуск музыки при первом клике
-        if (!musicStarted) {
-            bgMusic.play();
-            musicStarted = true;
-        }
-
+        if (!this.sound.locked && !bgMusic.isPlaying) bgMusic.play();
         if (p.y > 100 && p.y < config.height - 100 && !isLaunching && !isReturning) {
             isLaunching = true;
         }
@@ -97,34 +112,31 @@ function spawnCoin(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
     let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
     let coin = targets.create(x, y, 'usdt').setScale(0.12).setDepth(15);
-    
-    // Пульсация монеток
-    scene.tweens.add({
-        targets: coin, scale: 0.15, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
-    });
+    scene.tweens.add({ targets: coin, scale: 0.15, duration: 800, yoyo: true, repeat: -1 });
 }
 
 function update() {
+    // Анимация самолёта
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
     
-    // Точка выхода нитки (низ самолета)
+    // Точка старта всегда привязана к текущему Y самолёта (убираем разрыв)
     let startX = plane.x - 5; 
-    let startY = plane.y + 40; 
+    let startY = plane.y + 45; 
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
-        if (angle > 0.7 || angle < -0.7) swingSpeed *= -1;
-        distance = 0; // Клешня плотно к самолету
+        if (angle > 0.6 || angle < -0.6) swingSpeed *= -1; // Уменьшен размах для стабильности
+        distance = 0;
     } else if (isLaunching) {
         distance += 12;
-        if (distance > config.height - 150) { isLaunching = false; isReturning = true; }
+        if (distance > config.height - 160) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        distance -= 9;
+        distance -= 10;
         if (distance <= 0) {
             distance = 0;
             isReturning = false;
             if (caughtItem) {
-                money += COIN_VALUE;
+                money += 0.0005;
                 document.getElementById('money').innerText = money.toFixed(4);
                 caughtItem.destroy();
                 caughtItem = null;
@@ -138,10 +150,9 @@ function update() {
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // НИТКА: Рисуется ОТ самолета ДО клешни
+    // Отрисовка нитки (без разрывов)
     rope.clear().lineStyle(2, 0x444444, 0.8);
-    // Проводим линию только если клешня хоть немного отлетела
-    if (distance > 5) {
+    if (distance > 2) {
         rope.lineBetween(startX, startY, hook.x, hook.y);
     }
 
