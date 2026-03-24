@@ -3,40 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Pro Edition</title>
+    <title>Pepe Pilot: Energy & Ads</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
-        body { margin:0; overflow:hidden; background:#111; touch-action: none; user-select: none; }
-        #ui { position:fixed; top:12px; left:12px; color:#0f0; font-family: 'Courier New', Courier, monospace; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 2px 2px #000; }
-        #energy-bar-container { width: 100px; height: 10px; background: #333; border: 1px solid #0f0; margin-top: 5px; }
-        #energy-fill { width: 100%; height: 100%; background: #0f0; transition: width 0.3s; }
-        #timer-display { color: #ff3333; font-size: 14px; margin-top: 5px; font-style: italic; }
+        body { margin:0; overflow:hidden; background:#111; touch-action: none; }
+        #ui { position:fixed; top:12px; left:12px; color:#0f0; font-family: Arial; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; }
+        #timer-display { color: #ff3333; font-size: 14px; display: none; margin-top: 5px; }
         
+        /* Кнопка рекламы */
+        #ad-button { 
+            display: none; position: fixed; top: 80px; left: 12px; 
+            padding: 8px 12px; background: #ffcc00; color: #000; 
+            border: none; border-radius: 8px; font-weight: bold; 
+            cursor: pointer; z-index: 150; animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        /* Окно "просмотра" рекламы */
+        #ad-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 1000; color: white;
+            flex-direction: column; justify-content: center; align-items: center; font-family: sans-serif;
+        }
+
         #nav-bar { 
             position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); 
-            width: 90%; height: 60px; background: rgba(0, 0, 0, 0.85); 
-            border: 2px solid #0f0; border-radius: 15px; display: flex; 
+            width: 82%; height: 50px; background: rgba(0, 0, 0, 0.9); 
+            border: 1px solid #0f0; border-radius: 12px; display: flex; 
             justify-content: space-around; align-items: center; z-index: 200;
-            backdrop-filter: blur(5px);
         }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #0f0; font-size: 10px; cursor: pointer; }
-        .nav-item span { font-size: 22px; margin-bottom: 2px; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #0f0; font-size: 8px; font-weight: bold; }
+        .nav-item span { font-size: 18px; }
     </style>
 </head>
 <body>
 
 <div id="ui">
     💰 <span id="money">0.000</span><br>
-    ⚡ <span id="energy-text">100/100</span>
-    <div id="energy-bar-container"><div id="energy-fill"></div></div>
-    <div id="timer-display" style="display: none;">REGEN: <span id="time-left">03:00:00</span></div>
+    ⚡ <span id="energy">100</span>/100
+    <div id="timer-display">Восстановление: <span id="time-left">03:00:00</span></div>
+</div>
+
+<button id="ad-button" onclick="watchAd()">📺 ЭНЕРГИЯ ЗА РЕКЛАМУ</button>
+
+<div id="ad-overlay">
+    <h2>Смотрим рекламу...</h2>
+    <p id="ad-timer">Осталось: 5 сек.</p>
 </div>
 
 <div id="nav-bar">
-    <div class="nav-item"><span>🛒</span>SHOP</div>
-    <div class="nav-item"><span>📜</span>TASKS</div>
-    <div class="nav-item"><span>👥</span>FRIENDS</div>
-    <div class="nav-item"><span>👛</span>WALLET</div>
+    <div class="nav-item"><span>🛒</span>МАГАЗИН</div>
+    <div class="nav-item"><span>📜</span>ЗАДАНИЯ</div>
+    <div class="nav-item"><span>👥</span>ДРУЗЬЯ</div>
+    <div class="nav-item"><span>👛</span>КОШЕЛЕК</div>
 </div>
 
 <script>
@@ -44,7 +63,7 @@ const config = {
     type: Phaser.AUTO,
     width: window.innerWidth,
     height: window.innerHeight,
-    physics: { default: 'arcade', arcade: { gravity: { y: 0 } } },
+    physics: { default: 'arcade' },
     scene: { preload, create, update }
 };
 
@@ -52,57 +71,67 @@ const game = new Phaser.Game(config);
 
 let plane, hook, rope, targets, bgMusic;
 let isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.025, distance = 30; 
+let angle = 0, swingSpeed = 0.03, distance = 25; 
 let money = 0, energy = 100;
 let recoveryTime = 0;
-let returnSpeed = 6; // Базовая скорость возврата
 
-// Звуковой движок
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playSound(freq, duration, type = 'sine') {
-    const osc = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    osc.type = type;
-    osc.connect(g);
-    g.connect(audioCtx.destination);
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    g.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-    osc.start();
-    osc.stop(audioCtx.currentTime + duration);
+function playCustomBeep(frequency) {
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    oscillator.frequency.value = frequency; 
+    oscillator.type = 'triangle'; 
+    gainNode.gain.setValueAtTime(0.005, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.08);
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.08);
+}
+
+function showPopUp(scene, x, y) {
+    let txt = scene.add.text(x, y, '+0.001', { 
+        font: 'bold 24px Arial', fill: '#00ff00', stroke: '#000', strokeThickness: 4
+    }).setOrigin(0.5).setDepth(100);
+    scene.tweens.add({
+        targets: txt, y: y - 100, alpha: 0, duration: 1000, ease: 'Power2', onComplete: () => txt.destroy()
+    });
 }
 
 function preload() {
-    // В реальном проекте замени заглушки на свои файлы
-    this.load.image('sky', 'pg.jpeg'); 
+    this.load.image('sky', 'pg.jpeg');
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
     this.load.image('plane', 'pepe.png');
-    this.load.image('stone', 'https://labs.phaser.io/assets/sprites/asteroid.png'); // Временный камень
+    this.load.audio('theme', 'music.mp3');
 }
 
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
 
+    try { bgMusic = this.sound.add('theme', { volume: 0.005, loop: true }); } catch (e) {}
+
+    this.input.once('pointerdown', () => {
+        if (bgMusic && !bgMusic.isPlaying) bgMusic.play();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    });
+
     targets = this.physics.add.group();
-    // Спавним 4 монетки и 2 камня для интереса
-    for(let i = 0; i < 4; i++) spawnItem(this, 'usdt');
-    for(let i = 0; i < 2; i++) spawnItem(this, 'stone');
+    for(let i = 0; i < 6; i++) spawn(this);
 
     rope = this.add.graphics().setDepth(30);
-    hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(50, 50); 
+    hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(60, 60); 
     this.physics.add.existing(hook);
-    hook.body.setCircle(20); 
+    hook.body.setCircle(25); 
 
-    plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(200, 130).setDepth(60);
+    plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.input.on('pointerdown', (p) => {
-        if (p.y < config.height - 100 && !isLaunching && !isReturning && energy > 0) {
+        if (p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
             isLaunching = true;
             energy--;
             if (energy === 0) startRecovery();
             updateUI();
-            playSound(400, 0.1, 'square');
         }
     });
 
@@ -110,31 +139,48 @@ function create() {
         if (isLaunching && !caughtItem) {
             caughtItem = item;
             caughtItem.body.enable = false;
+            playCustomBeep(700); 
             isLaunching = false;
             isReturning = true;
-            
-            // Если поймали тяжелый камень — возвращаемся медленно
-            returnSpeed = (item.texture.key === 'stone') ? 2 : 8;
-            playSound(600, 0.2);
         }
     });
 
     setInterval(tick, 1000);
 }
 
-function spawnItem(scene, type) {
-    let x = Phaser.Math.Between(50, config.width - 50);
-    let y = Phaser.Math.Between(config.height * 0.4, config.height - 150);
-    let item = targets.create(x, y, type).setDepth(40);
+function startRecovery() {
+    recoveryTime = 3 * 60 * 60; 
+    document.getElementById('timer-display').style.display = 'block';
+    document.getElementById('ad-button').style.display = 'block'; // Показываем кнопку рекламы
+}
+
+// ФУНКЦИЯ ПРОСМОТРА РЕКЛАМЫ
+function watchAd() {
+    const overlay = document.getElementById('ad-overlay');
+    const timerText = document.getElementById('ad-timer');
+    overlay.style.display = 'flex';
     
-    if (type === 'usdt') {
-        item.setScale(0.12);
-        item.goldValue = 0.001;
-    } else {
-        item.setScale(0.4); // Камень больше
-        item.goldValue = 0.0001; // Камень почти ничего не дает
-        item.setTint(0x888888);
-    }
+    let timeLeft = 5; // Длительность "рекламы" в секундах
+    
+    const adInterval = setInterval(() => {
+        timeLeft--;
+        timerText.innerText = `Осталось: ${timeLeft} сек.`;
+        
+        if (timeLeft <= 0) {
+            clearInterval(adInterval);
+            overlay.style.display = 'none';
+            restoreEnergy();
+        }
+    }, 1000);
+}
+
+function restoreEnergy() {
+    energy = 100;
+    recoveryTime = 0;
+    document.getElementById('timer-display').style.display = 'none';
+    document.getElementById('ad-button').style.display = 'none';
+    updateUI();
+    alert("Энергия восстановлена за просмотр рекламы!");
 }
 
 function tick() {
@@ -144,37 +190,47 @@ function tick() {
         let m = Math.floor((recoveryTime % 3600) / 60).toString().padStart(2, '0');
         let s = (recoveryTime % 60).toString().padStart(2, '0');
         document.getElementById('time-left').innerText = `${h}:${m}:${s}`;
-        if (recoveryTime === 0) { energy = 100; document.getElementById('timer-display').style.display = 'none'; updateUI(); }
+
+        if (recoveryTime === 0) restoreEnergy();
+    }
+}
+
+function spawn(scene) {
+    let x = Phaser.Math.Between(50, config.width - 50);
+    let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
+    let coin = targets.create(x, y, 'usdt').setDepth(40);
+    if (coin) {
+        coin.setScale(0.12);
+        coin.pulse = scene.tweens.add({
+            targets: coin, scale: 0.14, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
+        });
     }
 }
 
 function update() {
-    plane.x = config.width / 2 + Math.sin(this.time.now / 1000) * 10;
-    plane.y = 120 + Math.cos(this.time.now / 600) * 5;
-    
-    let startX = plane.x; 
-    let startY = plane.y + 20; 
+    plane.y = 120 + Math.sin(this.time.now / 600) * 8;
+    let startX = plane.x - 5; 
+    let startY = plane.y + 15; 
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
-        if (Math.abs(angle) > 0.7) swingSpeed *= -1;
-        distance = 30;
+        if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
+        distance = 25;
     } else if (isLaunching) {
-        distance += 12; 
-        if (distance > config.height - 120) { isLaunching = false; isReturning = true; returnSpeed = 5; }
+        distance += 16; 
+        if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        distance -= returnSpeed; 
-        if (distance <= 30) {
+        distance -= 4; 
+        if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
-                money += caughtItem.goldValue;
-                showPopUp(this, plane.x, plane.y, caughtItem.goldValue);
-                let type = caughtItem.texture.key;
+                money += 0.001; 
+                playCustomBeep(900); 
+                showPopUp(this, plane.x, plane.y);
                 caughtItem.destroy();
                 caughtItem = null;
-                spawnItem(this, type);
+                spawn(this);
                 updateUI();
-                playSound(900, 0.1);
             }
         }
     }
@@ -183,32 +239,21 @@ function update() {
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    rope.clear().lineStyle(3, 0x555555, 1).lineBetween(startX, startY, hook.x, hook.y);
+    let endX = startX + Math.sin(angle) * (distance - 15);
+    let endY = startY + Math.cos(angle) * (distance - 15);
+    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
 
     if (caughtItem) {
+        caughtItem.setScale(0.12);
         caughtItem.x = hook.x;
-        caughtItem.y = hook.y + 10;
+        caughtItem.y = hook.y + 15; 
+        caughtItem.rotation = hook.rotation;
     }
-}
-
-function showPopUp(scene, x, y, val) {
-    let txt = scene.add.text(x, y, `+${val.toFixed(4)}`, { 
-        font: 'bold 28px Arial', fill: '#0f0', stroke: '#000', strokeThickness: 5
-    }).setOrigin(0.5).setDepth(100);
-    scene.tweens.add({ targets: txt, y: y - 120, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
-}
-
-function startRecovery() {
-    recoveryTime = 3 * 60 * 60;
-    document.getElementById('timer-display').style.display = 'block';
 }
 
 function updateUI() {
     document.getElementById('money').innerText = money.toFixed(3);
-    document.getElementById('energy-text').innerText = `${energy}/100`;
-    document.getElementById('energy-fill').style.width = `${energy}%`;
-    // Цвет полоски меняется, когда энергии мало
-    document.getElementById('energy-fill').style.background = energy < 20 ? '#f00' : '#0f0';
+    document.getElementById('energy').innerText = energy;
 }
 </script>
 </body>
