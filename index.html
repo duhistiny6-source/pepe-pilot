@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Audio Swapped</title>
+    <title>Pepe Pilot: Crypto Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#111; touch-action: none; }
@@ -21,7 +21,7 @@
 <body>
 
 <div id="ui">
-    💰 <span id="money">0</span><br>
+    💰 <span id="money">0.000</span><br>
     ⚡ <span id="energy">10</span>
 </div>
 
@@ -54,16 +54,31 @@ function playCustomBeep(frequency) {
     const gainNode = audioCtx.createGain();
     oscillator.connect(gainNode);
     gainNode.connect(audioCtx.destination);
-    
     oscillator.frequency.value = frequency; 
     oscillator.type = 'triangle'; 
-    
-    // Ультра-тихая громкость 0.005
     gainNode.gain.setValueAtTime(0.005, audioCtx.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.08);
-    
     oscillator.start();
     oscillator.stop(audioCtx.currentTime + 0.08);
+}
+
+// Функция для вылетающих цифр
+function showPopUp(scene, x, y) {
+    let txt = scene.add.text(x, y, '+0.001', { 
+        font: 'bold 24px Arial', 
+        fill: '#00ff00',
+        stroke: '#000000',
+        strokeThickness: 4
+    }).setOrigin(0.5).setDepth(100);
+
+    scene.tweens.add({
+        targets: txt,
+        y: y - 100,
+        alpha: 0,
+        duration: 1000,
+        ease: 'Power2',
+        onComplete: () => txt.destroy()
+    });
 }
 
 function preload() {
@@ -71,7 +86,6 @@ function preload() {
     let height = this.cameras.main.height;
     let progressBox = this.add.graphics().fillStyle(0x222222, 0.8).fillRect(width/2 - 110, height/2 - 10, 220, 20);
     let progressBar = this.add.graphics();
-    
     this.load.on('progress', (val) => {
         progressBar.clear().fillStyle(0x00ff00, 1).fillRect(width/2 - 105, height/2 - 5, 210 * val, 10);
     });
@@ -116,10 +130,7 @@ function create() {
         if (isLaunching && !caughtItem) {
             caughtItem = item;
             caughtItem.body.enable = false;
-            caughtItem.setDepth(45); 
-            
-            playCustomBeep(700); // Теперь НИЗКИЙ при захвате
-            
+            playCustomBeep(700); // Низкий при захвате
             isLaunching = false;
             isReturning = true;
         }
@@ -157,8 +168,11 @@ function update() {
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
-                money += 100;
-                playCustomBeep(900); // Теперь ВЫСОКИЙ при ударе
+                // СОБЫТИЕ УДАРА
+                money += 0.001; 
+                playCustomBeep(900); // Высокий при ударе
+                showPopUp(this, plane.x, plane.y); // Вылет цифр
+                
                 caughtItem.destroy();
                 caughtItem = null;
                 spawn(this);
@@ -167,7 +181,6 @@ function update() {
         }
     }
 
-    hook.setDisplaySize(60, 60);
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
@@ -185,7 +198,8 @@ function update() {
 }
 
 function updateUI() {
-    document.getElementById('money').innerText = money;
+    // Вывод с 3 знаками после запятой
+    document.getElementById('money').innerText = money.toFixed(3);
     document.getElementById('energy').innerText = energy;
 }
 </script>
