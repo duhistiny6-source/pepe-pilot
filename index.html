@@ -1,9 +1,9 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Final Fixed</title>
+    <title>Pepe Pilot Fixed</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:black; touch-action: none; }
@@ -26,25 +26,6 @@
 </div>
 
 <script>
-// Глобальные переменные
-let plane, hook, rope, targets;
-let isLaunching = false;
-let isReturning = false;
-let caughtItem = null;
-let angle = 0;
-let swingSpeed = 0.03;
-let distance = 35;
-let money = 0;
-let energy = 10;
-let upgrades = { chance: 0, speed: 0, power: 0 };
-
-const ITEMS = {
-    ton: { chance: 0.9, value: 50 },
-    usdt: { chance: 0.7, value: 100 },
-    not: { chance: 0.5, value: 200 },
-    dogs: { chance: 0.3, value: 400 }
-};
-
 const config = {
     type: Phaser.AUTO,
     width: window.innerWidth,
@@ -54,6 +35,19 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
+
+let plane, hook, rope, targets;
+let isLaunching = false, isReturning = false, caughtItem = null;
+let angle = 0, swingSpeed = 0.03, distance = 40;
+let money = 0, energy = 10;
+let upgrades = { chance: 0, speed: 0, power: 0 };
+
+const ITEMS = {
+    ton: { chance: 0.9, value: 50 },
+    usdt: { chance: 0.7, value: 100 },
+    not: { chance: 0.5, value: 200 },
+    dogs: { chance: 0.3, value: 400 }
+};
 
 function preload() {
     this.load.image('sky', 'pg.jpeg');
@@ -68,24 +62,19 @@ function preload() {
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
 
-    // Графика нити
     rope = this.add.graphics().setDepth(35);
 
-    // Клешня
-    hook = this.add.sprite(config.width / 2, 160, 'hook');
+    hook = this.add.sprite(0, 0, 'hook');
     hook.setDepth(40).setDisplaySize(60, 60); 
     this.physics.add.existing(hook);
     hook.body.setCircle(25);
 
-    // Самолет
     plane = this.add.image(config.width / 2, 120, 'plane');
     plane.setDisplaySize(280, 180).setDepth(50);
 
-    // Монетки
     targets = this.physics.add.group();
     for(let i = 0; i < 8; i++) spawn(this);
 
-    // Управление
     this.input.on('pointerdown', () => {
         if (!isLaunching && !isReturning && energy > 0) {
             isLaunching = true;
@@ -94,7 +83,6 @@ function create() {
         }
     });
 
-    // Коллизии
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
             if (Math.random() <= (ITEMS[item.texture.key].chance + upgrades.chance * 0.05)) { 
@@ -106,7 +94,6 @@ function create() {
         }
     });
 
-    // Реген энергии
     setInterval(() => { if (energy < 10) energy++; updateUI(); }, 4000);
 }
 
@@ -119,18 +106,16 @@ function spawn(scene) {
 }
 
 function update() {
-    // 1. Движение самолета
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
     
-    // 2. Крепление нити (по твоему рисунку)
-    let startX = plane.x - 12; 
+    // Точка крепления — плотно к самолёту
+    let startX = plane.x - 10; 
     let startY = plane.y + 35; 
 
-    // 3. Логика полета
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
         if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
-        distance = 35; 
+        distance = 35; // Клешня прижата вплотную к фюзеляжу
     } else if (isLaunching) {
         distance += 15 + (upgrades.speed * 2);
         if (distance > config.height - 100) { isLaunching = false; isReturning = true; }
@@ -148,12 +133,12 @@ function update() {
         }
     }
 
-    // 4. Обновление координат клешни
+    // Клешня теперь ВСЕГДА на конце нитки
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // 5. Отрисовка нити (БЕЗ ТОРЧАЩИХ ПАЛОК)
+    // Рисуем нить
     rope.clear();
     rope.lineStyle(2, 0xffffff, 1); 
     rope.lineBetween(startX, startY, hook.x, hook.y);
@@ -175,8 +160,7 @@ window.upgrade = function(type) {
         upgrades[type]++;
         updateUI();
     }
-};
+}
 </script>
 </body>
 </html>
-
