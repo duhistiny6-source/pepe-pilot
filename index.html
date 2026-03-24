@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: USDT Gold Edition</title>
+    <title>Pepe Pilot: Gold USDT Collector</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:black; touch-action: none; }
-        #ui { position:fixed; top:10px; left:10px; color:#0f0; font-family:Arial; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; }
-        #shop { position:fixed; bottom:15px; left:10px; z-index: 100; display: flex; gap: 10px; }
-        button { padding:12px; font-size:14px; background: rgba(34, 34, 34, 0.8); color: #0f0; border: 2px solid #0f0; border-radius: 8px; font-weight: bold; }
+        #ui { position:fixed; top:10px; left:10px; color:#0f0; font-family:Arial; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 1px #000; }
+        #shop { position:fixed; bottom:10px; left:10px; z-index: 100; display: flex; gap: 5px; }
+        button { padding:10px; font-size:14px; background: rgba(34, 34, 34, 0.8); color: #0f0; border: 2px solid #0f0; border-radius: 8px; font-weight: bold; }
         button:active { background: #0f0; color: #000; }
     </style>
 </head>
@@ -27,6 +27,13 @@
 </div>
 
 <script>
+// Глобальные переменные игры
+let plane, hook, rope, targets, maskShape;
+let isLaunching = false, isReturning = false, caughtItem = null;
+let angle = 0, swingSpeed = 0.03, distance = 25; 
+let money = 0, energy = 10;
+let upgrades = { chance: 0, speed: 0, power: 0 };
+
 const config = {
     type: Phaser.AUTO,
     width: window.innerWidth,
@@ -35,13 +42,7 @@ const config = {
     scene: { preload, create, update }
 };
 
-const game = new Phaser.Game(config);
-
-let plane, hook, rope, targets;
-let isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.03, distance = 25; 
-let money = 0, energy = 10;
-let upgrades = { chance: 0, speed: 0, power: 0 };
+new Phaser.Game(config);
 
 function preload() {
     this.load.image('sky', 'pg.jpeg');
@@ -55,18 +56,22 @@ function create() {
     
     rope = this.add.graphics().setDepth(35);
 
+    // 1. Создаем маску для монет (чтобы были круглыми)
+    maskShape = this.make.graphics().setDepth(1).fillStyle(0xffffff, 1).fillCircle(0, 0, 27);
+
     // Клешня
     hook = this.add.sprite(0, 0, 'hook').setDepth(40).setDisplaySize(60, 60); 
     this.physics.add.existing(hook);
-    hook.body.setCircle(22); // Компактная физика для точности
+    hook.body.setCircle(22); // Компактная физика
 
     // Самолет (Пепе)
     plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(50);
 
     targets = this.physics.add.group();
-    // Создаем 7 красивых монет
+    // Создаем 7 красивых круглых монет
     for(let i = 0; i < 7; i++) spawn(this);
 
+    // Управление
     this.input.on('pointerdown', () => {
         if (!isLaunching && !isReturning && energy > 0) {
             isLaunching = true;
@@ -75,18 +80,21 @@ function create() {
         }
     });
 
+    // Хватаем монету
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
-            // Шанс поимки (базовый 85% + бонусы)
-            if (Math.random() <= (0.85 + upgrades.chance * 0.04)) { 
+            // Шанс поимки USDT (базовый 80% + апгрейд)
+            if (Math.random() <= (0.8 + upgrades.chance * 0.05)) { 
                 caughtItem = item;
                 caughtItem.body.enable = false; 
+                caughtItem.mask = null; // Убираем маску при захвате, чтобы не багало
             }
             isLaunching = false;
             isReturning = true;
         }
     });
 
+    // Регенерация энергии
     setInterval(() => { if (energy < 10) energy++; updateUI(); }, 4000);
 }
 
@@ -94,15 +102,29 @@ function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
     let y = Phaser.Math.Between(config.height * 0.5, config.height - 100);
     
-    // Создаем монетку
     let coin = targets.create(x, y, 'usdt');
-    coin.setDisplaySize(55, 55); // Оптимальный размер
+    coin.setDisplaySize(55, 55); // Размер монетки
+    
+    // Применяем маску, делая монетку круглой
+    // Нам нужен отдельный экземпляр Graphics для каждой маски, чтобы она спавнилась на монете
+    let uniqueMask = scene.make.graphics().fillCircle(x, y, 27).setDepth(1);
+    coin.mask = new Phaser.Display.Masks.GeometryMask(scene, uniqueMask);
     
     // Добавляем монетке легкую анимацию пульсации, чтобы она выглядела "живой"
     scene.tweens.add({
         targets: coin,
         scale: 1.1,
-        duration: 800 + Math.random() * 500,
+        duration: 800 + Math.random() * 400,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+    });
+    
+    // Также пульсирует и её маска
+    scene.tweens.add({
+        targets: uniqueMask,
+        scale: 1.1,
+        duration: 800 + Math.random() * 400,
         yoyo: true,
         repeat: -1,
         ease: 'Sine.easeInOut'
@@ -110,10 +132,8 @@ function spawn(scene) {
 }
 
 function update() {
-    // Покачивание самолета
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
     
-    // Точка выхода нити (ровно из центра фюзеляжа)
     let startX = plane.x - 5; 
     let startY = plane.y + 15; 
 
@@ -123,7 +143,7 @@ function update() {
         distance = 25; 
     } else if (isLaunching) {
         distance += 16 + (upgrades.speed * 2.5);
-        if (distance > config.height - 80) { isLaunching = false; isReturning = true; }
+        if (distance > config.height - 100) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
         distance -= (14 + upgrades.power * 2.5);
         if (distance <= 25) {
@@ -138,12 +158,11 @@ function update() {
         }
     }
 
-    // Позиция клешни
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // Рисование нитки (не заходит в клешню)
+    // НИТКА: Используем прошлые правки, чтобы не торчала
     let endX = startX + Math.sin(angle) * (distance - 22);
     let endY = startY + Math.cos(angle) * (distance - 22);
 
@@ -164,8 +183,8 @@ function updateUI() {
 }
 
 window.upgrade = function(type) {
-    if (money >= 300) {
-        money -= 300;
+    if (money >= 200) {
+        money -= 200;
         upgrades[type]++;
         updateUI();
     }
