@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Energy & Timer</title>
+    <title>Pepe Pilot: Blink & White Timer</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#111; touch-action: none; }
         #ui { position:fixed; top:12px; left:12px; color:#0f0; font-family: Arial; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; }
-        #timer-display { color: #ff3333; font-size: 14px; display: none; }
+        /* ТАЙМЕР ТЕПЕРЬ БЕЛЫЙ */
+        #timer-display { color: #fff; font-size: 14px; display: none; margin-top: 4px; }
         #nav-bar { 
             position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); 
             width: 82%; height: 50px; background: rgba(0, 0, 0, 0.9); 
@@ -49,8 +50,9 @@ let plane, hook, rope, targets, bgMusic;
 let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, distance = 25; 
 let money = 0, energy = 100;
-let recoveryTime = 0; // Время до восстановления в секундах
+let recoveryTime = 0; 
 
+// Звуки
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playCustomBeep(frequency) {
     const oscillator = audioCtx.createOscillator();
@@ -65,6 +67,7 @@ function playCustomBeep(frequency) {
     oscillator.stop(audioCtx.currentTime + 0.08);
 }
 
+// Всплывающий номинал
 function showPopUp(scene, x, y) {
     let txt = scene.add.text(x, y, '+0.001', { 
         font: 'bold 24px Arial', fill: '#00ff00', stroke: '#000', strokeThickness: 4
@@ -74,6 +77,7 @@ function showPopUp(scene, x, y) {
     });
 }
 
+// ПРЕДЗАГРУЗКА
 function preload() {
     let width = this.cameras.main.width;
     let height = this.cameras.main.height;
@@ -91,6 +95,7 @@ function preload() {
     this.load.audio('theme', 'music.mp3');
 }
 
+// СОЗДАНИЕ
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
 
@@ -109,19 +114,37 @@ function create() {
     this.physics.add.existing(hook);
     hook.body.setCircle(25); 
 
-    plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
+    // САМОЛЕТ И МОРАГАЮЩИЙ ПЕПЕ
+    plane = this.add.container(config.width / 2, 120);
+    plane.setDepth(60);
+    
+    // 1. Спрайт самолета с Пепе
+    let pepeBody = this.add.image(0, 0, 'plane').setDisplaySize(280, 180).setOrigin(0.5);
+    plane.add(pepeBody);
+
+    // 2. Веки (закрытые) - программно рисуем
+    // Левый глаз (в координатах самолета)
+    plane.leftEyelid = this.add.graphics();
+    plane.leftEyelid.fillStyle(0xffffff, 1).fillCircle(-14, -28, 9).setOrigin(0.5).setDepth(61).setScale(0.01); 
+    plane.add(plane.leftEyelid);
+    // Правый глаз
+    plane.rightEyelid = this.add.graphics();
+    plane.rightEyelid.fillStyle(0xffffff, 1).fillCircle(14, -28, 9).setOrigin(0.5).setDepth(61).setScale(0.01);
+    plane.add(plane.rightEyelid);
+
+    // Логика моргания (случайный интервал от 2 до 5 секунд)
+    plane.blinkTimer = this.time.addEvent({
+        delay: Phaser.Math.Between(2000, 5000),
+        callback: blinkPepe,
+        callbackScope: this,
+        loop: true
+    });
 
     this.input.on('pointerdown', (p) => {
-        // Запуск только если есть энергия и не идет восстановление
         if (p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
             isLaunching = true;
             energy--;
-            
-            // Если энергия кончилась, запускаем таймер на 3 часа
-            if (energy === 0) {
-                startRecovery();
-            }
-            
+            if (energy === 0) startRecovery();
             updateUI();
         }
     });
@@ -136,30 +159,39 @@ function create() {
         }
     });
 
-    // Таймер обратного отсчета (раз в секунду)
     setInterval(tick, 1000);
 }
 
+// Функция моргания
+function blinkPepe() {
+    // Твин на закрытие век
+    this.tweens.add({
+        targets: [plane.leftEyelid, plane.rightEyelid],
+        scaleY: 1, // Закрываем
+        duration: 100,
+        ease: 'Cubic.easeOut',
+        yoyo: true, // Сразу открываем обратно
+        hold: 80, // Держим закрытыми чуть дольше
+        onComplete: () => {
+            // Обновляем таймер на следующий случайный интервал
+            plane.blinkTimer.delay = Phaser.Math.Between(2000, 5000);
+        }
+    });
+}
+
 function startRecovery() {
-    recoveryTime = 3 * 60 * 60; // 3 часа в секундах
+    recoveryTime = 3 * 60 * 60; 
     document.getElementById('timer-display').style.display = 'block';
 }
 
 function tick() {
     if (recoveryTime > 0) {
         recoveryTime--;
-        
-        // Форматирование времени HH:MM:SS
         let h = Math.floor(recoveryTime / 3600).toString().padStart(2, '0');
         let m = Math.floor((recoveryTime % 3600) / 60).toString().padStart(2, '0');
         let s = (recoveryTime % 60).toString().padStart(2, '0');
         document.getElementById('time-left').innerText = `${h}:${m}:${s}`;
-
-        if (recoveryTime === 0) {
-            energy = 100;
-            document.getElementById('timer-display').style.display = 'none';
-            updateUI();
-        }
+        if (recoveryTime === 0) { energy = 100; document.getElementById('timer-display').style.display = 'none'; updateUI(); }
     }
 }
 
@@ -175,8 +207,11 @@ function spawn(scene) {
     }
 }
 
+// ОБНОВЛЕНИЕ КАДРА
 function update() {
+    // Покачивание самолета (теперь он в контейнере)
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
+    
     let startX = plane.x - 5; 
     let startY = plane.y + 15; 
 
@@ -194,7 +229,7 @@ function update() {
             if (caughtItem) {
                 money += 0.001; 
                 playCustomBeep(900); 
-                showPopUp(this, plane.x, plane.y);
+                showPopUp(this, plane.x, plane.y); // Попап над центром контейнера
                 caughtItem.destroy();
                 caughtItem = null;
                 spawn(this);
