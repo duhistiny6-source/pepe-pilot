@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Claw PRO Real</title>
+    <title>Pepe Fixed Hook</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:black; touch-action: none; }
         #ui { position:fixed; top:10px; left:10px; color:#0f0; font-family:Arial; font-weight:bold; z-index: 100; }
         #shop { position:fixed; bottom:10px; left:10px; z-index: 100; display: flex; }
-        button { padding:10px; margin:5px; font-size:14px; background: #222; color: #fff; border: 1px solid #0f0; cursor: pointer; }
+        button { padding:10px; margin:5px; font-size:14px; background: #222; color: #fff; border: 1px solid #0f0; }
     </style>
 </head>
 <body>
@@ -38,7 +38,7 @@ new Phaser.Game(config);
 
 let plane, hook, chain, targets;
 let isLaunching=false, isReturning=false, caughtItem=null;
-let angle=0, swingSpeed=0.03, score=0;
+let angle=0, swingSpeed=0.03, currentLen = 60;
 
 let money=0;
 let energy=10;
@@ -63,22 +63,22 @@ function preload(){
 function create(){
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
 
-    // 1. ЦЕПЬ (ТЕПЕРЬ ИЗ КАРТИНКИ)
+    // 1. ЦЕПЬ (Спрайт, который тянется)
     chain = this.add.sprite(config.width/2, 130, 'pepe');
     chain.setOrigin(0.5, 0).setDepth(30);
-    chain.setCrop(495, 480, 10, 100); // Вырезаем тонкую нить из твоего файла
+    chain.setCrop(495, 480, 10, 100); // Берем нить из арта
 
-    // 2. КЛЕШНЯ (ВМЕСТО ЖЕЛТОГО ШАРА)
-    hook = this.add.sprite(config.width/2, 180, 'pepe');
+    // 2. КЛЕШНЯ
+    hook = this.add.sprite(config.width/2, 190, 'pepe');
     hook.setDepth(40).setDisplaySize(100, 90);
-    hook.setCrop(300, 600, 400, 400); // Вырезаем желтый захват
+    hook.setCrop(300, 600, 400, 400); // Желтая клешня
 
     // 3. САМОЛЕТ
     plane = this.add.image(config.width/2, 130, 'pepe');
     plane.setDisplaySize(280, 240).setDepth(50).setCrop(0, 0, 1000, 480);
 
     this.physics.add.existing(hook);
-    hook.body.setCircle(35, 15, 15);
+    hook.body.setCircle(30, 20, 20);
 
     targets = this.physics.add.group();
     for(let i=0; i<8; i++) spawn(this);
@@ -91,11 +91,16 @@ function create(){
         }
     });
 
+    // Монетка ловится КЛЕШНЕЙ
     this.physics.add.overlap(hook, targets, (h, item) => {
         if(isLaunching && !caughtItem){
             let d = ITEMS[item.texture.key];
             let finalChance = d.chance + upgrades.chance * 0.05;
-            if(Math.random() <= finalChance) { caughtItem = item; }
+            if(Math.random() <= finalChance) { 
+                caughtItem = item; 
+                // Отключаем физику у монетки, чтобы она не улетела
+                caughtItem.body.enable = false;
+            }
             isLaunching = false;
             isReturning = true;
         }
@@ -113,57 +118,50 @@ function spawn(scene){
 }
 
 function update(){
-    // САМОЛЕТ ТЕПЕРЬ ПОКАЧИВАЕТСЯ
-    let hover = Math.sin(this.time.now / 600) * 8;
-    plane.y = 130 + hover;
-    
-    let startY = plane.y + 35; // Точка крепления цепи к самолету
+    // ПЛАВНОЕ ПОКАЧИВАНИЕ САМОЛЕТА
+    plane.y = 130 + Math.sin(this.time.now / 600) * 10;
+    let startY = plane.y + 40;
 
     if(!isLaunching && !isReturning){
-        // КАЧАНИЕ КЛЕШНИ
+        // РЕЖИМ МАЯТНИКА
         angle += swingSpeed;
-        if(angle > 0.7 || angle < -0.7) swingSpeed *= -1;
-
-        chain.x = plane.x;
-        chain.y = startY;
-        chain.rotation = -angle;
-        chain.displayHeight = 50;
-        
-        hook.x = plane.x + Math.sin(angle) * 50;
-        hook.y = startY + Math.cos(angle) * 50;
-        hook.rotation = -angle;
+        if(angle > 0.8 || angle < -0.8) swingSpeed *= -1;
+        currentLen = 60;
     }
-    else{
-        if(isLaunching){
-            // ВЫДВИЖЕНИЕ (Скорость зависит от прокачки)
-            chain.displayHeight += 12 + upgrades.speed * 2;
-            if(chain.displayHeight > config.height - startY) { isLaunching = false; isReturning = true; }
-        } else {
-            // ВТЯГИВАНИЕ (Сила зависит от прокачки)
-            let returnSpeed = 10 + upgrades.power * 2;
-            chain.displayHeight -= returnSpeed;
-
-            if(chain.displayHeight <= 50){
-                isReturning = false;
-                if(caughtItem){
-                    money += ITEMS[caughtItem.texture.key].value;
-                    caughtItem.destroy();
-                    caughtItem = null;
-                    spawn(this);
-                    updateUI();
-                }
+    else if(isLaunching){
+        // КЛЕШНЯ ВЫЕЗЖАЕТ
+        currentLen += 12 + upgrades.speed * 2;
+        if(currentLen > config.height - startY) { isLaunching = false; isReturning = true; }
+    }
+    else if(isReturning){
+        // КЛЕШНЯ ВОЗВРАЩАЕТСЯ
+        currentLen -= (10 + upgrades.power * 2);
+        if(currentLen <= 60){
+            isReturning = false;
+            if(caughtItem){
+                money += ITEMS[caughtItem.texture.key].value;
+                caughtItem.destroy();
+                caughtItem = null;
+                spawn(this);
+                updateUI();
             }
         }
+    }
 
-        chain.rotation = -angle;
-        hook.x = plane.x + Math.sin(angle) * chain.displayHeight;
-        hook.y = startY + Math.cos(angle) * chain.displayHeight;
-        hook.rotation = -angle;
+    // ОБНОВЛЕНИЕ ПОЗИЦИЙ (Связываем цепь и клешню)
+    chain.x = plane.x;
+    chain.y = startY;
+    chain.rotation = -angle;
+    chain.displayHeight = currentLen;
 
-        if(caughtItem){
-            caughtItem.x = hook.x;
-            caughtItem.y = hook.y + 30;
-        }
+    hook.x = plane.x + Math.sin(angle) * currentLen;
+    hook.y = startY + Math.cos(angle) * currentLen;
+    hook.rotation = -angle;
+
+    // МОНЕТКА ПРИВЯЗАНА К КЛЕШНЕ
+    if(caughtItem){
+        caughtItem.x = hook.x;
+        caughtItem.y = hook.y + 30;
     }
 }
 
