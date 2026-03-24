@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Fixed Hook</title>
+    <title>Pepe Claw Final</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:black; touch-action: none; }
-        #ui { position:fixed; top:10px; left:10px; color:#0f0; font-family:Arial; font-weight:bold; z-index: 100; }
+        #ui { position:fixed; top:10px; left:10px; color:#0f0; font-family:Arial; font-weight:bold; z-index: 100; pointer-events: none; }
         #shop { position:fixed; bottom:10px; left:10px; z-index: 100; display: flex; }
         button { padding:10px; margin:5px; font-size:14px; background: #222; color: #fff; border: 1px solid #0f0; }
     </style>
@@ -34,11 +34,11 @@ const config = {
     scene: { preload, create, update }
 };
 
-new Phaser.Game(config);
+const game = new Phaser.Game(config);
 
-let plane, hook, chain, targets;
+let plane, hook, chainGraphics, targets;
 let isLaunching=false, isReturning=false, caughtItem=null;
-let angle=0, swingSpeed=0.03, currentLen = 60;
+let angle=0, swingSpeed=0.03, currentLen = 70;
 
 let money=0;
 let energy=10;
@@ -63,22 +63,20 @@ function preload(){
 function create(){
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
 
-    // 1. ЦЕПЬ (Спрайт, который тянется)
-    chain = this.add.sprite(config.width/2, 130, 'pepe');
-    chain.setOrigin(0.5, 0).setDepth(30);
-    chain.setCrop(495, 480, 10, 100); // Берем нить из арта
+    // 1. ГРАФИКА ДЛЯ ТРОСА (Вместо белой палки - будет золотая нить)
+    chainGraphics = this.add.graphics().setDepth(30);
 
     // 2. КЛЕШНЯ
-    hook = this.add.sprite(config.width/2, 190, 'pepe');
+    hook = this.add.sprite(config.width/2, 200, 'pepe');
     hook.setDepth(40).setDisplaySize(100, 90);
-    hook.setCrop(300, 600, 400, 400); // Желтая клешня
+    hook.setCrop(300, 600, 400, 400); // Берем желтый захват
 
     // 3. САМОЛЕТ
     plane = this.add.image(config.width/2, 130, 'pepe');
     plane.setDisplaySize(280, 240).setDepth(50).setCrop(0, 0, 1000, 480);
 
     this.physics.add.existing(hook);
-    hook.body.setCircle(30, 20, 20);
+    hook.body.setCircle(35, 15, 15);
 
     targets = this.physics.add.group();
     for(let i=0; i<8; i++) spawn(this);
@@ -91,15 +89,13 @@ function create(){
         }
     });
 
-    // Монетка ловится КЛЕШНЕЙ
     this.physics.add.overlap(hook, targets, (h, item) => {
         if(isLaunching && !caughtItem){
             let d = ITEMS[item.texture.key];
             let finalChance = d.chance + upgrades.chance * 0.05;
             if(Math.random() <= finalChance) { 
-                caughtItem = item; 
-                // Отключаем физику у монетки, чтобы она не улетела
-                caughtItem.body.enable = false;
+                caughtItem = item;
+                caughtItem.body.enable = false; 
             }
             isLaunching = false;
             isReturning = true;
@@ -118,25 +114,25 @@ function spawn(scene){
 }
 
 function update(){
-    // ПЛАВНОЕ ПОКАЧИВАНИЕ САМОЛЕТА
+    // САМОЛЕТ ПАРИТ
     plane.y = 130 + Math.sin(this.time.now / 600) * 10;
     let startY = plane.y + 40;
 
     if(!isLaunching && !isReturning){
-        // РЕЖИМ МАЯТНИКА
+        // КАЧАНИЕ
         angle += swingSpeed;
         if(angle > 0.8 || angle < -0.8) swingSpeed *= -1;
-        currentLen = 60;
+        currentLen = 70;
     }
     else if(isLaunching){
-        // КЛЕШНЯ ВЫЕЗЖАЕТ
-        currentLen += 12 + upgrades.speed * 2;
+        // ВЫЛЕТ
+        currentLen += 14 + upgrades.speed * 2;
         if(currentLen > config.height - startY) { isLaunching = false; isReturning = true; }
     }
     else if(isReturning){
-        // КЛЕШНЯ ВОЗВРАЩАЕТСЯ
+        // ВОЗВРАТ
         currentLen -= (10 + upgrades.power * 2);
-        if(currentLen <= 60){
+        if(currentLen <= 70){
             isReturning = false;
             if(caughtItem){
                 money += ITEMS[caughtItem.texture.key].value;
@@ -148,29 +144,30 @@ function update(){
         }
     }
 
-    // ОБНОВЛЕНИЕ ПОЗИЦИЙ (Связываем цепь и клешню)
-    chain.x = plane.x;
-    chain.y = startY;
-    chain.rotation = -angle;
-    chain.displayHeight = currentLen;
-
+    // ОБНОВЛЕНИЕ ПОЗИЦИИ КЛЕШНИ
     hook.x = plane.x + Math.sin(angle) * currentLen;
     hook.y = startY + Math.cos(angle) * currentLen;
     hook.rotation = -angle;
 
-    // МОНЕТКА ПРИВЯЗАНА К КЛЕШНЕ
+    // РИСУЕМ ТРОС (Очищаем и рисуем заново каждый кадр)
+    chainGraphics.clear();
+    chainGraphics.lineStyle(3, 0xFFD700, 1); // Золотистый цвет (под цвет клешни)
+    chainGraphics.lineBetween(plane.x, startY, hook.x, hook.y);
+
     if(caughtItem){
         caughtItem.x = hook.x;
-        caughtItem.y = hook.y + 30;
+        caughtItem.y = hook.y + 35;
     }
 }
 
 function updateUI(){
-    document.getElementById('money').innerText = money;
-    document.getElementById('energy').innerText = energy;
+    const moneyEl = document.getElementById('money');
+    const energyEl = document.getElementById('energy');
+    if(moneyEl) moneyEl.innerText = money;
+    if(energyEl) energyEl.innerText = energy;
 }
 
-function upgrade(type){
+window.upgrade = function(type){
     let cost = 200;
     if(money >= cost){
         money -= cost;
