@@ -3,36 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Fixed UI</title>
+    <title>Pepe Pilot: Energy Boost</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#000; touch-action: none; }
-        
-        /* Основной контейнер UI */
         #ui { 
-            position:fixed; top:12px; left:12px; 
-            color:#0f0; font-family: Arial; font-weight:bold; 
-            z-index: 100; pointer-events: none; 
-            text-shadow: 1px 1px 2px #000;
-            display: flex; flex-direction: column; gap: 4px;
+            position:fixed; top:12px; left:12px; color:#0f0; font-family: Arial; font-weight:bold; 
+            z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000;
+            display: flex; flex-direction: column; gap: 5px;
         }
-
-        #timer-display { color: #ff3333; font-size: 14px; display: none; }
+        #timer-display { color: #ff3333; font-size: 13px; display: none; }
         
-        /* Обновленная аккуратная кнопка под таймером */
+        /* Аккуратная кнопка под таймером */
         #ad-button { 
-            display: none; 
-            pointer-events: auto; /* Чтобы на кнопку можно было нажать */
-            background: #ffcc00; 
-            color: #000; 
-            border: 1px solid #fff; 
-            padding: 4px 8px; 
-            font-size: 11px;
-            font-weight: bold; 
-            border-radius: 4px; 
-            cursor: pointer;
-            width: fit-content;
-            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            display: none; pointer-events: auto; background: #ffcc00; color: #000; 
+            border: 1px solid #fff; padding: 4px 8px; font-size: 11px; font-weight: bold; 
+            border-radius: 4px; cursor: pointer; width: fit-content;
         }
 
         #ad-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; color: #fff; justify-content: center; align-items: center; flex-direction: column; font-family: Arial; }
@@ -48,11 +34,11 @@
     <div>💰 <span id="money">0.000</span></div>
     <div>⚡ <span id="energy">100</span>/100</div>
     <div id="timer-display">Восстановление: <span id="time-left">03:00:00</span></div>
-    <button id="ad-button" onclick="startAd()">📺 СМОТРЕТЬ РЕКЛАМУ (+⚡)</button>
+    <button id="ad-button" onclick="startAd()">📺 СМОТРЕТЬ РЕКЛАМУ (+50 ⚡)</button>
 </div>
 
 <div id="ad-overlay">
-    <h2>РЕКЛАМА...</h2>
+    <h2>СМОТРИМ РОЛИК...</h2>
     <p id="ad-timer">Осталось: 5 сек.</p>
 </div>
 
@@ -90,8 +76,7 @@ function playCustomBeep(frequency) {
     oscillator.type = 'triangle'; 
     gainNode.gain.setValueAtTime(0.005, audioCtx.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.08);
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 0.08);
+    oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.08);
 }
 
 function showPopUp(scene, x, y) {
@@ -102,27 +87,17 @@ function showPopUp(scene, x, y) {
 function preload() {
     let width = this.cameras.main.width;
     let height = this.cameras.main.height;
-
     let progressBar = this.add.graphics();
     let progressBox = this.add.graphics();
     progressBox.fillStyle(0x222222, 0.8);
-    progressBox.fillRect(width / 2 - 110, height / 2 - 10, 220, 25);
+    progressBox.fillRect(width/2 - 110, height/2 - 10, 220, 25);
+    let percentText = this.make.text({ x: width/2, y: height/2+30, text: '0%', style: { font: '18px Arial', fill: '#00ff00' } }).setOrigin(0.5);
 
-    let percentText = this.make.text({
-        x: width / 2, y: height / 2 + 30, text: '0%',
-        style: { font: '18px Arial', fill: '#00ff00' }
-    }).setOrigin(0.5);
-
-    this.load.on('progress', function (value) {
-        progressBar.clear();
-        progressBar.fillStyle(0x00ff00, 1);
-        progressBar.fillRect(width / 2 - 105, height / 2 - 5, 210 * value, 15);
-        percentText.setText(parseInt(value * 100) + '%');
+    this.load.on('progress', (v) => {
+        progressBar.clear().fillStyle(0x00ff00, 1).fillRect(width/2 - 105, height/2 - 5, 210 * v, 15);
+        percentText.setText(Math.floor(v * 100) + '%');
     });
-
-    this.load.on('complete', function () {
-        progressBar.destroy(); progressBox.destroy(); percentText.destroy();
-    });
+    this.load.on('complete', () => { progressBar.destroy(); progressBox.destroy(); percentText.destroy(); });
 
     this.load.image('sky', 'pg.jpeg');
     this.load.image('hook', 'kleshn.png');
@@ -151,7 +126,7 @@ function create() {
         if (p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
             isLaunching = true;
             energy--;
-            if (energy === 0) startRecovery();
+            if (energy <= 0) startRecovery();
             updateUI();
         }
     });
@@ -160,12 +135,9 @@ function create() {
         if (isLaunching && !caughtItem) {
             caughtItem = item;
             caughtItem.body.enable = false;
-            playCustomBeep(700); 
-            isLaunching = false;
-            isReturning = true;
+            playCustomBeep(700); isLaunching = false; isReturning = true;
         }
     });
-
     setInterval(tick, 1000);
 }
 
@@ -183,15 +155,17 @@ function startAd() {
     const interval = setInterval(() => {
         count--;
         adTimerText.innerText = `Осталось: ${count} сек.`;
-        if (count <= 0) { clearInterval(interval); overlay.style.display = 'none'; completeAd(); }
+        if (count <= 0) { clearInterval(interval); overlay.style.display = 'none'; addEnergyBoost(); }
     }, 1000);
 }
 
-function completeAd() {
-    energy = 100;
-    recoveryTime = 0;
-    document.getElementById('timer-display').style.display = 'none';
-    document.getElementById('ad-button').style.display = 'none';
+function addEnergyBoost() {
+    energy = Math.min(energy + 50, 100); // Добавляем 50, но не больше 100
+    if (energy > 0) {
+        recoveryTime = 0;
+        document.getElementById('timer-display').style.display = 'none';
+        document.getElementById('ad-button').style.display = 'none';
+    }
     updateUI();
 }
 
@@ -202,7 +176,7 @@ function tick() {
         let m = Math.floor((recoveryTime % 3600) / 60).toString().padStart(2, '0');
         let s = (recoveryTime % 60).toString().padStart(2, '0');
         document.getElementById('time-left').innerText = `${h}:${m}:${s}`;
-        if (recoveryTime === 0) completeAd();
+        if (recoveryTime === 0) { energy = 100; updateUI(); }
     }
 }
 
@@ -218,8 +192,7 @@ function spawn(scene) {
 
 function update() {
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
-    let startX = plane.x - 5; 
-    let startY = plane.y + 15; 
+    let startX = plane.x - 5; let startY = plane.y + 15; 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
         if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
@@ -232,9 +205,7 @@ function update() {
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
-                money += 0.001; 
-                playCustomBeep(900); 
-                showPopUp(this, plane.x, plane.y);
+                money += 0.001; playCustomBeep(900); showPopUp(this, plane.x, plane.y);
                 caughtItem.destroy(); caughtItem = null; spawn(this); updateUI();
             }
         }
@@ -246,14 +217,18 @@ function update() {
     let endY = startY + Math.cos(angle) * (distance - 15);
     rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
     if (caughtItem) {
-        caughtItem.setScale(0.12);
-        caughtItem.x = hook.x; caughtItem.y = hook.y + 15; caughtItem.rotation = hook.rotation;
+        caughtItem.setScale(0.12); caughtItem.x = hook.x; caughtItem.y = hook.y + 15; caughtItem.rotation = hook.rotation;
     }
 }
 
 function updateUI() {
     document.getElementById('money').innerText = money.toFixed(3);
     document.getElementById('energy').innerText = energy;
+    // Скрываем кнопку, если энергия пополнилась (например, сама или через админку)
+    if (energy > 0) {
+        document.getElementById('ad-button').style.display = 'none';
+        document.getElementById('timer-display').style.display = 'none';
+    }
 }
 </script>
 </body>
