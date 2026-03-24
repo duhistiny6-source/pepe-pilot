@@ -3,121 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Safe & Sleek</title>
+    <title>Pepe Pilot: Loading Fixed</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#000; touch-action: none; font-family: Arial, sans-serif; }
-        
-        /* Верхний интерфейс */
         #ui { position:fixed; top:12px; left:12px; color:#0f0; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; display: flex; flex-direction: column; gap: 5px; }
-        #timer-display { color: #ff3333; font-size: 13px; display: none; }
-        #ad-button { display: none; pointer-events: auto; background: #ffcc00; color: #000; border: 1px solid #fff; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor: pointer; width: fit-content; margin-top: 5px; }
-        #settings-btn { position: fixed; top: 12px; right: 12px; font-size: 28px; cursor: pointer; z-index: 1001; filter: drop-shadow(1px 1px 2px #000); }
-        
-        /* Настройки */
-        #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
-        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 240px; }
-        .lang-btn { background: #333; color: #0f0; border: 1px solid #0f0; padding: 12px 20px; margin: 10px 0; cursor: pointer; border-radius: 10px; font-weight: bold; width: 100%; }
-        #ad-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
-
-        /* ЧЁРНАЯ, УЗКАЯ НИЖНЯЯ ПАНЕЛЬ С ОБВОДКОЙ */
         #nav-bar { 
             position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); 
-            width: 90%; height: 50px; /* Сделали уже */
-            background: rgba(0, 0, 0, 0.95); /* Чёрная */
-            border: 1px solid #0f0; /* Зелёная обводка */
-            border-radius: 12px; 
+            width: 90%; height: 50px; background: rgba(0, 0, 0, 0.95); 
+            border: 1px solid #0f0; border-radius: 12px; 
             display: flex; justify-content: space-around; align-items: center; z-index: 200; 
-            box-shadow: 0 0 10px rgba(0,255,0,0.2);
         }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #0f0; font-weight: bold; flex: 1; cursor: pointer; }
-        .nav-item span { font-size: 18px; margin-bottom: 1px; }
-        .nav-text { font-size: 8px; color: #0f0; text-transform: uppercase; letter-spacing: 0.5px; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #0f0; font-weight: bold; flex: 1; }
+        .nav-item span { font-size: 18px; }
+        .nav-text { font-size: 8px; text-transform: uppercase; }
+        #settings-btn { position: fixed; top: 12px; right: 12px; font-size: 28px; cursor: pointer; z-index: 1001; }
     </style>
 </head>
 <body>
 
-<div id="settings-btn" onclick="toggleSettings()">⚙️</div>
+<div id="settings-btn">⚙️</div>
 
 <div id="ui">
     <div>💰 <span id="money">0.0000</span></div>
     <div>⚡ <span id="energy">100</span>/100</div>
-    <div id="timer-display"><span id="txt-recovery">Восстановление</span>: <span id="time-left">03:00:00</span></div>
-    <button id="ad-button" onclick="startAd()">📺 СМОТРЕТЬ РЕКЛАМУ (+50⚡)</button>
-</div>
-
-<div id="settings-modal">
-    <div class="modal-content">
-        <h3 id="txt-settings-title">НАСТРОЙКИ</h3>
-        <button class="lang-btn" onclick="changeLanguage('ru')">РУССКИЙ</button>
-        <button class="lang-btn" onclick="changeLanguage('en')">ENGLISH</button>
-        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleSettings()" id="txt-close">Закрыть</div>
-    </div>
-</div>
-
-<div id="ad-overlay">
-    <h2 id="txt-ad-watching">СМОТРИМ РОЛИК...</h2>
-    <p id="ad-timer">Осталось: 5 сек.</p>
 </div>
 
 <div id="nav-bar">
-    <div class="nav-item"><span>🛒</span><div class="nav-text" id="nav-shop">МАГАЗИН</div></div>
-    <div class="nav-item"><span>📜</span><div class="nav-text" id="nav-tasks">ЗАДАНИЯ</div></div>
-    <div class="nav-item"><span>👥</span><div class="nav-text" id="nav-friends">ДРУЗЬЯ</div></div>
-    <div class="nav-item"><span>👛</span><div class="nav-text" id="nav-wallet">КОШЕЛЕК</div></div>
+    <div class="nav-item"><span>🛒</span><div class="nav-text">МАГАЗИН</div></div>
+    <div class="nav-item"><span>📜</span><div class="nav-text">ЗАДАНИЯ</div></div>
+    <div class="nav-item"><span>👥</span><div class="nav-text">ДРУЗЬЯ</div></div>
+    <div class="nav-item"><span>👛</span><div class="nav-text">КОШЕЛЕК</div></div>
 </div>
 
 <script>
-const translations = {
-    ru: { recovery: "Восстановление", ad_btn: "📺 СМОТРЕТЬ РЕКЛАМУ (+50⚡)", settings: "НАСТРОЙКИ", close: "Закрыть", watching: "СМОТРИМ РОЛИК...", left: "Осталось", shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК" },
-    en: { recovery: "Recovery", ad_btn: "📺 WATCH AD (+50⚡)", settings: "SETTINGS", close: "Close", watching: "WATCHING AD...", left: "Left", shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET" }
-};
-
-let currentLang = 'ru';
-function toggleSettings() { const m = document.getElementById('settings-modal'); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; }
-function changeLanguage(lang) {
-    currentLang = lang; const t = translations[lang];
-    document.getElementById('txt-recovery').innerText = t.recovery;
-    document.getElementById('ad-button').innerText = t.ad_btn;
-    document.getElementById('txt-settings-title').innerText = t.settings;
-    document.getElementById('txt-close').innerText = t.close;
-    document.getElementById('txt-ad-watching').innerText = t.watching;
-    document.getElementById('nav-shop').innerText = t.shop;
-    document.getElementById('nav-tasks').innerText = t.tasks;
-    document.getElementById('nav-friends').innerText = t.friends;
-    document.getElementById('nav-wallet').innerText = t.wallet;
-    toggleSettings();
-}
-
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playBeep(freq, dur) {
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.frequency.value = freq; osc.type = 'sine';
-    gain.gain.setValueAtTime(0.005, audioCtx.currentTime); 
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
-    osc.start(); osc.stop(audioCtx.currentTime + dur);
-}
-
 const config = {
-    type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight,
-    backgroundColor: '#002200', // ЗАЩИТА: Темно-зеленый фон, если картинки не загрузятся
-    physics: { default: 'arcade' }, scene: { preload, create, update }
+    type: Phaser.AUTO,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    backgroundColor: '#002200', // Тот самый зеленый фон
+    physics: { default: 'arcade' },
+    scene: { preload, create, update }
 };
 
 const game = new Phaser.Game(config);
-let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.03, distance = 25, money = 0, energy = 100, recoveryTime = 0;
-const COIN_VALUE = 0.0005; 
+let plane, hook, targets, bgMusic;
+const COIN_VALUE = 0.0005;
 
 function preload() {
-    // ЗАЩИТА: Добавил вывод ошибок в консоль при загрузке
-    this.load.on('loaderror', function (file) {
-        console.warn('Ошибка загрузки файла:', file.key, 'по пути:', file.url);
+    // --- ЛИНИЯ ЗАГРУЗКИ ---
+    let width = this.cameras.main.width;
+    let height = this.cameras.main.height;
+
+    // Фон для полоски
+    let progressBox = this.add.graphics();
+    let progressBar = this.add.graphics();
+    progressBox.fillStyle(0x222222, 0.8);
+    progressBox.fillRect(width / 2 - 110, height / 2 - 10, 220, 30);
+
+    // Текст процентов
+    let percentText = this.make.text({
+        x: width / 2,
+        y: height / 2 + 35,
+        text: '0%',
+        style: { font: '18px monospace', fill: '#00ff00' }
+    });
+    percentText.setOrigin(0.5, 0.5);
+
+    // Слушатель прогресса
+    this.load.on('progress', function (value) {
+        percentText.setText(parseInt(value * 100) + '%');
+        progressBar.clear();
+        progressBar.fillStyle(0x00ff00, 1);
+        progressBar.fillRect(width / 2 - 100, height / 2, 200 * value, 10);
     });
 
+    // Удаление после загрузки
+    this.load.on('complete', function () {
+        progressBar.destroy();
+        progressBox.destroy();
+        percentText.destroy();
+    });
+
+    // --- ЗАГРУЗКА РЕСУРСОВ ---
     this.load.image('sky', 'pg.jpeg');
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
@@ -126,139 +94,37 @@ function preload() {
 }
 
 function create() {
-    // ЗАЩИТА: Проверка существования текстуры перед добавлением
     if (this.textures.exists('sky')) {
         this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
     }
     
+    // Музыка (0.004 как просил)
     try {
-        bgMusic = this.sound.add('theme', { volume: 0.004, loop: true }); 
-    } catch (e) {
-        console.warn("Музыка не загрузилась. Проверь файл music.mp3");
-    }
+        bgMusic = this.sound.add('theme', { volume: 0.004, loop: true });
+    } catch (e) {}
 
     this.input.once('pointerdown', () => { 
-        if (audioCtx.state === 'suspended') audioCtx.resume();
         if (bgMusic && !bgMusic.isPlaying) bgMusic.play();
     });
 
-    targets = this.physics.add.group();
-    for(let i = 0; i < 6; i++) spawn(this);
-    rope = this.add.graphics().setDepth(5);
-    
-    // ЗАЩИТА: Если нет текстуры клешни, рисуем красный круг
-    if (this.textures.exists('hook')) {
-        hook = this.add.sprite(0, 0, 'hook').setDisplaySize(60, 60); 
-    } else {
-        hook = this.add.circle(0, 0, 25, 0xff0000); // Красный круг вместо клешни
-    }
-    hook.setDepth(50);
-    this.physics.add.existing(hook);
-    
-    // ЗАЩИТА: Если нет текстуры самолета, рисуем желтый прямоугольник
+    // Самолёт Пепе
     if (this.textures.exists('plane')) {
-        plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180);
-    } else {
-        plane = this.add.rectangle(config.width/2, 120, 120, 60, 0xffff00); // Желтый прямоугольник
-    }
-    plane.setDepth(60);
-
-    this.input.on('pointerdown', (p) => {
-        if (p.y > 80 && p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
-            isLaunching = true; energy--; if (energy <= 0) startRecovery(); updateUI();
-        }
-    });
-
-    this.physics.add.overlap(hook, targets, (h, item) => {
-        if (isLaunching && !caughtItem) {
-            caughtItem = item; caughtItem.body.enable = false;
-            if (caughtItem.pulse) caughtItem.pulse.stop();
-            playBeep(400, 0.08); 
-            isLaunching = false; isReturning = true;
-        }
-    });
-    setInterval(tick, 1000);
-}
-
-function spawn(scene) {
-    let x = Phaser.Math.Between(50, config.width - 50);
-    let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
-    let coin;
-    
-    // ЗАЩИТА: Если нет монетки, рисуем зелёный квадратик
-    if (scene.textures.exists('usdt')) {
-        coin = targets.create(x, y, 'usdt').setScale(0.12);
-    } else {
-        coin = targets.create(x, y, null).setDisplaySize(30,30); // Пустая текстура, Phaser нарисует квадратик
-        coin.setTint(0x00ff00); // Зелёный
+        plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
     }
     
-    coin.setDepth(40);
-    coin.pulse = scene.tweens.add({ targets: coin, scale: (coin.scaleX * 1.2), duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-}
-
-function showValue(scene) {
-    let txt = scene.add.text(plane.x, plane.y - 40, `+${COIN_VALUE}`, { font: 'bold 24px Arial', fill: '#0f0', stroke: '#000', strokeThickness: 4 }).setDepth(100).setOrigin(0.5);
-    scene.tweens.add({ targets: txt, y: txt.y - 100, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
+    // Монетки USDT
+    targets = this.physics.add.group();
+    for(let i = 0; i < 6; i++) {
+        let x = Phaser.Math.Between(50, config.width - 50);
+        let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
+        let coin = targets.create(x, y, 'usdt').setScale(0.12).setDepth(40);
+    }
 }
 
 function update() {
-    plane.y = 120 + Math.sin(this.time.now / 600) * 8;
-    let startX = plane.x - 5; let startY = plane.y + 15; 
-
-    if (!isLaunching && !isReturning) {
-        angle += swingSpeed; if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
-        distance = 25;
-    } else if (isLaunching) {
-        distance += 16; if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
-    } else if (isReturning) {
-        distance -= 6; 
-        if (distance <= 25) {
-            isReturning = false;
-            if (caughtItem) {
-                money += COIN_VALUE; playBeep(900, 0.12); 
-                showValue(this); caughtItem.destroy(); caughtItem = null; spawn(this); updateUI();
-            }
-        }
-    }
-
-    hook.x = startX + Math.sin(angle) * distance;
-    hook.y = startY + Math.cos(angle) * distance;
-    hook.rotation = -angle;
-
-    let endX = startX + Math.sin(angle) * (distance - 30);
-    let endY = startY + Math.cos(angle) * (distance - 30);
-    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
-
-    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; caughtItem.rotation = hook.rotation; }
+    // Анимация покачивания самолёта
+    if (plane) plane.y = 120 + Math.sin(this.time.now / 600) * 8;
 }
-
-function updateUI() {
-    document.getElementById('money').innerText = money.toFixed(4); 
-    document.getElementById('energy').innerText = energy;
-    const isOutOfEnergy = energy <= 0;
-    document.getElementById('timer-display').style.display = isOutOfEnergy ? 'block' : 'none';
-    document.getElementById('ad-button').style.display = isOutOfEnergy ? 'block' : 'none';
-}
-
-function tick() {
-    if (recoveryTime > 0) {
-        recoveryTime--;
-        let m = Math.floor(recoveryTime / 60).toString().padStart(2, '0'), s = (recoveryTime % 60).toString().padStart(2, '0');
-        document.getElementById('time-left').innerText = `00:${m}:${s}`;
-        if (recoveryTime === 0) { energy = 100; updateUI(); }
-    }
-}
-
-function startAd() {
-    document.getElementById('ad-overlay').style.display = 'flex';
-    let c = 5;
-    let i = setInterval(() => {
-        c--; document.getElementById('ad-timer').innerText = `Осталось: ${c} сек.`;
-        if (c <= 0) { clearInterval(i); document.getElementById('ad-overlay').style.display = 'none'; energy = 100; recoveryTime = 0; updateUI(); }
-    }, 1000);
-}
-function startRecovery() { recoveryTime = 180; }
 </script>
 </body>
 </html>
