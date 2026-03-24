@@ -3,27 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Energy & Ads</title>
+    <title>Pepe Pilot: Energy & Timer</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#111; touch-action: none; }
         #ui { position:fixed; top:12px; left:12px; color:#0f0; font-family: Arial; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; }
-        #timer-display { color: #ff3333; font-size: 14px; display: none; margin-top: 5px; }
+        #timer-display { color: #ff3333; font-size: 14px; display: none; }
         
-        /* Кнопка рекламы */
+        /* Кнопка рекламы, которая появляется при 0 энергии */
         #ad-button { 
-            display: none; position: fixed; top: 80px; left: 12px; 
-            padding: 8px 12px; background: #ffcc00; color: #000; 
-            border: none; border-radius: 8px; font-weight: bold; 
-            cursor: pointer; z-index: 150; animation: pulse 1.5s infinite;
+            display: none; position: fixed; top: 100px; left: 12px; 
+            background: #ffcc00; color: #000; border: 2px solid #fff; 
+            padding: 5px 10px; font-weight: bold; border-radius: 5px; 
+            z-index: 150; cursor: pointer;
         }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
-        /* Окно "просмотра" рекламы */
+        /* Оверлей симуляции рекламы */
         #ad-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); z-index: 1000; color: white;
-            flex-direction: column; justify-content: center; align-items: center; font-family: sans-serif;
+            background: rgba(0,0,0,0.9); z-index: 1000; color: #fff;
+            justify-content: center; align-items: center; flex-direction: column; font-family: Arial;
         }
 
         #nav-bar { 
@@ -44,10 +43,10 @@
     <div id="timer-display">Восстановление: <span id="time-left">03:00:00</span></div>
 </div>
 
-<button id="ad-button" onclick="watchAd()">📺 ЭНЕРГИЯ ЗА РЕКЛАМУ</button>
+<button id="ad-button" onclick="startAd()">📺 СМОТРЕТЬ РЕКЛАМУ (+⚡)</button>
 
 <div id="ad-overlay">
-    <h2>Смотрим рекламу...</h2>
+    <h2>РЕКЛАМА...</h2>
     <p id="ad-timer">Осталось: 5 сек.</p>
 </div>
 
@@ -99,6 +98,15 @@ function showPopUp(scene, x, y) {
 }
 
 function preload() {
+    let width = this.cameras.main.width;
+    let height = this.cameras.main.height;
+    let progressBox = this.add.graphics().fillStyle(0x222222, 0.8).fillRect(width/2 - 110, height/2 - 10, 220, 20);
+    let progressBar = this.add.graphics();
+    this.load.on('progress', (val) => {
+        progressBar.clear().fillStyle(0x00ff00, 1).fillRect(width/2 - 105, height/2 - 5, 210 * val, 10);
+    });
+    this.load.on('complete', () => { progressBar.destroy(); progressBox.destroy(); });
+
     this.load.image('sky', 'pg.jpeg');
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
@@ -154,33 +162,30 @@ function startRecovery() {
     document.getElementById('ad-button').style.display = 'block'; // Показываем кнопку рекламы
 }
 
-// ФУНКЦИЯ ПРОСМОТРА РЕКЛАМЫ
-function watchAd() {
+// ФУНКЦИИ ДЛЯ РЕКЛАМЫ
+function startAd() {
     const overlay = document.getElementById('ad-overlay');
-    const timerText = document.getElementById('ad-timer');
+    const adTimerText = document.getElementById('ad-timer');
     overlay.style.display = 'flex';
     
-    let timeLeft = 5; // Длительность "рекламы" в секундах
-    
-    const adInterval = setInterval(() => {
-        timeLeft--;
-        timerText.innerText = `Осталось: ${timeLeft} сек.`;
-        
-        if (timeLeft <= 0) {
-            clearInterval(adInterval);
+    let count = 5;
+    const interval = setInterval(() => {
+        count--;
+        adTimerText.innerText = `Осталось: ${count} сек.`;
+        if (count <= 0) {
+            clearInterval(interval);
             overlay.style.display = 'none';
-            restoreEnergy();
+            completeAd();
         }
     }, 1000);
 }
 
-function restoreEnergy() {
+function completeAd() {
     energy = 100;
     recoveryTime = 0;
     document.getElementById('timer-display').style.display = 'none';
     document.getElementById('ad-button').style.display = 'none';
     updateUI();
-    alert("Энергия восстановлена за просмотр рекламы!");
 }
 
 function tick() {
@@ -191,7 +196,9 @@ function tick() {
         let s = (recoveryTime % 60).toString().padStart(2, '0');
         document.getElementById('time-left').innerText = `${h}:${m}:${s}`;
 
-        if (recoveryTime === 0) restoreEnergy();
+        if (recoveryTime === 0) {
+            completeAd();
+        }
     }
 }
 
