@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Calm USDT</title>
+    <title>Pepe Pilot: Smooth USDT</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:black; touch-action: none; }
@@ -76,10 +76,10 @@ function create() {
                 caughtItem = item;
                 caughtItem.body.enable = false; 
                 
-                // ПОЛНАЯ ОСТАНОВКА: Больше никаких огромных монет при поимке
+                // Остановка дыхания при поимке
                 if(caughtItem.breath) {
                     caughtItem.breath.stop(); 
-                    caughtItem.setScale(caughtItem.baseScale); // Возвращаем к исходному размеру
+                    caughtItem.setScale(caughtItem.baseScale); 
                 }
             }
             isLaunching = false;
@@ -95,14 +95,14 @@ function spawn(scene) {
     let y = Phaser.Math.Between(config.height * 0.55, config.height - 80);
     
     let coin = targets.create(x, y, 'usdt');
-    coin.setDisplaySize(55, 55); 
-    coin.baseScale = coin.scaleX; // Сохраняем правильный масштаб
+    coin.setDisplaySize(60, 60); // Чуть-чуть увеличил для красоты
+    coin.baseScale = coin.scaleX; 
     
-    // Эффект "едва заметного дыхания" - всего 2%
+    // Микро-дыхание: всего 1% и очень плавно
     coin.breath = scene.tweens.add({
         targets: coin,
-        scale: coin.baseScale * 1.02, 
-        duration: 1500,
+        scale: coin.baseScale * 1.01, 
+        duration: 2000, 
         yoyo: true,
         repeat: -1,
         ease: 'Sine.easeInOut'
@@ -123,7 +123,8 @@ function update() {
         distance += 16 + (upgrades.speed * 2.5);
         if (distance > config.height - 100) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        distance -= (14 + upgrades.power * 2.5);
+        // Сделал возврат медленнее (было 14, стало 8)
+        distance -= (8 + upgrades.power * 2); 
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
@@ -140,6 +141,7 @@ function update() {
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
+    // Нить по-прежнему плотно прилегает
     let endX = startX + Math.sin(angle) * (distance - 22);
     let endY = startY + Math.cos(angle) * (distance - 22);
 
@@ -169,4 +171,3 @@ window.upgrade = function(type) {
 </script>
 </body>
 </html>
-
