@@ -3,35 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Energy & Timer</title>
+    <title>Pepe Pilot: Pro Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
-        body { margin:0; overflow:hidden; background:#111; touch-action: none; }
-        #ui { position:fixed; top:12px; left:12px; color:#0f0; font-family: Arial; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; }
-        #timer-display { color: #ff3333; font-size: 14px; display: none; }
+        body { margin:0; overflow:hidden; background:#111; touch-action: none; user-select: none; }
+        #ui { position:fixed; top:12px; left:12px; color:#0f0; font-family: 'Courier New', Courier, monospace; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 2px 2px #000; }
+        #energy-bar-container { width: 100px; height: 10px; background: #333; border: 1px solid #0f0; margin-top: 5px; }
+        #energy-fill { width: 100%; height: 100%; background: #0f0; transition: width 0.3s; }
+        #timer-display { color: #ff3333; font-size: 14px; margin-top: 5px; font-style: italic; }
+        
         #nav-bar { 
             position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); 
-            width: 82%; height: 50px; background: rgba(0, 0, 0, 0.9); 
-            border: 1px solid #0f0; border-radius: 12px; display: flex; 
+            width: 90%; height: 60px; background: rgba(0, 0, 0, 0.85); 
+            border: 2px solid #0f0; border-radius: 15px; display: flex; 
             justify-content: space-around; align-items: center; z-index: 200;
+            backdrop-filter: blur(5px);
         }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #0f0; font-size: 8px; font-weight: bold; }
-        .nav-item span { font-size: 18px; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #0f0; font-size: 10px; cursor: pointer; }
+        .nav-item span { font-size: 22px; margin-bottom: 2px; }
     </style>
 </head>
 <body>
 
 <div id="ui">
     💰 <span id="money">0.000</span><br>
-    ⚡ <span id="energy">100</span>/100
-    <div id="timer-display">Восстановление: <span id="time-left">03:00:00</span></div>
+    ⚡ <span id="energy-text">100/100</span>
+    <div id="energy-bar-container"><div id="energy-fill"></div></div>
+    <div id="timer-display" style="display: none;">REGEN: <span id="time-left">03:00:00</span></div>
 </div>
 
 <div id="nav-bar">
-    <div class="nav-item"><span>🛒</span>МАГАЗИН</div>
-    <div class="nav-item"><span>📜</span>ЗАДАНИЯ</div>
-    <div class="nav-item"><span>👥</span>ДРУЗЬЯ</div>
-    <div class="nav-item"><span>👛</span>КОШЕЛЕК</div>
+    <div class="nav-item"><span>🛒</span>SHOP</div>
+    <div class="nav-item"><span>📜</span>TASKS</div>
+    <div class="nav-item"><span>👥</span>FRIENDS</div>
+    <div class="nav-item"><span>👛</span>WALLET</div>
 </div>
 
 <script>
@@ -39,7 +44,7 @@ const config = {
     type: Phaser.AUTO,
     width: window.innerWidth,
     height: window.innerHeight,
-    physics: { default: 'arcade' },
+    physics: { default: 'arcade', arcade: { gravity: { y: 0 } } },
     scene: { preload, create, update }
 };
 
@@ -47,82 +52,57 @@ const game = new Phaser.Game(config);
 
 let plane, hook, rope, targets, bgMusic;
 let isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.03, distance = 25; 
+let angle = 0, swingSpeed = 0.025, distance = 30; 
 let money = 0, energy = 100;
-let recoveryTime = 0; // Время до восстановления в секундах
+let recoveryTime = 0;
+let returnSpeed = 6; // Базовая скорость возврата
 
+// Звуковой движок
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playCustomBeep(frequency) {
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    oscillator.frequency.value = frequency; 
-    oscillator.type = 'triangle'; 
-    gainNode.gain.setValueAtTime(0.005, audioCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.08);
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 0.08);
-}
-
-function showPopUp(scene, x, y) {
-    let txt = scene.add.text(x, y, '+0.001', { 
-        font: 'bold 24px Arial', fill: '#00ff00', stroke: '#000', strokeThickness: 4
-    }).setOrigin(0.5).setDepth(100);
-    scene.tweens.add({
-        targets: txt, y: y - 100, alpha: 0, duration: 1000, ease: 'Power2', onComplete: () => txt.destroy()
-    });
+function playSound(freq, duration, type = 'sine') {
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type;
+    osc.connect(g);
+    g.connect(audioCtx.destination);
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
 }
 
 function preload() {
-    let width = this.cameras.main.width;
-    let height = this.cameras.main.height;
-    let progressBox = this.add.graphics().fillStyle(0x222222, 0.8).fillRect(width/2 - 110, height/2 - 10, 220, 20);
-    let progressBar = this.add.graphics();
-    this.load.on('progress', (val) => {
-        progressBar.clear().fillStyle(0x00ff00, 1).fillRect(width/2 - 105, height/2 - 5, 210 * val, 10);
-    });
-    this.load.on('complete', () => { progressBar.destroy(); progressBox.destroy(); });
-
-    this.load.image('sky', 'pg.jpeg');
+    // В реальном проекте замени заглушки на свои файлы
+    this.load.image('sky', 'pg.jpeg'); 
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
     this.load.image('plane', 'pepe.png');
-    this.load.audio('theme', 'music.mp3');
+    this.load.image('stone', 'https://labs.phaser.io/assets/sprites/asteroid.png'); // Временный камень
 }
 
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
 
-    try { bgMusic = this.sound.add('theme', { volume: 0.005, loop: true }); } catch (e) {}
-
-    this.input.once('pointerdown', () => {
-        if (bgMusic && !bgMusic.isPlaying) bgMusic.play();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-    });
-
     targets = this.physics.add.group();
-    for(let i = 0; i < 6; i++) spawn(this);
+    // Спавним 4 монетки и 2 камня для интереса
+    for(let i = 0; i < 4; i++) spawnItem(this, 'usdt');
+    for(let i = 0; i < 2; i++) spawnItem(this, 'stone');
 
     rope = this.add.graphics().setDepth(30);
-    hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(60, 60); 
+    hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(50, 50); 
     this.physics.add.existing(hook);
-    hook.body.setCircle(25); 
+    hook.body.setCircle(20); 
 
-    plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
+    plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(200, 130).setDepth(60);
 
     this.input.on('pointerdown', (p) => {
-        // Запуск только если есть энергия и не идет восстановление
-        if (p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
+        if (p.y < config.height - 100 && !isLaunching && !isReturning && energy > 0) {
             isLaunching = true;
             energy--;
-            
-            // Если энергия кончилась, запускаем таймер на 3 часа
-            if (energy === 0) {
-                startRecovery();
-            }
-            
+            if (energy === 0) startRecovery();
             updateUI();
+            playSound(400, 0.1, 'square');
         }
     });
 
@@ -130,75 +110,71 @@ function create() {
         if (isLaunching && !caughtItem) {
             caughtItem = item;
             caughtItem.body.enable = false;
-            playCustomBeep(700); 
             isLaunching = false;
             isReturning = true;
+            
+            // Если поймали тяжелый камень — возвращаемся медленно
+            returnSpeed = (item.texture.key === 'stone') ? 2 : 8;
+            playSound(600, 0.2);
         }
     });
 
-    // Таймер обратного отсчета (раз в секунду)
     setInterval(tick, 1000);
 }
 
-function startRecovery() {
-    recoveryTime = 3 * 60 * 60; // 3 часа в секундах
-    document.getElementById('timer-display').style.display = 'block';
+function spawnItem(scene, type) {
+    let x = Phaser.Math.Between(50, config.width - 50);
+    let y = Phaser.Math.Between(config.height * 0.4, config.height - 150);
+    let item = targets.create(x, y, type).setDepth(40);
+    
+    if (type === 'usdt') {
+        item.setScale(0.12);
+        item.goldValue = 0.001;
+    } else {
+        item.setScale(0.4); // Камень больше
+        item.goldValue = 0.0001; // Камень почти ничего не дает
+        item.setTint(0x888888);
+    }
 }
 
 function tick() {
     if (recoveryTime > 0) {
         recoveryTime--;
-        
-        // Форматирование времени HH:MM:SS
         let h = Math.floor(recoveryTime / 3600).toString().padStart(2, '0');
         let m = Math.floor((recoveryTime % 3600) / 60).toString().padStart(2, '0');
         let s = (recoveryTime % 60).toString().padStart(2, '0');
         document.getElementById('time-left').innerText = `${h}:${m}:${s}`;
-
-        if (recoveryTime === 0) {
-            energy = 100;
-            document.getElementById('timer-display').style.display = 'none';
-            updateUI();
-        }
-    }
-}
-
-function spawn(scene) {
-    let x = Phaser.Math.Between(50, config.width - 50);
-    let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
-    let coin = targets.create(x, y, 'usdt').setDepth(40);
-    if (coin) {
-        coin.setScale(0.12);
-        coin.pulse = scene.tweens.add({
-            targets: coin, scale: 0.14, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
-        });
+        if (recoveryTime === 0) { energy = 100; document.getElementById('timer-display').style.display = 'none'; updateUI(); }
     }
 }
 
 function update() {
-    plane.y = 120 + Math.sin(this.time.now / 600) * 8;
-    let startX = plane.x - 5; 
-    let startY = plane.y + 15; 
+    plane.x = config.width / 2 + Math.sin(this.time.now / 1000) * 10;
+    plane.y = 120 + Math.cos(this.time.now / 600) * 5;
+    
+    let startX = plane.x; 
+    let startY = plane.y + 20; 
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
-        if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
-        distance = 25;
+        if (Math.abs(angle) > 0.7) swingSpeed *= -1;
+        distance = 30;
     } else if (isLaunching) {
-        distance += 16; 
-        if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
+        distance += 12; 
+        if (distance > config.height - 120) { isLaunching = false; isReturning = true; returnSpeed = 5; }
     } else if (isReturning) {
-        distance -= 4; 
-        if (distance <= 25) {
+        distance -= returnSpeed; 
+        if (distance <= 30) {
             isReturning = false;
             if (caughtItem) {
-                money += 0.001; 
-                playCustomBeep(900); 
-                showPopUp(this, plane.x, plane.y);
+                money += caughtItem.goldValue;
+                showPopUp(this, plane.x, plane.y, caughtItem.goldValue);
+                let type = caughtItem.texture.key;
                 caughtItem.destroy();
                 caughtItem = null;
-                spawn(this);
+                spawnItem(this, type);
                 updateUI();
+                playSound(900, 0.1);
             }
         }
     }
@@ -207,21 +183,32 @@ function update() {
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    let endX = startX + Math.sin(angle) * (distance - 15);
-    let endY = startY + Math.cos(angle) * (distance - 15);
-    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
+    rope.clear().lineStyle(3, 0x555555, 1).lineBetween(startX, startY, hook.x, hook.y);
 
     if (caughtItem) {
-        caughtItem.setScale(0.12);
         caughtItem.x = hook.x;
-        caughtItem.y = hook.y + 15; 
-        caughtItem.rotation = hook.rotation;
+        caughtItem.y = hook.y + 10;
     }
+}
+
+function showPopUp(scene, x, y, val) {
+    let txt = scene.add.text(x, y, `+${val.toFixed(4)}`, { 
+        font: 'bold 28px Arial', fill: '#0f0', stroke: '#000', strokeThickness: 5
+    }).setOrigin(0.5).setDepth(100);
+    scene.tweens.add({ targets: txt, y: y - 120, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
+}
+
+function startRecovery() {
+    recoveryTime = 3 * 60 * 60;
+    document.getElementById('timer-display').style.display = 'block';
 }
 
 function updateUI() {
     document.getElementById('money').innerText = money.toFixed(3);
-    document.getElementById('energy').innerText = energy;
+    document.getElementById('energy-text').innerText = `${energy}/100`;
+    document.getElementById('energy-fill').style.width = `${energy}%`;
+    // Цвет полоски меняется, когда энергии мало
+    document.getElementById('energy-fill').style.background = energy < 20 ? '#f00' : '#0f0';
 }
 </script>
 </body>
