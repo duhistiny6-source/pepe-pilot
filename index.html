@@ -3,69 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Mobile</title>
+    <title>Pepe Pilot Debug</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
-        body { margin:0; padding:0; overflow:hidden; background:#000; font-family: sans-serif; }
+        body { margin:0; padding:0; overflow:hidden; background:#111; font-family: sans-serif; }
         
-        /* ИНТЕРФЕЙС ПОВЕРХ ИГРЫ */
+        /* СТАТИСТИКА */
         #game-ui {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 10;
         }
-
         .stats {
             position: absolute; top: 10px; left: 10px; color: #0f0;
-            font-weight: bold; text-shadow: 2px 2px #000; font-size: 16px;
+            font-weight: bold; text-shadow: 2px 2px #000; font-size: 18px;
         }
 
+        /* НАСТРОЙКИ */
         #settings-btn {
-            position: absolute; top: 10px; right: 10px; width: 40px; height: 40px;
-            background: rgba(0, 255, 0, 0.2); border: 2px solid #0f0; border-radius: 50%;
+            position: absolute; top: 10px; right: 10px; width: 42px; height: 42px;
+            background: rgba(0, 255, 0, 0.3); border: 2px solid #0f0; border-radius: 50%;
             display: flex; justify-content: center; align-items: center;
-            cursor: pointer; pointer-events: auto; font-size: 24px;
+            cursor: pointer; pointer-events: auto; font-size: 24px; color: #0f0;
         }
 
-        /* КНОПКА РЕКЛАМЫ (СЛЕВА ПОД СТАТИСТИКОЙ) */
-        #ad-box {
-            position: absolute; top: 70px; left: 10px; pointer-events: auto;
-            display: none; flex-direction: column; gap: 5px;
-        }
-        #ad-btn {
-            background: #ffcc00; color: #000; border: none; padding: 8px;
-            font-weight: bold; border-radius: 5px; font-size: 12px;
-        }
-
-        /* НИЖНЯЯ ПАНЕЛЬ - ЖЕЛЕЗНОЕ ВЫРАВНИВАНИЕ */
+        /* НИЖНЯЯ ПАНЕЛЬ */
         #nav-bar { 
             position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); 
-            width: 90%; height: 70px; background: rgba(0, 10, 0, 0.9); 
-            border: 2px solid #0f0; border-radius: 15px; 
+            width: 92%; height: 70px; background: rgba(0, 20, 0, 0.95); 
+            border: 2px solid #0f0; border-radius: 18px; 
             display: grid; grid-template-columns: repeat(4, 1fr);
             align-items: center; pointer-events: auto;
         }
         .nav-item { 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: #0f0; text-decoration: none; gap: 4px;
+            display: flex; flex-direction: column; align-items: center; color: #0f0; 
         }
-        .nav-item i { font-style: normal; font-size: 24px; }
-        .nav-item span { font-size: 9px; font-weight: bold; text-transform: uppercase; }
+        .nav-item i { font-style: normal; font-size: 24px; margin-bottom: 2px; }
+        .nav-item span { font-size: 8px; font-weight: bold; }
 
         /* ОКНО НАСТРОЕК */
         #modal {
             display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 250px; background: #000; border: 2px solid #0f0; border-radius: 15px;
+            width: 240px; background: #000; border: 3px solid #0f0; border-radius: 20px;
             padding: 20px; color: #0f0; text-align: center; pointer-events: auto; z-index: 100;
         }
         .lang-btn {
-            background: #050; color: #0f0; border: 1px solid #0f0; padding: 10px;
-            margin: 10px; width: 80px; border-radius: 5px; font-weight: bold;
-        }
-
-        #ad-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 1000; color: #fff; justify-content: center; align-items: center;
-            flex-direction: column; text-align: center;
+            background: #040; color: #0f0; border: 1px solid #0f0; padding: 12px;
+            margin: 8px; width: 90px; border-radius: 8px; font-weight: bold;
         }
     </style>
 </head>
@@ -75,14 +58,9 @@
     <div class="stats">
         💰 <span id="money">0.000</span><br>
         ⚡ <span id="energy">100</span>/100
-        <div id="timer" style="color:red; font-size:12px; display:none;">Восст: <span id="time">00:00</span></div>
     </div>
 
     <div id="settings-btn" onclick="toggleModal()">⚙️</div>
-
-    <div id="ad-box">
-        <button id="ad-btn" onclick="watchAd()">📺 +50 ЭНЕРГИИ</button>
-    </div>
 
     <div id="nav-bar">
         <div class="nav-item"><i>🛒</i><span id="l-shop">МАГАЗИН</span></div>
@@ -96,21 +74,15 @@
     <h2 id="l-settings">НАСТРОЙКИ</h2>
     <button class="lang-btn" onclick="setLang('ru')">RU 🇷🇺</button>
     <button class="lang-btn" onclick="setLang('en')">EN 🇺🇸</button>
-    <div onclick="toggleModal()" style="margin-top:20px; color:red; cursor:pointer;">[ ЗАКРЫТЬ ]</div>
-</div>
-
-<div id="ad-overlay">
-    <h1 id="l-watch">СМОТРИМ РЕКЛАМУ...</h1>
-    <h2 id="ad-count">5</h2>
+    <div onclick="toggleModal()" style="margin-top:20px; color:red; font-size:12px;">[ ЗАКРЫТЬ ]</div>
 </div>
 
 <script>
 const config = {
-    type: Phaser.AUTO,
+    type: Phaser.CANVAS, // Принудительно используем Canvas для старых телефонов
     width: window.innerWidth,
     height: window.innerHeight,
-    parent: 'game-container',
-    transparent: true,
+    backgroundColor: '#002200', // Темно-зеленый фон вместо черного
     physics: { default: 'arcade' },
     scene: { preload, create, update }
 };
@@ -118,50 +90,49 @@ const config = {
 const game = new Phaser.Game(config);
 let plane, hook, rope, targets, money=0, energy=100, angle=0, dist=30, isMoving=false;
 
-const langs = {
-    ru: { shop: "Магазин", tasks: "Задания", friends: "Друзья", wallet: "Кошелек", settings: "Настройки", watch: "Смотрим рекламу..." },
-    en: { shop: "Shop", tasks: "Tasks", friends: "Friends", wallet: "Wallet", settings: "Settings", watch: "Watching Ad..." }
-};
-
-function setLang(id) {
-    const l = langs[id];
-    document.getElementById('l-shop').innerText = l.shop;
-    document.getElementById('l-tasks').innerText = l.tasks;
-    document.getElementById('l-friends').innerText = l.friends;
-    document.getElementById('l-wallet').innerText = l.wallet;
-    document.getElementById('l-settings').innerText = l.settings;
-    document.getElementById('l-watch').innerText = l.watch;
-    toggleModal();
-}
-
 function toggleModal() {
     const m = document.getElementById('modal');
     m.style.display = (m.style.display === 'block') ? 'none' : 'block';
 }
 
+function setLang(id) {
+    const l = { ru: ["Магазин","Задания","Друзья","Кошелек","Настройки"], en: ["Shop","Tasks","Friends","Wallet","Settings"] }[id];
+    document.getElementById('l-shop').innerText = l[0];
+    document.getElementById('l-tasks').innerText = l[1];
+    document.getElementById('l-friends').innerText = l[2];
+    document.getElementById('l-wallet').innerText = l[3];
+    document.getElementById('l-settings').innerText = l[4];
+    toggleModal();
+}
+
 function preload() {
-    this.load.image('sky', 'pg.jpeg');
-    this.load.image('pepe', 'pepe.png');
-    this.load.image('usdt', 'usdt.png');
-    this.load.image('hook', 'kleshn.png');
+    // Временно создаем графику вместо загрузки файлов для проверки
+    // Если это заработает — значит ошибка в именах твоих картинок!
 }
 
 function create() {
-    this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
-    targets = this.physics.add.group();
-    for(let i=0; i<5; i++) spawnCoin(this);
-
-    rope = this.add.graphics();
-    hook = this.add.sprite(0, 0, 'hook').setDisplaySize(50, 50);
+    // Создаем "самолет" (желтый прямоугольник)
+    plane = this.add.rectangle(config.width/2, 120, 100, 50, 0xffff00);
+    
+    // Создаем "крюк" (зеленый квадрат)
+    hook = this.add.rectangle(0, 0, 30, 30, 0x00ff00);
     this.physics.add.existing(hook);
     
-    plane = this.add.image(config.width/2, 120, 'pepe').setDisplaySize(220, 140);
+    targets = this.physics.add.group();
+    for(let i=0; i<5; i++) {
+        let x = Phaser.Math.Between(50, config.width - 50);
+        let y = Phaser.Math.Between(300, config.height - 150);
+        let coin = this.add.circle(x, y, 15, 0x00ffff); // Голубые монетки
+        targets.add(coin);
+    }
+
+    rope = this.add.graphics();
 
     this.input.on('pointerdown', (p) => {
-        if (p.y > 100 && p.y < config.height - 100 && !isMoving && energy > 0) {
+        if (p.y > 150 && p.y < config.height - 100 && !isMoving && energy > 0) {
             isMoving = true;
             energy--;
-            updateUI();
+            document.getElementById('energy').innerText = energy;
         }
     });
 
@@ -173,26 +144,24 @@ function create() {
     });
 }
 
-function spawnCoin(scene) {
-    let x = Phaser.Math.Between(50, config.width - 50);
-    let y = Phaser.Math.Between(config.height/2, config.height - 150);
-    targets.create(x, y, 'usdt').setScale(0.12);
-}
-
 function update() {
-    let sX = plane.x; let sY = plane.y + 20;
+    let sX = plane.x; let sY = plane.y + 10;
     if (!isMoving && !hook.returning) {
         angle += 0.04; dist = 30;
     } else if (isMoving) {
-        dist += 10;
+        dist += 12;
         if (dist > config.height - 150) isMoving = false;
     } else {
-        dist -= 7;
+        dist -= 8;
         if (dist <= 30) {
             hook.returning = false;
             if (hook.caught) {
                 money += 0.001; hook.caught.destroy(); hook.caught = null;
-                spawnCoin(this); updateUI();
+                document.getElementById('money').innerText = money.toFixed(3);
+                // Спавним новую монетку
+                let nx = Phaser.Math.Between(50, config.width - 50);
+                let ny = Phaser.Math.Between(300, config.height - 150);
+                targets.add(this.add.circle(nx, ny, 15, 0x00ffff));
             }
         }
     }
@@ -200,37 +169,8 @@ function update() {
 
     hook.x = sX + Math.sin(angle) * dist;
     hook.y = sY + Math.cos(angle) * dist;
-    hook.rotation = -angle;
-    rope.clear().lineStyle(2, 0xffffff, 0.5).lineBetween(sX, sY, hook.x, hook.y);
+    rope.clear().lineStyle(2, 0x00ff00, 1).lineBetween(sX, sY, hook.x, hook.y);
     if (hook.caught) { hook.caught.x = hook.x; hook.caught.y = hook.y; }
-}
-
-function updateUI() {
-    document.getElementById('money').innerText = money.toFixed(3);
-    document.getElementById('energy').innerText = energy;
-    if (energy <= 0) {
-        document.getElementById('ad-box').style.display = 'flex';
-        document.getElementById('timer').style.display = 'block';
-    } else {
-        document.getElementById('ad-box').style.display = 'none';
-        document.getElementById('timer').style.display = 'none';
-    }
-}
-
-function watchAd() {
-    const over = document.getElementById('ad-overlay');
-    const num = document.getElementById('ad-count');
-    over.style.display = 'flex';
-    let count = 5;
-    let timer = setInterval(() => {
-        count--; num.innerText = count;
-        if (count <= 0) {
-            clearInterval(timer);
-            over.style.display = 'none';
-            energy = Math.min(energy + 50, 100);
-            updateUI();
-        }
-    }, 1000);
 }
 </script>
 </body>
