@@ -3,24 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Final Fix</title>
+    <title>Pepe Pilot: Hard Fixed</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#000; touch-action: none; font-family: Arial, sans-serif; }
         #ui { position:fixed; top:12px; left:12px; color:#0f0; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; }
-        
-        /* Кнопка настроек */
-        #settings-btn { position: fixed; top: 12px; right: 12px; font-size: 30px; cursor: pointer; z-index: 2000; }
-        
-        /* Окно настроек */
+        #settings-btn { position: fixed; top: 12px; right: 12px; font-size: 30px; cursor: pointer; z-index: 5000; }
         #settings-modal { 
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.9); z-index: 3000; color: #fff; 
+            background: rgba(0,0,0,0.95); z-index: 6000; color: #fff; 
             justify-content: center; align-items: center; flex-direction: column; 
         }
         .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 30px; border-radius: 20px; text-align: center; }
-        .lang-btn { background: #333; color: #0f0; border: 1px solid #0f0; padding: 15px; margin: 10px 0; cursor: pointer; border-radius: 10px; width: 100%; font-weight: bold; }
-
+        .lang-btn { background: #333; color: #0f0; border: 1px solid #0f0; padding: 15px; margin: 10px 0; cursor: pointer; border-radius: 10px; width: 200px; font-weight: bold; }
         #nav-bar { 
             position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); 
             width: 90%; height: 55px; background: rgba(0, 0, 0, 0.95); 
@@ -39,11 +34,11 @@
     <div>⚡ <span id="energy">100</span>/100</div>
 </div>
 
-<div id="settings-modal" onclick="closeSettings()">
-    <div class="modal-content" onclick="event.stopPropagation()">
+<div id="settings-modal">
+    <div class="modal-content">
         <h3>НАСТРОЙКИ</h3>
-        <button class="lang-btn" onclick="alert('RU selected')">РУССКИЙ</button>
-        <button class="lang-btn" onclick="alert('EN selected')">ENGLISH</button>
+        <button class="lang-btn" onclick="closeSettings()">РУССКИЙ</button>
+        <button class="lang-btn" onclick="closeSettings()">ENGLISH</button>
         <p onclick="closeSettings()" style="cursor:pointer; color:#888; margin-top:15px;">Закрыть</p>
     </div>
 </div>
@@ -56,7 +51,7 @@
 </div>
 
 <script>
-// Функции для шестерёнки
+// Глобальные функции для UI
 function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; }
 function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
 
@@ -70,7 +65,7 @@ const config = {
 const game = new Phaser.Game(config);
 let plane, hook, rope, targets, bgMusic;
 let isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.025, distance = 0, money = 0;
+let angle = 0, swingSpeed = 0.015, distance = 0, money = 0; // Скорость качания уменьшена в 2 раза
 
 function preload() {
     this.load.image('sky', 'pg.jpeg');
@@ -83,13 +78,14 @@ function preload() {
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
     bgMusic = this.sound.add('theme', { volume: 0.1, loop: true });
-    
+
     targets = this.physics.add.group();
     for(let i = 0; i < 6; i++) spawnCoin(this);
 
+    // ВАЖНО: Порядок отрисовки (Сначала нитка, потом всё остальное)
     rope = this.add.graphics().setDepth(5);
-    hook = this.physics.add.sprite(0, 0, 'hook').setDisplaySize(60, 60).setDepth(10);
-    plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(280, 180).setDepth(20);
+    hook = this.physics.add.sprite(0, 0, 'hook').setDisplaySize(60, 60).setDepth(20); // Клешня выше нитки
+    plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(280, 180).setDepth(30);
 
     this.input.on('pointerdown', (p) => {
         if (!this.sound.locked && !bgMusic.isPlaying) bgMusic.play();
@@ -116,20 +112,20 @@ function spawnCoin(scene) {
 }
 
 function update() {
-    // Анимация самолёта
+    // Движение самолета
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
     
-    // Точка старта всегда привязана к текущему Y самолёта (убираем разрыв)
+    // ЖЕСТКАЯ ПРИВЯЗКА: Точка старта нитки прямо под центром самолета
     let startX = plane.x - 5; 
-    let startY = plane.y + 45; 
+    let startY = plane.y + 65; 
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
-        if (angle > 0.6 || angle < -0.6) swingSpeed *= -1; // Уменьшен размах для стабильности
+        if (angle > 0.5 || angle < -0.5) swingSpeed *= -1; // Узкий и плавный ход
         distance = 0;
     } else if (isLaunching) {
-        distance += 12;
-        if (distance > config.height - 160) { isLaunching = false; isReturning = true; }
+        distance += 10; // Скорость вылета
+        if (distance > config.height - 180) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
         distance -= 10;
         if (distance <= 0) {
@@ -145,20 +141,20 @@ function update() {
         }
     }
 
-    // Позиция клешни
-    hook.x = startX + Math.sin(angle) * distance;
-    hook.y = startY + Math.cos(angle) * distance;
+    // Позиция клешни (всегда следует за углом и дистанцией от точки привязки)
+    hook.x = startX + Math.sin(angle) * (distance + 15); // +15 чтобы не сливалась совсем в ноль
+    hook.y = startY + Math.cos(angle) * (distance + 15);
     hook.rotation = -angle;
 
-    // Отрисовка нитки (без разрывов)
-    rope.clear().lineStyle(2, 0x444444, 0.8);
-    if (distance > 2) {
+    // Отрисовка нитки: начинается ВСЕГДА из startY самолета
+    rope.clear().lineStyle(3, 0x333333, 0.9); // Темный стальной цвет
+    if (distance > 0) {
         rope.lineBetween(startX, startY, hook.x, hook.y);
     }
 
     if (caughtItem) {
         caughtItem.x = hook.x;
-        caughtItem.y = hook.y + 10;
+        caughtItem.y = hook.y + 15;
         caughtItem.rotation = hook.rotation;
     }
 }
