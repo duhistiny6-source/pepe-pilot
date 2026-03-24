@@ -3,60 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Pro Edition</title>
+    <title>Pepe Pilot: Final Polish</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#000; touch-action: none; font-family: Arial, sans-serif; }
-        
-        /* UI показатели */
-        #ui { 
-            position:fixed; top:12px; left:12px; color:#0f0; font-weight:bold; 
-            z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000;
-            display: flex; flex-direction: column; gap: 5px;
-        }
+        #ui { position:fixed; top:12px; left:12px; color:#0f0; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; display: flex; flex-direction: column; gap: 5px; }
         #timer-display { color: #ff3333; font-size: 13px; display: none; }
-        
-        #ad-button { 
-            display: none; pointer-events: auto; background: #ffcc00; color: #000; 
-            border: 1px solid #fff; padding: 4px 8px; font-size: 11px; font-weight: bold; 
-            border-radius: 4px; cursor: pointer; width: fit-content; margin-top: 5px;
-        }
-
-        /* Кнопка настроек */
-        #settings-btn {
-            position: fixed; top: 12px; right: 12px; font-size: 28px; cursor: pointer;
-            z-index: 1001; filter: drop-shadow(1px 1px 2px #000); user-select: none;
-            transition: transform 0.2s;
-        }
-        #settings-btn:active { transform: scale(0.9); }
-
-        /* Окно настроек */
-        #settings-modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 2000; color: #fff;
-            justify-content: center; align-items: center; flex-direction: column;
-        }
-        .modal-content {
-            background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px;
-            text-align: center; min-width: 240px; box-shadow: 0 0 20px rgba(0,255,0,0.2);
-        }
-        .lang-btn {
-            background: #333; color: #0f0; border: 1px solid #0f0; padding: 12px 20px;
-            margin: 10px 0; cursor: pointer; border-radius: 10px; font-weight: bold; width: 100%;
-            display: block;
-        }
-        .close-btn { margin-top: 15px; color: #888; cursor: pointer; font-size: 14px; }
-
-        /* Реклама */
+        #ad-button { display: none; pointer-events: auto; background: #ffcc00; color: #000; border: 1px solid #fff; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor: pointer; width: fit-content; margin-top: 5px; }
+        #settings-btn { position: fixed; top: 12px; right: 12px; font-size: 28px; cursor: pointer; z-index: 1001; filter: drop-shadow(1px 1px 2px #000); }
+        #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
+        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 240px; }
+        .lang-btn { background: #333; color: #0f0; border: 1px solid #0f0; padding: 12px 20px; margin: 10px 0; cursor: pointer; border-radius: 10px; font-weight: bold; width: 100%; }
         #ad-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
-        
-        /* Нижнее меню */
-        #nav-bar { 
-            position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); 
-            width: 90%; height: 60px; background: rgba(0, 0, 0, 0.9); 
-            border: 1px solid #0f0; border-radius: 15px; 
-            display: flex; justify-content: space-around; align-items: center; z-index: 200; 
-        }
+        #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 90%; height: 60px; background: rgba(0, 0, 0, 0.9); border: 1px solid #0f0; border-radius: 15px; display: flex; justify-content: space-around; align-items: center; z-index: 200; }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #0f0; font-weight: bold; flex: 1; }
         .nav-item span { font-size: 20px; }
         .nav-text { font-size: 8px; margin-top: 2px; }
@@ -70,7 +29,7 @@
     <div>💰 <span id="money">0.000</span></div>
     <div>⚡ <span id="energy">100</span>/100</div>
     <div id="timer-display"><span id="txt-recovery">Восстановление</span>: <span id="time-left">03:00:00</span></div>
-    <button id="ad-button" onclick="startAd()">📺 СМОТРЕТЬ РЕКЛАМУ (+50 ⚡)</button>
+    <button id="ad-button" onclick="startAd()">📺 СМОТРЕТЬ РЕКЛАМУ (+50⚡)</button>
 </div>
 
 <div id="settings-modal">
@@ -78,7 +37,7 @@
         <h3 id="txt-settings-title">НАСТРОЙКИ</h3>
         <button class="lang-btn" onclick="changeLanguage('ru')">РУССКИЙ</button>
         <button class="lang-btn" onclick="changeLanguage('en')">ENGLISH</button>
-        <div class="close-btn" onclick="toggleSettings()" id="txt-close">Закрыть</div>
+        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleSettings()" id="txt-close">Закрыть</div>
     </div>
 </div>
 
@@ -95,22 +54,15 @@
 </div>
 
 <script>
-// --- Переводы ---
 const translations = {
-    ru: { recovery: "Восстановление", ad_btn: "📺 СМОТРЕТЬ РЕКЛАМУ (+50 ⚡)", settings: "НАСТРОЙКИ", close: "Закрыть", watching: "СМОТРИМ РОЛИК...", left: "Осталось", shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК" },
-    en: { recovery: "Recovery", ad_btn: "📺 WATCH AD (+50 ⚡)", settings: "SETTINGS", close: "Close", watching: "WATCHING AD...", left: "Left", shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET" }
+    ru: { recovery: "Восстановление", ad_btn: "📺 СМОТРЕТЬ РЕКЛАМУ (+50⚡)", settings: "НАСТРОЙКИ", close: "Закрыть", watching: "СМОТРИМ РОЛИК...", left: "Осталось", shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК" },
+    en: { recovery: "Recovery", ad_btn: "📺 WATCH AD (+50⚡)", settings: "SETTINGS", close: "Close", watching: "WATCHING AD...", left: "Left", shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET" }
 };
 
 let currentLang = 'ru';
-
-function toggleSettings() {
-    const modal = document.getElementById('settings-modal');
-    modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
-}
-
+function toggleSettings() { const m = document.getElementById('settings-modal'); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; }
 function changeLanguage(lang) {
-    currentLang = lang;
-    const t = translations[lang];
+    currentLang = lang; const t = translations[lang];
     document.getElementById('txt-recovery').innerText = t.recovery;
     document.getElementById('ad-button').innerText = t.ad_btn;
     document.getElementById('txt-settings-title').innerText = t.settings;
@@ -123,17 +75,25 @@ function changeLanguage(lang) {
     toggleSettings();
 }
 
-// --- Игра ---
+// Звуковой движок
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playBeep(freq, dur) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.frequency.value = freq; osc.type = 'sine';
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+    osc.start(); osc.stop(audioCtx.currentTime + dur);
+}
+
 const config = {
-    type: Phaser.AUTO,
-    width: window.innerWidth,
-    height: window.innerHeight,
-    physics: { default: 'arcade' },
-    scene: { preload, create, update }
+    type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight,
+    physics: { default: 'arcade' }, scene: { preload, create, update }
 };
 
 const game = new Phaser.Game(config);
-let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
+let plane, hook, rope, targets, isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, distance = 25, money = 0, energy = 100, recoveryTime = 0;
 
 function preload() {
@@ -141,42 +101,30 @@ function preload() {
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
     this.load.image('plane', 'pepe.png');
-    this.load.audio('theme', 'music.mp3');
 }
 
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
-    
-    try { bgMusic = this.sound.add('theme', { volume: 0.01, loop: true }); } catch (e) {}
-    this.input.once('pointerdown', () => { if (bgMusic && !bgMusic.isPlaying) bgMusic.play(); });
+    this.input.once('pointerdown', () => { if (audioCtx.state === 'suspended') audioCtx.resume(); });
 
     targets = this.physics.add.group();
     for(let i = 0; i < 6; i++) spawn(this);
-
-    // НИТКА: depth 5 (под всеми)
     rope = this.add.graphics().setDepth(5);
-    
-    // КЛЕШНЯ: depth 50 (над ниткой)
     hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(60, 60); 
     this.physics.add.existing(hook);
-    
-    // ПЕПЕ: depth 60 (самый верх)
     plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.input.on('pointerdown', (p) => {
         if (p.y > 80 && p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
-            isLaunching = true;
-            energy--;
-            if (energy <= 0) startRecovery();
-            updateUI();
+            isLaunching = true; energy--; if (energy <= 0) startRecovery(); updateUI();
         }
     });
 
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
-            caughtItem = item;
-            caughtItem.body.enable = false;
+            caughtItem = item; caughtItem.body.enable = false;
             if (caughtItem.pulse) caughtItem.pulse.stop();
+            playBeep(400, 0.1); // Звук захвата
             isLaunching = false; isReturning = true;
         }
     });
@@ -187,35 +135,30 @@ function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
     let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
     let coin = targets.create(x, y, 'usdt').setDepth(40).setScale(0.12);
-    // ПУЛЬСАЦИЯ МОНЕТОК
-    coin.pulse = scene.tweens.add({
-        targets: coin,
-        scale: 0.14,
-        duration: 1000,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut'
-    });
+    coin.pulse = scene.tweens.add({ targets: coin, scale: 0.14, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+}
+
+function showValue(scene) {
+    let txt = scene.add.text(plane.x, plane.y - 40, '+0.001', { font: 'bold 22px Arial', fill: '#0f0', stroke: '#000', strokeThickness: 3 }).setDepth(100).setOrigin(0.5);
+    scene.tweens.add({ targets: txt, y: txt.y - 60, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
 }
 
 function update() {
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
-    let startX = plane.x - 5; 
-    let startY = plane.y + 15; 
+    let startX = plane.x - 5; let startY = plane.y + 15; 
 
     if (!isLaunching && !isReturning) {
-        angle += swingSpeed;
-        if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
+        angle += swingSpeed; if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
         distance = 25;
     } else if (isLaunching) {
-        distance += 16; 
-        if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
+        distance += 16; if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
         distance -= 6; 
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
-                money += 0.001; caughtItem.destroy(); caughtItem = null; spawn(this); updateUI();
+                money += 0.001; playBeep(800, 0.15); // Звук доставки
+                showValue(this); caughtItem.destroy(); caughtItem = null; spawn(this); updateUI();
             }
         }
     }
@@ -224,33 +167,26 @@ function update() {
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // РИСУЕМ НИТКУ (она автоматически будет под клешней из-за setDepth)
-    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, hook.x, hook.y);
+    // Скрываем нитку под клешню за счет уменьшения длины отрисовки
+    let endX = startX + Math.sin(angle) * (distance - 30);
+    let endY = startY + Math.cos(angle) * (distance - 30);
+    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
 
-    if (caughtItem) {
-        caughtItem.x = hook.x; 
-        caughtItem.y = hook.y + 15; 
-        caughtItem.rotation = hook.rotation;
-    }
+    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; caughtItem.rotation = hook.rotation; }
 }
 
 function updateUI() {
     document.getElementById('money').innerText = money.toFixed(3);
     document.getElementById('energy').innerText = energy;
-    if (energy <= 0) {
-        document.getElementById('timer-display').style.display = 'block';
-        document.getElementById('ad-button').style.display = 'block';
-    } else {
-        document.getElementById('timer-display').style.display = 'none';
-        document.getElementById('ad-button').style.display = 'none';
-    }
+    const isOutOfEnergy = energy <= 0;
+    document.getElementById('timer-display').style.display = isOutOfEnergy ? 'block' : 'none';
+    document.getElementById('ad-button').style.display = isOutOfEnergy ? 'block' : 'none';
 }
 
 function tick() {
     if (recoveryTime > 0) {
         recoveryTime--;
-        let m = Math.floor(recoveryTime / 60).toString().padStart(2, '0');
-        let s = (recoveryTime % 60).toString().padStart(2, '0');
+        let m = Math.floor(recoveryTime / 60).toString().padStart(2, '0'), s = (recoveryTime % 60).toString().padStart(2, '0');
         document.getElementById('time-left').innerText = `00:${m}:${s}`;
         if (recoveryTime === 0) { energy = 100; updateUI(); }
     }
@@ -260,16 +196,10 @@ function startAd() {
     document.getElementById('ad-overlay').style.display = 'flex';
     let c = 5;
     let i = setInterval(() => {
-        c--;
-        document.getElementById('ad-timer').innerText = `${translations[currentLang].left}: ${c} сек.`;
-        if (c <= 0) { 
-            clearInterval(i); 
-            document.getElementById('ad-overlay').style.display = 'none'; 
-            energy = 100; recoveryTime = 0; updateUI(); 
-        }
+        c--; document.getElementById('ad-timer').innerText = `Осталось: ${c} сек.`;
+        if (c <= 0) { clearInterval(i); document.getElementById('ad-overlay').style.display = 'none'; energy = 100; recoveryTime = 0; updateUI(); }
     }, 1000);
 }
-
 function startRecovery() { recoveryTime = 180; }
 </script>
 </body>
