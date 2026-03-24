@@ -238,3 +238,39 @@ function updateUI() {
     document.getElementById('money').innerText = money.toFixed(3);
     document.getElementById('energy').innerText = energy;
     if (energy <= 0) {
+        document.getElementById('timer-display').style.display = 'block';
+        document.getElementById('ad-button').style.display = 'block';
+    } else {
+        document.getElementById('timer-display').style.display = 'none';
+        document.getElementById('ad-button').style.display = 'none';
+    }
+}
+
+function tick() {
+    if (recoveryTime > 0) {
+        recoveryTime--;
+        let m = Math.floor(recoveryTime / 60).toString().padStart(2, '0');
+        let s = (recoveryTime % 60).toString().padStart(2, '0');
+        document.getElementById('time-left').innerText = `00:${m}:${s}`;
+        if (recoveryTime === 0) { energy = 100; updateUI(); }
+    }
+}
+
+function startAd() {
+    document.getElementById('ad-overlay').style.display = 'flex';
+    let c = 5;
+    let i = setInterval(() => {
+        c--;
+        document.getElementById('ad-timer').innerText = `${translations[currentLang].left}: ${c} сек.`;
+        if (c <= 0) { 
+            clearInterval(i); 
+            document.getElementById('ad-overlay').style.display = 'none'; 
+            energy = 100; recoveryTime = 0; updateUI(); 
+        }
+    }, 1000);
+}
+
+function startRecovery() { recoveryTime = 180; }
+</script>
+</body>
+</html>
