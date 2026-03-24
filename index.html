@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Claw Moving</title>
+    <title>Pepe Moonbix Style</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:black; touch-action: none; }
-        #ui { position:fixed; top:10px; left:10px; color:#0f0; font-family:Arial; font-weight:bold; z-index: 100; }
+        #ui { position:fixed; top:10px; left:10px; color:#0f0; font-family:Arial; font-weight:bold; z-index: 100; pointer-events: none; }
         #shop { position:fixed; bottom:10px; left:10px; z-index: 100; display: flex; }
-        button { padding:10px; margin:5px; font-size:14px; background: #222; color: #fff; border: 1px solid #0f0; }
+        button { padding:10px; margin:5px; font-size:14px; background: #222; color: #fff; border: 1px solid #0f0; border-radius: 5px; }
     </style>
 </head>
 <body>
@@ -36,12 +36,11 @@ const config = {
 
 new Phaser.Game(config);
 
-let plane, hook, chain, targets;
+let plane, hook, rope, targets;
 let isLaunching=false, isReturning=false, caughtItem=null;
-let angle=0, swingSpeed=0.03, currentLen = 70;
+let angle=0, swingSpeed=0.025, distance = 60;
 
-let money=0;
-let energy=10;
+let money=0, energy=10;
 let upgrades = { chance: 0, speed: 0, power: 0 };
 
 const ITEMS = {
@@ -63,23 +62,20 @@ function preload(){
 function create(){
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
 
-    // 1. ЦЕПЬ (Спрайт, который мы будем растягивать)
-    // Вместо рисования линии, берем кусочек из pepe.png
-    chain = this.add.tileSprite(config.width/2, 130, 8, 70, 'pepe');
-    chain.setOrigin(0.5, 0).setDepth(30);
-    chain.setTilePosition(495, 480); // Вырезаем нить
+    // 1. ЛИНИЯ-ТРОС (Graphics) - рисуем как в Moonbix
+    rope = this.add.graphics().setDepth(30);
 
     // 2. КЛЕШНЯ
     hook = this.add.sprite(config.width/2, 200, 'pepe');
-    hook.setDepth(40).setDisplaySize(100, 90);
-    hook.setCrop(300, 600, 400, 400); // Желтая клешня
+    hook.setDepth(40).setDisplaySize(90, 80);
+    hook.setCrop(300, 600, 400, 400); // Желтая часть
 
     // 3. САМОЛЕТ
-    plane = this.add.image(config.width/2, 130, 'pepe');
-    plane.setDisplaySize(280, 240).setDepth(50).setCrop(0, 0, 1000, 480);
+    plane = this.add.image(config.width/2, 120, 'pepe');
+    plane.setDisplaySize(260, 220).setDepth(50).setCrop(0, 0, 1000, 480);
 
     this.physics.add.existing(hook);
-    hook.body.setCircle(35, 15, 15);
+    hook.body.setCircle(30, 20, 20);
 
     targets = this.physics.add.group();
     for(let i=0; i<8; i++) spawn(this);
@@ -95,8 +91,7 @@ function create(){
     this.physics.add.overlap(hook, targets, (h, item) => {
         if(isLaunching && !caughtItem){
             let d = ITEMS[item.texture.key];
-            let finalChance = d.chance + upgrades.chance * 0.05;
-            if(Math.random() <= finalChance) { 
+            if(Math.random() <= (d.chance + upgrades.chance * 0.05)) { 
                 caughtItem = item;
                 caughtItem.body.enable = false; 
             }
@@ -105,36 +100,35 @@ function create(){
         }
     });
 
-    setInterval(() => { if(energy < 10) energy++; updateUI(); }, 3000);
+    setInterval(() => { if(energy < 10) energy++; updateUI(); }, 4000);
 }
 
 function spawn(scene){
     let keys = Object.keys(ITEMS);
     let k = keys[Phaser.Math.Between(0, keys.length - 1)];
-    let x = Phaser.Math.Between(80, config.width - 80);
-    let y = Phaser.Math.Between(config.height * 0.6, config.height - 80);
-    targets.create(x, y, k).setDisplaySize(65, 65);
+    let x = Phaser.Math.Between(60, config.width - 60);
+    let y = Phaser.Math.Between(config.height * 0.6, config.height - 60);
+    targets.create(x, y, k).setDisplaySize(60, 60);
 }
 
 function update(){
-    // САМОЛЕТ ПАРИТ
-    plane.y = 130 + Math.sin(this.time.now / 600) * 8;
-    let startY = plane.y + 40;
+    // САМОЛЕТ ПЛАВНО КАЧАЕТСЯ
+    plane.y = 120 + Math.sin(this.time.now / 800) * 6;
+    let startY = plane.y + 40; // Точка вылета нити
 
     if(!isLaunching && !isReturning){
+        // Свободное качание как в Moonbix
         angle += swingSpeed;
-        if(angle > 0.7 || angle < -0.7) swingSpeed *= -1;
-        currentLen = 70;
+        if(angle > 0.75 || angle < -0.75) swingSpeed *= -1;
+        distance = 60;
     }
     else if(isLaunching){
-        // УВЕЛИЧИВАЕМ ДЛИНУ (Клешня едет вниз)
-        currentLen += 12 + (upgrades.speed * 2);
-        if(currentLen > config.height - startY) { isLaunching = false; isReturning = true; }
+        distance += 12 + (upgrades.speed * 2);
+        if(distance > config.height - 100) { isLaunching = false; isReturning = true; }
     }
     else if(isReturning){
-        // УМЕНЬШАЕМ ДЛИНУ (Клешня едет вверх)
-        currentLen -= (10 + upgrades.power * 2);
-        if(currentLen <= 70){
+        distance -= (10 + upgrades.power * 2);
+        if(distance <= 60){
             isReturning = false;
             if(caughtItem){
                 money += ITEMS[caughtItem.texture.key].value;
@@ -146,19 +140,19 @@ function update(){
         }
     }
 
-    // СИНХРОНИЗАЦИЯ ЦЕПИ И КЛЕШНИ
-    chain.x = plane.x;
-    chain.y = startY;
-    chain.rotation = -angle;
-    chain.height = currentLen; // ТЕПЕРЬ ЦЕПЬ РАСТЯГИВАЕТСЯ РЕАЛЬНО
-
-    hook.x = plane.x + Math.sin(angle) * currentLen;
-    hook.y = startY + Math.cos(angle) * currentLen;
+    // РАСЧЕТ ПОЗИЦИИ КЛЕШНИ
+    hook.x = plane.x + Math.sin(angle) * distance;
+    hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
+
+    // РИСОВАНИЕ ОДНОЙ ЧИСТОЙ НИТИ
+    rope.clear();
+    rope.lineStyle(2, 0xcccccc, 1); // Тонкая серая нить
+    rope.lineBetween(plane.x, startY, hook.x, hook.y);
 
     if(caughtItem){
         caughtItem.x = hook.x;
-        caughtItem.y = hook.y + 30;
+        caughtItem.y = hook.y + 25;
     }
 }
 
@@ -168,9 +162,8 @@ function updateUI(){
 }
 
 window.upgrade = function(type){
-    let cost = 200;
-    if(money >= cost){
-        money -= cost;
+    if(money >= 200){
+        money -= 200;
         upgrades[type]++;
         updateUI();
     }
