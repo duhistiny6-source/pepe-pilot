@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Blink & White Timer</title>
+    <title>Pepe Pilot: Fixed & Alive</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#111; touch-action: none; }
         #ui { position:fixed; top:12px; left:12px; color:#0f0; font-family: Arial; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; }
-        /* ТАЙМЕР ТЕПЕРЬ БЕЛЫЙ */
         #timer-display { color: #fff; font-size: 14px; display: none; margin-top: 4px; }
         #nav-bar { 
             position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); 
@@ -46,13 +45,12 @@ const config = {
 
 const game = new Phaser.Game(config);
 
-let plane, hook, rope, targets, bgMusic;
+let planeContainer, hook, rope, targets, bgMusic;
 let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, distance = 25; 
 let money = 0, energy = 100;
 let recoveryTime = 0; 
 
-// Звуки
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playCustomBeep(frequency) {
     const oscillator = audioCtx.createOscillator();
@@ -67,7 +65,6 @@ function playCustomBeep(frequency) {
     oscillator.stop(audioCtx.currentTime + 0.08);
 }
 
-// Всплывающий номинал
 function showPopUp(scene, x, y) {
     let txt = scene.add.text(x, y, '+0.001', { 
         font: 'bold 24px Arial', fill: '#00ff00', stroke: '#000', strokeThickness: 4
@@ -77,17 +74,7 @@ function showPopUp(scene, x, y) {
     });
 }
 
-// ПРЕДЗАГРУЗКА
 function preload() {
-    let width = this.cameras.main.width;
-    let height = this.cameras.main.height;
-    let progressBox = this.add.graphics().fillStyle(0x222222, 0.8).fillRect(width/2 - 110, height/2 - 10, 220, 20);
-    let progressBar = this.add.graphics();
-    this.load.on('progress', (val) => {
-        progressBar.clear().fillStyle(0x00ff00, 1).fillRect(width/2 - 105, height/2 - 5, 210 * val, 10);
-    });
-    this.load.on('complete', () => { progressBar.destroy(); progressBox.destroy(); });
-
     this.load.image('sky', 'pg.jpeg');
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
@@ -95,12 +82,10 @@ function preload() {
     this.load.audio('theme', 'music.mp3');
 }
 
-// СОЗДАНИЕ
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
 
     try { bgMusic = this.sound.add('theme', { volume: 0.005, loop: true }); } catch (e) {}
-
     this.input.once('pointerdown', () => {
         if (bgMusic && !bgMusic.isPlaying) bgMusic.play();
         if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -110,35 +95,34 @@ function create() {
     for(let i = 0; i < 6; i++) spawn(this);
 
     rope = this.add.graphics().setDepth(30);
+    
+    // Создаем контейнер для самолета
+    planeContainer = this.add.container(config.width / 2, 120);
+    planeContainer.setDepth(60);
+
+    let pepeBody = this.add.image(0, 0, 'plane').setDisplaySize(280, 180);
+    planeContainer.add(pepeBody);
+
+    // Веки для моргания
+    planeContainer.leftEyelid = this.add.graphics().fillStyle(0xffffff, 1).fillCircle(-14, -28, 9).setScale(0.01);
+    planeContainer.rightEyelid = this.add.graphics().fillStyle(0xffffff, 1).fillCircle(14, -28, 9).setScale(0.01);
+    planeContainer.add([planeContainer.leftEyelid, planeContainer.rightEyelid]);
+
+    this.time.addEvent({
+        delay: Phaser.Math.Between(2000, 5000),
+        callback: () => {
+            this.tweens.add({
+                targets: [planeContainer.leftEyelid, planeContainer.rightEyelid],
+                scaleY: 1, duration: 100, yoyo: true, hold: 80
+            });
+        },
+        loop: true
+    });
+
+    // Клешня должна быть ВНЕ контейнера, чтобы свободно летать
     hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(60, 60); 
     this.physics.add.existing(hook);
     hook.body.setCircle(25); 
-
-    // САМОЛЕТ И МОРАГАЮЩИЙ ПЕПЕ
-    plane = this.add.container(config.width / 2, 120);
-    plane.setDepth(60);
-    
-    // 1. Спрайт самолета с Пепе
-    let pepeBody = this.add.image(0, 0, 'plane').setDisplaySize(280, 180).setOrigin(0.5);
-    plane.add(pepeBody);
-
-    // 2. Веки (закрытые) - программно рисуем
-    // Левый глаз (в координатах самолета)
-    plane.leftEyelid = this.add.graphics();
-    plane.leftEyelid.fillStyle(0xffffff, 1).fillCircle(-14, -28, 9).setOrigin(0.5).setDepth(61).setScale(0.01); 
-    plane.add(plane.leftEyelid);
-    // Правый глаз
-    plane.rightEyelid = this.add.graphics();
-    plane.rightEyelid.fillStyle(0xffffff, 1).fillCircle(14, -28, 9).setOrigin(0.5).setDepth(61).setScale(0.01);
-    plane.add(plane.rightEyelid);
-
-    // Логика моргания (случайный интервал от 2 до 5 секунд)
-    plane.blinkTimer = this.time.addEvent({
-        delay: Phaser.Math.Between(2000, 5000),
-        callback: blinkPepe,
-        callbackScope: this,
-        loop: true
-    });
 
     this.input.on('pointerdown', (p) => {
         if (p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
@@ -162,28 +146,6 @@ function create() {
     setInterval(tick, 1000);
 }
 
-// Функция моргания
-function blinkPepe() {
-    // Твин на закрытие век
-    this.tweens.add({
-        targets: [plane.leftEyelid, plane.rightEyelid],
-        scaleY: 1, // Закрываем
-        duration: 100,
-        ease: 'Cubic.easeOut',
-        yoyo: true, // Сразу открываем обратно
-        hold: 80, // Держим закрытыми чуть дольше
-        onComplete: () => {
-            // Обновляем таймер на следующий случайный интервал
-            plane.blinkTimer.delay = Phaser.Math.Between(2000, 5000);
-        }
-    });
-}
-
-function startRecovery() {
-    recoveryTime = 3 * 60 * 60; 
-    document.getElementById('timer-display').style.display = 'block';
-}
-
 function tick() {
     if (recoveryTime > 0) {
         recoveryTime--;
@@ -199,21 +161,17 @@ function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
     let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
     let coin = targets.create(x, y, 'usdt').setDepth(40);
-    if (coin) {
-        coin.setScale(0.12);
-        coin.pulse = scene.tweens.add({
-            targets: coin, scale: 0.14, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
-        });
-    }
+    coin.setScale(0.12);
+    scene.tweens.add({ targets: coin, scale: 0.14, duration: 1500, yoyo: true, repeat: -1 });
 }
 
-// ОБНОВЛЕНИЕ КАДРА
 function update() {
-    // Покачивание самолета (теперь он в контейнере)
-    plane.y = 120 + Math.sin(this.time.now / 600) * 8;
+    // Качание самолета
+    planeContainer.y = 120 + Math.sin(this.time.now / 600) * 8;
     
-    let startX = plane.x - 5; 
-    let startY = plane.y + 15; 
+    // Точка крепления веревки (относительно качающегося самолета)
+    let startX = planeContainer.x - 5; 
+    let startY = planeContainer.y + 15; 
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
@@ -229,7 +187,7 @@ function update() {
             if (caughtItem) {
                 money += 0.001; 
                 playCustomBeep(900); 
-                showPopUp(this, plane.x, plane.y); // Попап над центром контейнера
+                showPopUp(this, planeContainer.x, planeContainer.y);
                 caughtItem.destroy();
                 caughtItem = null;
                 spawn(this);
@@ -242,12 +200,9 @@ function update() {
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    let endX = startX + Math.sin(angle) * (distance - 15);
-    let endY = startY + Math.cos(angle) * (distance - 15);
-    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
+    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, hook.x, hook.y);
 
     if (caughtItem) {
-        caughtItem.setScale(0.12);
         caughtItem.x = hook.x;
         caughtItem.y = hook.y + 15; 
         caughtItem.rotation = hook.rotation;
