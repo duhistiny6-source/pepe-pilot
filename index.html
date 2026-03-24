@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Final Edition</title>
+    <title>Pepe Pilot: Audio Optimized</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#000; touch-action: none; font-family: Arial, sans-serif; }
@@ -75,7 +75,7 @@ function changeLanguage(lang) {
     toggleSettings();
 }
 
-// Звуковой движок (Громкость снижена)
+// Звуковой движок (Громкость снижена для тихих сигналов)
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playBeep(freq, dur) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -83,7 +83,7 @@ function playBeep(freq, dur) {
     const gain = audioCtx.createGain();
     osc.connect(gain); gain.connect(audioCtx.destination);
     osc.frequency.value = freq; osc.type = 'sine';
-    gain.gain.setValueAtTime(0.02, audioCtx.currentTime); // Очень тихий звук
+    gain.gain.setValueAtTime(0.015, audioCtx.currentTime); // Тихие сигналы
     gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
     osc.start(); osc.stop(audioCtx.currentTime + dur);
 }
@@ -98,7 +98,6 @@ let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = fals
 let angle = 0, swingSpeed = 0.03, distance = 25, money = 0, energy = 100, recoveryTime = 0;
 
 function preload() {
-    // Индикатор загрузки
     let progressBar = this.add.graphics();
     let progressBox = this.add.graphics();
     progressBox.fillStyle(0x222222, 0.8);
@@ -114,9 +113,7 @@ function preload() {
     });
     
     this.load.on('complete', function () {
-        progressBar.destroy();
-        progressBox.destroy();
-        loadingText.destroy();
+        progressBar.destroy(); progressBox.destroy(); loadingText.destroy();
     });
 
     this.load.image('sky', 'pg.jpeg');
@@ -129,14 +126,17 @@ function preload() {
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
     
-    // Инициализация фоновой музыки
+    // Музыка установлена на очень низкую громкость (0.02)
     try {
-        bgMusic = this.sound.add('theme', { volume: 0.1, loop: true });
+        bgMusic = this.sound.add('theme', { volume: 0.02, loop: true });
     } catch (e) { console.error("Music load error", e); }
 
+    // Активация звука при ПЕРВОМ касании для мгновенного включения
     this.input.once('pointerdown', () => { 
-        if (bgMusic && !bgMusic.isPlaying) bgMusic.play();
-        if (audioCtx.state === 'suspended') audioCtx.resume(); 
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        if (bgMusic && !bgMusic.isPlaying) {
+            bgMusic.play();
+        }
     });
 
     targets = this.physics.add.group();
@@ -147,6 +147,7 @@ function create() {
     plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.input.on('pointerdown', (p) => {
+        // Проверка клика вне кнопок навигации и настроек
         if (p.y > 80 && p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
             isLaunching = true; energy--; if (energy <= 0) startRecovery(); updateUI();
         }
@@ -199,7 +200,6 @@ function update() {
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // Скрываем нитку глубоко под клешню
     let endX = startX + Math.sin(angle) * (distance - 30);
     let endY = startY + Math.cos(angle) * (distance - 30);
     rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
