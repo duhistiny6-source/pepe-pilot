@@ -3,204 +3,234 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Fixed</title>
+    <title>Pepe Pilot Mobile</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
-        body { margin:0; overflow:hidden; background:#000; touch-action: none; font-family: sans-serif; }
+        body { margin:0; padding:0; overflow:hidden; background:#000; font-family: sans-serif; }
         
-        /* ВЕРХНИЙ ИНТЕРФЕЙС */
-        #ui { 
-            position:fixed; top:10px; left:10px; color:#0f0; font-weight:bold; 
-            z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000;
-            display: flex; flex-direction: column; gap: 4px;
-        }
-        #timer-display { color: #ff3333; font-size: 12px; display: none; }
-        #ad-button { 
-            display: none; pointer-events: auto; background: #ffcc00; color: #000; 
-            border: 1px solid #fff; padding: 4px 8px; font-size: 10px; font-weight: bold; 
-            border-radius: 4px; cursor: pointer; width: fit-content; margin-top: 5px;
+        /* ИНТЕРФЕЙС ПОВЕРХ ИГРЫ */
+        #game-ui {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 10;
         }
 
-        /* НАСТРОЙКИ */
+        .stats {
+            position: absolute; top: 10px; left: 10px; color: #0f0;
+            font-weight: bold; text-shadow: 2px 2px #000; font-size: 16px;
+        }
+
         #settings-btn {
-            position: fixed; top: 10px; right: 10px; width: 35px; height: 35px;
-            background: rgba(0,255,0,0.2); border: 1px solid #0f0; border-radius: 50%;
-            color: #0f0; font-size: 20px; cursor: pointer; z-index: 150;
+            position: absolute; top: 10px; right: 10px; width: 40px; height: 40px;
+            background: rgba(0, 255, 0, 0.2); border: 2px solid #0f0; border-radius: 50%;
             display: flex; justify-content: center; align-items: center;
-        }
-        #settings-modal {
-            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 220px; background: rgba(0,0,0,0.95); border: 2px solid #0f0; border-radius: 15px;
-            padding: 20px; z-index: 1000; color: #0f0; text-align: center;
-        }
-        .lang-btn {
-            background: #111; color: #0f0; border: 1px solid #0f0; padding: 8px;
-            margin: 5px; cursor: pointer; border-radius: 5px; font-weight: bold; width: 80px;
+            cursor: pointer; pointer-events: auto; font-size: 24px;
         }
 
-        /* НИЖНЯЯ ПАНЕЛЬ - ИСПРАВЛЕНА */
+        /* КНОПКА РЕКЛАМЫ (СЛЕВА ПОД СТАТИСТИКОЙ) */
+        #ad-box {
+            position: absolute; top: 70px; left: 10px; pointer-events: auto;
+            display: none; flex-direction: column; gap: 5px;
+        }
+        #ad-btn {
+            background: #ffcc00; color: #000; border: none; padding: 8px;
+            font-weight: bold; border-radius: 5px; font-size: 12px;
+        }
+
+        /* НИЖНЯЯ ПАНЕЛЬ - ЖЕЛЕЗНОЕ ВЫРАВНИВАНИЕ */
         #nav-bar { 
-            position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); 
-            width: 90%; height: 60px; background: rgba(0, 0, 0, 0.9); 
-            border: 1px solid #0f0; border-radius: 15px; display: flex; 
-            justify-content: space-around; align-items: center; z-index: 100;
+            position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); 
+            width: 90%; height: 70px; background: rgba(0, 10, 0, 0.9); 
+            border: 2px solid #0f0; border-radius: 15px; 
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            align-items: center; pointer-events: auto;
         }
         .nav-item { 
-            display: flex; flex-direction: column; align-items: center; 
-            color: #0f0; width: 25%; pointer-events: auto;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: #0f0; text-decoration: none; gap: 4px;
         }
-        .nav-item span:first-child { font-size: 20px; }
-        .nav-item span:last-child { 
-            font-size: 8px; font-weight: normal; text-transform: uppercase; 
-            margin-top: 2px;
+        .nav-item i { font-style: normal; font-size: 24px; }
+        .nav-item span { font-size: 9px; font-weight: bold; text-transform: uppercase; }
+
+        /* ОКНО НАСТРОЕК */
+        #modal {
+            display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 250px; background: #000; border: 2px solid #0f0; border-radius: 15px;
+            padding: 20px; color: #0f0; text-align: center; pointer-events: auto; z-index: 100;
+        }
+        .lang-btn {
+            background: #050; color: #0f0; border: 1px solid #0f0; padding: 10px;
+            margin: 10px; width: 80px; border-radius: 5px; font-weight: bold;
         }
 
-        #ad-overlay { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.95); z-index: 2000; color: #fff; 
-            justify-content: center; align-items: center; flex-direction: column;
+        #ad-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 1000; color: #fff; justify-content: center; align-items: center;
+            flex-direction: column; text-align: center;
         }
     </style>
 </head>
 <body>
 
-<div id="ui">
-    <div>💰 <span id="money">0.000</span></div>
-    <div>⚡ <span id="energy">100</span>/100</div>
-    <div id="timer-display"><span id="txt-recovery">Восстановление</span>: <span id="time-left">00:00:00</span></div>
-    <button id="ad-button" onclick="startAd()">📺 <span id="txt-ad-btn">СМОТРЕТЬ РЕКЛАМУ</span> (+50 ⚡)</button>
+<div id="game-ui">
+    <div class="stats">
+        💰 <span id="money">0.000</span><br>
+        ⚡ <span id="energy">100</span>/100
+        <div id="timer" style="color:red; font-size:12px; display:none;">Восст: <span id="time">00:00</span></div>
+    </div>
+
+    <div id="settings-btn" onclick="toggleModal()">⚙️</div>
+
+    <div id="ad-box">
+        <button id="ad-btn" onclick="watchAd()">📺 +50 ЭНЕРГИИ</button>
+    </div>
+
+    <div id="nav-bar">
+        <div class="nav-item"><i>🛒</i><span id="l-shop">МАГАЗИН</span></div>
+        <div class="nav-item"><i>📜</i><span id="l-tasks">ЗАДАНИЯ</span></div>
+        <div class="nav-item"><i>👥</i><span id="l-friends">ДРУЗЬЯ</span></div>
+        <div class="nav-item"><i>👛</i><span id="l-wallet">КОШЕЛЕК</span></div>
+    </div>
 </div>
 
-<div id="settings-btn" onclick="toggleSettings()">⚙️</div>
-
-<div id="settings-modal">
-    <h3 id="txt-settings-title">НАСТРОЙКИ</h3>
-    <button class="lang-btn" onclick="setLanguage('ru')">RU 🇷🇺</button>
-    <button class="lang-btn" onclick="setLanguage('en')">EN 🇺🇸</button>
-    <p onclick="toggleSettings()" style="color:#ff3333; cursor:pointer; font-size:12px; margin-top:15px;">[ ЗАКРЫТЬ ]</p>
+<div id="modal">
+    <h2 id="l-settings">НАСТРОЙКИ</h2>
+    <button class="lang-btn" onclick="setLang('ru')">RU 🇷🇺</button>
+    <button class="lang-btn" onclick="setLang('en')">EN 🇺🇸</button>
+    <div onclick="toggleModal()" style="margin-top:20px; color:red; cursor:pointer;">[ ЗАКРЫТЬ ]</div>
 </div>
 
 <div id="ad-overlay">
-    <h2 id="txt-ad-watching">РЕКЛАМА...</h2>
-    <p><span id="ad-timer">5</span> сек.</p>
-</div>
-
-<div id="nav-bar">
-    <div class="nav-item"><span>🛒</span><span id="nav-shop">МАГАЗИН</span></div>
-    <div class="nav-item"><span>📜</span><span id="nav-tasks">ЗАДАНИЯ</span></div>
-    <div class="nav-item"><span>👥</span><span id="nav-friends">ДРУЗЬЯ</span></div>
-    <div class="nav-item"><span>👛</span><span id="nav-wallet">КОШЕЛЕК</span></div>
+    <h1 id="l-watch">СМОТРИМ РЕКЛАМУ...</h1>
+    <h2 id="ad-count">5</h2>
 </div>
 
 <script>
-const translations = {
-    ru: { recovery: "Восстановление", adBtn: "СМОТРЕТЬ РЕКЛАМУ", settings: "НАСТРОЙКИ", watching: "РЕКЛАМА...", shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК" },
-    en: { recovery: "Recovery", adBtn: "WATCH AD", settings: "SETTINGS", watching: "ADVERTISING...", shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET" }
-};
-
-function setLanguage(lang) {
-    const t = translations[lang];
-    document.getElementById('txt-recovery').innerText = t.recovery;
-    document.getElementById('txt-ad-btn').innerText = t.adBtn;
-    document.getElementById('txt-settings-title').innerText = t.settings;
-    document.getElementById('txt-ad-watching').innerText = t.watching;
-    document.getElementById('nav-shop').innerText = t.shop;
-    document.getElementById('nav-tasks').innerText = t.tasks;
-    document.getElementById('nav-friends').innerText = t.friends;
-    document.getElementById('nav-wallet').innerText = t.wallet;
-    toggleSettings();
-}
-
-function toggleSettings() {
-    const m = document.getElementById('settings-modal');
-    m.style.display = (m.style.display === 'block') ? 'none' : 'block';
-}
-
 const config = {
     type: Phaser.AUTO,
     width: window.innerWidth,
     height: window.innerHeight,
+    parent: 'game-container',
+    transparent: true,
     physics: { default: 'arcade' },
     scene: { preload, create, update }
 };
 
 const game = new Phaser.Game(config);
-let plane, hook, rope, targets, money = 0, energy = 100, isLaunching = false, isReturning = false, distance = 25, angle = 0, caughtItem = null;
+let plane, hook, rope, targets, money=0, energy=100, angle=0, dist=30, isMoving=false;
+
+const langs = {
+    ru: { shop: "Магазин", tasks: "Задания", friends: "Друзья", wallet: "Кошелек", settings: "Настройки", watch: "Смотрим рекламу..." },
+    en: { shop: "Shop", tasks: "Tasks", friends: "Friends", wallet: "Wallet", settings: "Settings", watch: "Watching Ad..." }
+};
+
+function setLang(id) {
+    const l = langs[id];
+    document.getElementById('l-shop').innerText = l.shop;
+    document.getElementById('l-tasks').innerText = l.tasks;
+    document.getElementById('l-friends').innerText = l.friends;
+    document.getElementById('l-wallet').innerText = l.wallet;
+    document.getElementById('l-settings').innerText = l.settings;
+    document.getElementById('l-watch').innerText = l.watch;
+    toggleModal();
+}
+
+function toggleModal() {
+    const m = document.getElementById('modal');
+    m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+}
 
 function preload() {
     this.load.image('sky', 'pg.jpeg');
-    this.load.image('hook', 'kleshn.png');
+    this.load.image('pepe', 'pepe.png');
     this.load.image('usdt', 'usdt.png');
-    this.load.image('plane', 'pepe.png');
+    this.load.image('hook', 'kleshn.png');
 }
 
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
     targets = this.physics.add.group();
-    for(let i=0; i<6; i++) spawn(this);
+    for(let i=0; i<5; i++) spawnCoin(this);
+
     rope = this.add.graphics();
     hook = this.add.sprite(0, 0, 'hook').setDisplaySize(50, 50);
     this.physics.add.existing(hook);
-    plane = this.add.image(config.width/2, 100, 'plane').setDisplaySize(200, 130).setDepth(10);
+    
+    plane = this.add.image(config.width/2, 120, 'pepe').setDisplaySize(220, 140);
 
     this.input.on('pointerdown', (p) => {
-        // Если нажали на UI, игру не запускаем
-        if (p.y > config.height - 80 || p.y < 60) return;
-        if (!isLaunching && !isReturning && energy > 0) {
-            isLaunching = true;
-            energy--; updateUI();
+        if (p.y > 100 && p.y < config.height - 100 && !isMoving && energy > 0) {
+            isMoving = true;
+            energy--;
+            updateUI();
         }
     });
 
-    this.physics.add.overlap(hook, targets, (h, item) => {
-        if (isLaunching && !caughtItem) {
-            caughtItem = item; item.body.enable = false;
-            isLaunching = false; isReturning = true;
+    this.physics.add.overlap(hook, targets, (h, coin) => {
+        if (isMoving && !hook.caught) {
+            hook.caught = coin;
+            isMoving = false;
         }
     });
 }
 
-function startAd() {
-    document.getElementById('ad-overlay').style.display = 'flex';
-    let c = 5;
-    let inv = setInterval(() => {
-        c--; document.getElementById('ad-timer').innerText = c;
-        if(c <= 0) { clearInterval(inv); document.getElementById('ad-overlay').style.display = 'none'; energy = Math.min(energy+50, 100); updateUI(); }
-    }, 1000);
-}
-
-function spawn(s) {
+function spawnCoin(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
-    let y = Phaser.Math.Between(config.height * 0.4, config.height - 120);
-    targets.create(x, y, 'usdt').setScale(0.12).setDepth(5);
+    let y = Phaser.Math.Between(config.height/2, config.height - 150);
+    targets.create(x, y, 'usdt').setScale(0.12);
 }
 
 function update() {
     let sX = plane.x; let sY = plane.y + 20;
-    if (!isLaunching && !isReturning) {
-        angle += 0.03; distance = 25;
-    } else if (isLaunching) {
-        distance += 12;
-        if (distance > config.height - 100) { isLaunching = false; isReturning = true; }
+    if (!isMoving && !hook.returning) {
+        angle += 0.04; dist = 30;
+    } else if (isMoving) {
+        dist += 10;
+        if (dist > config.height - 150) isMoving = false;
     } else {
-        distance -= 8;
-        if (distance <= 25) {
-            isReturning = false;
-            if (caughtItem) { money += 0.001; caughtItem.destroy(); caughtItem = null; spawn(this); updateUI(); }
+        dist -= 7;
+        if (dist <= 30) {
+            hook.returning = false;
+            if (hook.caught) {
+                money += 0.001; hook.caught.destroy(); hook.caught = null;
+                spawnCoin(this); updateUI();
+            }
         }
     }
-    hook.x = sX + Math.sin(angle) * distance;
-    hook.y = sY + Math.cos(angle) * distance;
+    if (dist > 30 && !isMoving) hook.returning = true;
+
+    hook.x = sX + Math.sin(angle) * dist;
+    hook.y = sY + Math.cos(angle) * dist;
     hook.rotation = -angle;
     rope.clear().lineStyle(2, 0xffffff, 0.5).lineBetween(sX, sY, hook.x, hook.y);
-    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y; }
+    if (hook.caught) { hook.caught.x = hook.x; hook.caught.y = hook.y; }
 }
 
 function updateUI() {
     document.getElementById('money').innerText = money.toFixed(3);
     document.getElementById('energy').innerText = energy;
-    if (energy <= 0) { document.getElementById('timer-display').style.display = 'block'; document.getElementById('ad-button').style.display = 'block'; }
-    else { document.getElementById('timer-display').style.display = 'none'; document.getElementById('ad-button').style.display = 'none'; }
+    if (energy <= 0) {
+        document.getElementById('ad-box').style.display = 'flex';
+        document.getElementById('timer').style.display = 'block';
+    } else {
+        document.getElementById('ad-box').style.display = 'none';
+        document.getElementById('timer').style.display = 'none';
+    }
+}
+
+function watchAd() {
+    const over = document.getElementById('ad-overlay');
+    const num = document.getElementById('ad-count');
+    over.style.display = 'flex';
+    let count = 5;
+    let timer = setInterval(() => {
+        count--; num.innerText = count;
+        if (count <= 0) {
+            clearInterval(timer);
+            over.style.display = 'none';
+            energy = Math.min(energy + 50, 100);
+            updateUI();
+        }
+    }, 1000);
 }
 </script>
 </body>
