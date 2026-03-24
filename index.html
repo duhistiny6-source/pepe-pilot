@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Energy Boost</title>
+    <title>Pepe Pilot: Settings & Lang</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#000; touch-action: none; }
@@ -14,14 +14,33 @@
         }
         #timer-display { color: #ff3333; font-size: 13px; display: none; }
         
-        /* Аккуратная кнопка под таймером */
+        /* Кнопка настроек (шестеренка) */
+        #settings-btn {
+            position: fixed; top: 12px; right: 12px; width: 35px; height: 35px;
+            background: rgba(0,255,0,0.2); border: 1px solid #0f0; border-radius: 50%;
+            color: #0f0; font-size: 20px; cursor: pointer; z-index: 150;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        /* Окно настроек */
+        #settings-modal {
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 250px; background: rgba(0,0,0,0.95); border: 2px solid #0f0; border-radius: 15px;
+            padding: 20px; z-index: 1000; color: #0f0; font-family: Arial; text-align: center;
+        }
+        .lang-btn {
+            background: #111; color: #0f0; border: 1px solid #0f0; padding: 10px;
+            margin: 10px 5px; cursor: pointer; border-radius: 5px; font-weight: bold;
+        }
+        .close-btn { margin-top: 15px; color: #ff3333; cursor: pointer; font-size: 12px; text-decoration: underline; }
+
         #ad-button { 
             display: none; pointer-events: auto; background: #ffcc00; color: #000; 
             border: 1px solid #fff; padding: 4px 8px; font-size: 11px; font-weight: bold; 
             border-radius: 4px; cursor: pointer; width: fit-content;
         }
 
-        #ad-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; color: #fff; justify-content: center; align-items: center; flex-direction: column; font-family: Arial; }
+        #ad-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1100; color: #fff; justify-content: center; align-items: center; flex-direction: column; font-family: Arial; }
         
         #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 82%; height: 50px; background: rgba(0, 0, 0, 0.9); border: 1px solid #0f0; border-radius: 12px; display: flex; justify-content: space-around; align-items: center; z-index: 200; }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #0f0; font-size: 8px; font-weight: bold; }
@@ -33,23 +52,81 @@
 <div id="ui">
     <div>💰 <span id="money">0.000</span></div>
     <div>⚡ <span id="energy">100</span>/100</div>
-    <div id="timer-display">Восстановление: <span id="time-left">03:00:00</span></div>
-    <button id="ad-button" onclick="startAd()">📺 СМОТРЕТЬ РЕКЛАМУ (+50 ⚡)</button>
+    <div id="timer-display"><span id="txt-recovery">Восстановление</span>: <span id="time-left">03:00:00</span></div>
+    <button id="ad-button" onclick="startAd()">📺 <span id="txt-ad-btn">СМОТРЕТЬ РЕКЛАМУ</span> (+50 ⚡)</button>
+</div>
+
+<div id="settings-btn" onclick="toggleSettings()">⚙️</div>
+
+<div id="settings-modal">
+    <h3 id="txt-settings-title">НАСТРОЙКИ</h3>
+    <p id="txt-lang-select">Выберите язык:</p>
+    <button class="lang-btn" onclick="setLanguage('ru')">RU 🇷🇺</button>
+    <button class="lang-btn" onclick="setLanguage('en')">EN 🇺🇸</button>
+    <div class="close-btn" id="txt-close" onclick="toggleSettings()">ЗАКРЫТЬ</div>
 </div>
 
 <div id="ad-overlay">
-    <h2>СМОТРИМ РОЛИК...</h2>
-    <p id="ad-timer">Осталось: 5 сек.</p>
+    <h2 id="txt-ad-watching">СМОТРИМ РОЛИК...</h2>
+    <p><span id="txt-ad-left">Осталось</span>: <span id="ad-timer">5</span> сек.</p>
 </div>
 
 <div id="nav-bar">
-    <div class="nav-item"><span>🛒</span>МАГАЗИН</div>
-    <div class="nav-item"><span>📜</span>ЗАДАНИЯ</div>
-    <div class="nav-item"><span>👥</span>ДРУЗЬЯ</div>
-    <div class="nav-item"><span>👛</span>КОШЕЛЕК</div>
+    <div class="nav-item"><span>🛒</span><span id="nav-shop">МАГАЗИН</span></div>
+    <div class="nav-item"><span>📜</span><span id="nav-tasks">ЗАДАНИЯ</span></div>
+    <div class="nav-item"><span>👥</span><span id="nav-friends">ДРУЗЬЯ</span></div>
+    <div class="nav-item"><span>👛</span><span id="nav-wallet">КОШЕЛЕК</span></div>
 </div>
 
 <script>
+// Система переводов
+const translations = {
+    ru: {
+        recovery: "Восстановление",
+        adBtn: "СМОТРЕТЬ РЕКЛАМУ",
+        settings: "НАСТРОЙКИ",
+        selectLang: "Выберите язык:",
+        close: "ЗАКРЫТЬ",
+        watching: "СМОТРИМ РОЛИК...",
+        left: "Осталось",
+        shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК"
+    },
+    en: {
+        recovery: "Recovery",
+        adBtn: "WATCH AD",
+        settings: "SETTINGS",
+        selectLang: "Select Language:",
+        close: "CLOSE",
+        watching: "WATCHING AD...",
+        left: "Time left",
+        shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET"
+    }
+};
+
+let currentLang = 'ru';
+
+function setLanguage(lang) {
+    currentLang = lang;
+    const t = translations[lang];
+    document.getElementById('txt-recovery').innerText = t.recovery;
+    document.getElementById('txt-ad-btn').innerText = t.adBtn;
+    document.getElementById('txt-settings-title').innerText = t.settings;
+    document.getElementById('txt-lang-select').innerText = t.selectLang;
+    document.getElementById('txt-close').innerText = t.close;
+    document.getElementById('txt-ad-watching').innerText = t.watching;
+    document.getElementById('txt-ad-left').innerText = t.left;
+    
+    document.getElementById('nav-shop').innerText = t.shop;
+    document.getElementById('nav-tasks').innerText = t.tasks;
+    document.getElementById('nav-friends').innerText = t.friends;
+    document.getElementById('nav-wallet').innerText = t.wallet;
+}
+
+function toggleSettings() {
+    const modal = document.getElementById('settings-modal');
+    modal.style.display = (modal.style.display === 'block') ? 'none' : 'block';
+}
+
 const config = {
     type: Phaser.AUTO,
     width: window.innerWidth,
@@ -123,7 +200,8 @@ function create() {
     plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.input.on('pointerdown', (p) => {
-        if (p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
+        // Проверка: не нажал ли пользователь на UI или шестеренку
+        if (p.y < config.height - 80 && p.x < config.width - 60 && !isLaunching && !isReturning && energy > 0) {
             isLaunching = true;
             energy--;
             if (energy <= 0) startRecovery();
@@ -152,20 +230,16 @@ function startAd() {
     const adTimerText = document.getElementById('ad-timer');
     overlay.style.display = 'flex';
     let count = 5;
+    adTimerText.innerText = count;
     const interval = setInterval(() => {
         count--;
-        adTimerText.innerText = `Осталось: ${count} сек.`;
+        adTimerText.innerText = count;
         if (count <= 0) { clearInterval(interval); overlay.style.display = 'none'; addEnergyBoost(); }
     }, 1000);
 }
 
 function addEnergyBoost() {
-    energy = Math.min(energy + 50, 100); // Добавляем 50, но не больше 100
-    if (energy > 0) {
-        recoveryTime = 0;
-        document.getElementById('timer-display').style.display = 'none';
-        document.getElementById('ad-button').style.display = 'none';
-    }
+    energy = Math.min(energy + 50, 100);
     updateUI();
 }
 
@@ -224,7 +298,6 @@ function update() {
 function updateUI() {
     document.getElementById('money').innerText = money.toFixed(3);
     document.getElementById('energy').innerText = energy;
-    // Скрываем кнопку, если энергия пополнилась (например, сама или через админку)
     if (energy > 0) {
         document.getElementById('ad-button').style.display = 'none';
         document.getElementById('timer-display').style.display = 'none';
