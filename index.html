@@ -20,27 +20,27 @@
             border-radius: 4px; cursor: pointer; width: fit-content;
         }
 
-        /* Иконка настроек */
+        /* Кнопка настроек - теперь она видна и кликабельна */
         #settings-btn {
-            position: fixed; top: 12px; right: 12px; font-size: 28px; cursor: pointer;
-            z-index: 101; filter: drop-shadow(1px 1px 2px #000); user-select: none;
+            position: fixed; top: 12px; right: 12px; font-size: 24px; 
+            z-index: 1001; cursor: pointer; pointer-events: auto;
+            background: rgba(0,0,0,0.5); border-radius: 50%; width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center; border: 1px solid #0f0;
         }
 
-        /* Окно настроек */
+        /* Модальное окно */
         #settings-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); z-index: 1000; color: #fff;
+            background: rgba(0,0,0,0.85); z-index: 2000; color: #fff;
             justify-content: center; align-items: center; flex-direction: column; font-family: Arial;
         }
-        .modal-content {
-            background: #222; border: 2px solid #0f0; padding: 20px; border-radius: 15px;
-            text-align: center; min-width: 200px;
+        .modal-box {
+            background: #111; border: 2px solid #0f0; padding: 25px; border-radius: 15px; text-align: center;
         }
-        .lang-btn {
-            background: #333; color: #0f0; border: 1px solid #0f0; padding: 10px 20px;
-            margin: 10px; cursor: pointer; border-radius: 5px; font-weight: bold;
+        .lang-option {
+            background: #222; color: #0f0; border: 1px solid #0f0; padding: 12px 25px;
+            margin: 10px; cursor: pointer; border-radius: 8px; font-weight: bold; display: block;
         }
-        .close-btn { margin-top: 15px; color: #aaa; cursor: pointer; font-size: 14px; text-decoration: underline; }
 
         #ad-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; color: #fff; justify-content: center; align-items: center; flex-direction: column; font-family: Arial; }
         
@@ -51,90 +51,63 @@
 </head>
 <body>
 
-<div id="settings-btn" onclick="toggleSettings()">⚙️</div>
+<div id="settings-btn" onclick="openSettings()">⚙️</div>
+
+<div id="settings-modal" onclick="closeSettings(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <h2 id="set-title">Настройки</h2>
+        <div class="lang-option" onclick="setLanguage('ru')">Русский</div>
+        <div class="lang-option" onclick="setLanguage('en')">English</div>
+        <div style="margin-top:15px; font-size:12px; color:#666; cursor:pointer;" onclick="closeSettings()">[ Закрыть ]</div>
+    </div>
+</div>
 
 <div id="ui">
     <div>💰 <span id="money">0.000</span></div>
     <div>⚡ <span id="energy">100</span>/100</div>
-    <div id="timer-display"><span id="txt-recovery">Восстановление</span>: <span id="time-left">03:00:00</span></div>
-    <button id="ad-button" onclick="startAd()" data-lang="ad_btn">📺 СМОТРЕТЬ РЕКЛАМУ (+50 ⚡)</button>
-</div>
-
-<div id="settings-modal">
-    <div class="modal-content">
-        <h3 id="txt-settings-title">НАСТРОЙКИ</h3>
-        <button class="lang-btn" onclick="changeLanguage('ru')">Русский</button>
-        <button class="lang-btn" onclick="changeLanguage('en')">English</button>
-        <div class="close-btn" onclick="toggleSettings()" id="txt-close">Закрыть</div>
-    </div>
+    <div id="timer-display"><span id="rec-text">Восстановление</span>: <span id="time-left">03:00:00</span></div>
+    <button id="ad-button" onclick="startAd()">📺 СМОТРЕТЬ РЕКЛАМУ (+50 ⚡)</button>
 </div>
 
 <div id="ad-overlay">
-    <h2 id="txt-ad-watching">СМОТРИМ РОЛИК...</h2>
+    <h2 id="ad-text-title">СМОТРИМ РОЛИК...</h2>
     <p id="ad-timer">Осталось: 5 сек.</p>
 </div>
 
 <div id="nav-bar">
-    <div class="nav-item"><span>🛒</span><span id="nav-shop">МАГАЗИН</span></div>
-    <div class="nav-item"><span>📜</span><span id="nav-tasks">ЗАДАНИЯ</span></div>
-    <div class="nav-item"><span>👥</span><span id="nav-friends">ДРУЗЬЯ</span></div>
-    <div class="nav-item"><span>👛</span><span id="nav-wallet">КОШЕЛЕК</span></div>
+    <div class="nav-item"><span>🛒</span><span id="nav-1">МАГАЗИН</span></div>
+    <div class="nav-item"><span>📜</span><span id="nav-2">ЗАДАНИЯ</span></div>
+    <div class="nav-item"><span>👥</span><span id="nav-3">ДРУЗЬЯ</span></div>
+    <div class="nav-item"><span>👛</span><span id="nav-4">КОШЕЛЕК</span></div>
 </div>
 
 <script>
-// --- Локализация ---
-const translations = {
-    ru: {
-        recovery: "Восстановление",
-        ad_btn: "📺 СМОТРЕТЬ РЕКЛАМУ (+50 ⚡)",
-        settings: "НАСТРОЙКИ",
-        close: "Закрыть",
-        watching: "СМОТРИМ РОЛИК...",
-        left: "Осталось",
-        sec: "сек.",
-        shop: "МАГАЗИН",
-        tasks: "ЗАДАНИЯ",
-        friends: "ДРУЗЬЯ",
-        wallet: "КОШЕЛЕК"
-    },
-    en: {
-        recovery: "Recovery",
-        ad_btn: "📺 WATCH AD (+50 ⚡)",
-        settings: "SETTINGS",
-        close: "Close",
-        watching: "WATCHING AD...",
-        left: "Left",
-        sec: "sec.",
-        shop: "SHOP",
-        tasks: "TASKS",
-        friends: "FRIENDS",
-        wallet: "WALLET"
-    }
+// --- Система языков ---
+const langData = {
+    ru: { title: "Настройки", rec: "Восстановление", ad: "📺 СМОТРЕТЬ РЕКЛАМУ (+50 ⚡)", n1: "МАГАЗИН", n2: "ЗАДАНИЯ", n3: "ДРУЗЬЯ", n4: "КОШЕЛЕК", adT: "СМОТРИМ РОЛИК...", rem: "Осталось" },
+    en: { title: "Settings", rec: "Recovery", ad: "📺 WATCH AD (+50 ⚡)", n1: "SHOP", n2: "TASKS", n3: "FRIENDS", n4: "WALLET", adT: "WATCHING AD...", rem: "Left" }
 };
 
 let currentLang = 'ru';
 
-function changeLanguage(lang) {
+function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; }
+function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+
+function setLanguage(lang) {
     currentLang = lang;
-    const t = translations[lang];
-    document.getElementById('txt-recovery').innerText = t.recovery;
-    document.getElementById('ad-button').innerText = t.ad_btn;
-    document.getElementById('txt-settings-title').innerText = t.settings;
-    document.getElementById('txt-close').innerText = t.close;
-    document.getElementById('txt-ad-watching').innerText = t.watching;
-    document.getElementById('nav-shop').innerText = t.shop;
-    document.getElementById('nav-tasks').innerText = t.tasks;
-    document.getElementById('nav-friends').innerText = t.friends;
-    document.getElementById('nav-wallet').innerText = t.wallet;
-    toggleSettings(); // Закрыть после выбора
+    const d = langData[lang];
+    document.getElementById('set-title').innerText = d.title;
+    document.getElementById('rec-text').innerText = d.rec;
+    document.getElementById('ad-button').innerText = d.ad;
+    document.getElementById('nav-1').innerText = d.n1;
+    document.getElementById('nav-2').innerText = d.n2;
+    document.getElementById('nav-3').innerText = d.n3;
+    document.getElementById('nav-4').innerText = d.n4;
+    document.getElementById('ad-text-title').innerText = d.adT;
+    closeSettings();
 }
 
-function toggleSettings() {
-    const modal = document.getElementById('settings-modal');
-    modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
-}
-
-// --- Основная логика игры ---
+// --- Игра ---
 const config = {
     type: Phaser.AUTO,
     width: window.innerWidth,
@@ -144,6 +117,7 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
+
 let plane, hook, rope, targets, bgMusic;
 let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, distance = 25; 
@@ -193,8 +167,10 @@ function create() {
     plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.input.on('pointerdown', (p) => {
-        // Чтобы клик по кнопке настроек не тратил энергию
-        if (p.y > 60 && p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
+        // Игнорируем нажатия в области кнопки настроек
+        if (p.x > config.width - 60 && p.y < 60) return;
+        
+        if (p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
             isLaunching = true;
             energy--;
             if (energy <= 0) startRecovery();
@@ -225,7 +201,7 @@ function startAd() {
     let count = 5;
     const interval = setInterval(() => {
         count--;
-        adTimerText.innerText = `${translations[currentLang].left}: ${count} ${translations[currentLang].sec}`;
+        adTimerText.innerText = `${langData[currentLang].rem}: ${count} сек.`;
         if (count <= 0) { clearInterval(interval); overlay.style.display = 'none'; addEnergyBoost(); }
     }, 1000);
 }
@@ -277,29 +253,4 @@ function update() {
             isReturning = false;
             if (caughtItem) {
                 money += 0.001; playCustomBeep(900); showPopUp(this, plane.x, plane.y);
-                caughtItem.destroy(); caughtItem = null; spawn(this); updateUI();
-            }
-        }
-    }
-    hook.x = startX + Math.sin(angle) * distance;
-    hook.y = startY + Math.cos(angle) * distance;
-    hook.rotation = -angle;
-    let endX = startX + Math.sin(angle) * (distance - 15);
-    let endY = startY + Math.cos(angle) * (distance - 15);
-    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
-    if (caughtItem) {
-        caughtItem.setScale(0.12); caughtItem.x = hook.x; caughtItem.y = hook.y + 15; caughtItem.rotation = hook.rotation;
-    }
-}
-
-function updateUI() {
-    document.getElementById('money').innerText = money.toFixed(3);
-    document.getElementById('energy').innerText = energy;
-    if (energy > 0) {
-        document.getElementById('ad-button').style.display = 'none';
-        document.getElementById('timer-display').style.display = 'none';
-    }
-}
-</script>
-</body>
-</html>
+                caughtItem.
