@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Final</title>
+    <title>Pepe Pilot Final Version</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:black; touch-action: none; }
@@ -61,16 +61,13 @@ function preload() {
 
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
-
     rope = this.add.graphics().setDepth(35);
 
-    hook = this.add.sprite(0, 0, 'hook');
-    hook.setDepth(40).setDisplaySize(60, 60); 
+    hook = this.add.sprite(0, 0, 'hook').setDepth(40).setDisplaySize(60, 60); 
     this.physics.add.existing(hook);
     hook.body.setCircle(25);
 
-    plane = this.add.image(config.width / 2, 120, 'plane');
-    plane.setDisplaySize(280, 180).setDepth(50);
+    plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(50);
 
     targets = this.physics.add.group();
     for(let i = 0; i < 8; i++) spawn(this);
@@ -108,9 +105,9 @@ function spawn(scene) {
 function update() {
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
     
-    // ПРИВЯЗКА ВПЛОТНУЮ: Сместил точку выше к центру "живота"
-    let startX = plane.x - 12; 
-    let startY = plane.y + 25; 
+    // ТОЧКА КРЕПЛЕНИЯ: Теперь строго под центром корпуса
+    let startX = plane.x - 5; 
+    let startY = plane.y + 15; 
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
@@ -133,18 +130,18 @@ function update() {
         }
     }
 
-    // Позиция центра клешни
+    // Клешня
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // РИСУЕМ НИТЬ ТОЛЬКО ДО ВЕРХА КЛЕШНИ (вычитаем радиус, чтобы не торчала)
-    let hookEdgeX = startX + Math.sin(angle) * (distance - 25);
-    let hookEdgeY = startY + Math.cos(angle) * (distance - 25);
+    // НИТКА: Рисуем до границы спрайта (distance - 22), чтобы не торчала
+    let endX = startX + Math.sin(angle) * (distance - 22);
+    let endY = startY + Math.cos(angle) * (distance - 22);
 
     rope.clear();
     rope.lineStyle(2, 0xffffff, 1); 
-    rope.lineBetween(startX, startY, hookEdgeX, hookEdgeY);
+    rope.lineBetween(startX, startY, endX, endY);
 
     if (caughtItem) {
         caughtItem.x = hook.x;
