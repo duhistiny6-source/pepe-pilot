@@ -260,10 +260,11 @@ function spawn(scene) {
         coin.pulse = scene.tweens.add({ targets: coin, scale: 0.14, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     }
 }
-
 function update() {
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
-    let startX = plane.x - 5; let startY = plane.y + 15; 
+    let startX = plane.x - 5; 
+    let startY = plane.y + 15; 
+
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
         if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
@@ -276,8 +277,38 @@ function update() {
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
-                money += 0.001; playCustomBeep(900); showPopUp(this, plane.x, plane.y);
-                caughtItem.destroy(); caughtItem = null; spawn(this); updateUI();
+                money += 0.001; 
+                playCustomBeep(900); 
+                showPopUp(this, plane.x, plane.y);
+                caughtItem.destroy(); 
+                caughtItem = null; 
+                spawn(this); 
+                updateUI();
+            }
+        }
+    }
+
+    // Рассчитываем положение самой клешни
+    hook.x = startX + Math.sin(angle) * distance;
+    hook.y = startY + Math.cos(angle) * distance;
+    hook.rotation = -angle;
+
+    // ИСПРАВЛЕНИЕ ТУТ: Увеличиваем отступ (было -15, стало -25)
+    // Чтобы кончик белой линии прятался под клешней
+    let endX = startX + Math.sin(angle) * (distance - 25);
+    let endY = startY + Math.cos(angle) * (distance - 25);
+
+    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
+
+    if (caughtItem) {
+        caughtItem.setScale(0.12); 
+        caughtItem.x = hook.x; 
+        caughtItem.y = hook.y + 15; 
+        caughtItem.rotation = hook.rotation;
+    }
+}
+
+  
             }
         }
     }
