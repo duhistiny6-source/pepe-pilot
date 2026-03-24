@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Smooth USDT</title>
+    <title>Pepe Pilot: Realistic Grip</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:black; touch-action: none; }
@@ -45,21 +45,25 @@ let upgrades = { chance: 0, speed: 0, power: 0 };
 function preload() {
     this.load.image('sky', 'pg.jpeg');
     this.load.image('plane', 'pepe.png');
-    this.load.image('hook', 'kleshn.png');
+    this.load.image('hook', 'kleshn.png'); // Твоя отдельная клешня
     this.load.image('usdt', 'usdt.png');
 }
 
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
-    rope = this.add.graphics().setDepth(35);
+    
+    rope = this.add.graphics().setDepth(35); // Низкий слой для нити
 
-    hook = this.add.sprite(0, 0, 'hook').setDepth(40).setDisplaySize(60, 60); 
+    // Самолет (Пепе)
+    plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60); // Самый высокий слой
+
+    // Клешня
+    hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(60, 60); 
     this.physics.add.existing(hook);
-    hook.body.setCircle(25);
-
-    plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(50);
+    hook.body.setCircle(22); // Компактная физика для точности
 
     targets = this.physics.add.group();
+    // Создаем 7 аккуратных монет
     for(let i = 0; i < 7; i++) spawn(this);
 
     this.input.on('pointerdown', () => {
@@ -70,16 +74,19 @@ function create() {
         }
     });
 
+    // Хватаем монету
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
+            // Шанс поимки USDT (базовый 85% + бонусы)
             if (Math.random() <= (0.85 + upgrades.chance * 0.04)) { 
                 caughtItem = item;
                 caughtItem.body.enable = false; 
                 
-                // Остановка дыхания при поимке
-                if(caughtItem.breath) {
-                    caughtItem.breath.stop(); 
-                    caughtItem.setScale(caughtItem.baseScale); 
+                // РЕАЛИСТИЧНЫЙ ЗАХВАТ: Монета фиксируется под клешней и больше не "дышит"
+                caughtItem.setDepth(45); // Монетка уходит под зубцы клешни
+                if(caughtItem.breathTween) {
+                    caughtItem.breathTween.stop(); 
+                    caughtItem.setScale(caughtItem.baseScale); // Возвращаем к исходному размеру
                 }
             }
             isLaunching = false;
@@ -94,15 +101,16 @@ function spawn(scene) {
     let x = Phaser.Math.Between(60, config.width - 60);
     let y = Phaser.Math.Between(config.height * 0.55, config.height - 80);
     
-    let coin = targets.create(x, y, 'usdt');
-    coin.setDisplaySize(60, 60); // Чуть-чуть увеличил для красоты
+    // Создаем монетку
+    let coin = targets.create(x, y, 'usdt').setDepth(42);
+    coin.setDisplaySize(55, 55); 
     coin.baseScale = coin.scaleX; 
     
-    // Микро-дыхание: всего 1% и очень плавно
-    coin.breath = scene.tweens.add({
+    // Легкое "дыхание" - 2%
+    coin.breathTween = scene.tweens.add({
         targets: coin,
-        scale: coin.baseScale * 1.01, 
-        duration: 2000, 
+        scale: coin.baseScale * 1.02, 
+        duration: 1500,
         yoyo: true,
         repeat: -1,
         ease: 'Sine.easeInOut'
@@ -110,8 +118,10 @@ function spawn(scene) {
 }
 
 function update() {
+    // Покачивание самолета
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
     
+    // Точка выхода нити (плотно под корпусом)
     let startX = plane.x - 5; 
     let startY = plane.y + 15; 
 
@@ -123,8 +133,8 @@ function update() {
         distance += 16 + (upgrades.speed * 2.5);
         if (distance > config.height - 100) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        // Сделал возврат медленнее (было 14, стало 8)
-        distance -= (8 + upgrades.power * 2); 
+        // Сделал возврат медленнее, чтобы не дергало (было 14, стало 10)
+        distance -= (10 + upgrades.power * 2.5);
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
@@ -137,11 +147,13 @@ function update() {
         }
     }
 
+    // Позиция клешни
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // Нить по-прежнему плотно прилегает
+    // Отрисовка нити (строго от корпуса до центра клешни)
+    // Нить по-прежнему плотно прилегает, без "торчащих палок"
     let endX = startX + Math.sin(angle) * (distance - 22);
     let endY = startY + Math.cos(angle) * (distance - 22);
 
@@ -151,8 +163,8 @@ function update() {
 
     if (caughtItem) {
         caughtItem.x = hook.x;
-        caughtItem.y = hook.y + 20; 
-        caughtItem.rotation = hook.rotation;
+        caughtItem.y = hook.y + 22; // Позиция монетки глубоко в клешне
+        caughtItem.rotation = hook.rotation; // Идеально повторяет вращение для реализма
     }
 }
 
