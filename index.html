@@ -3,42 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Modern UI</title>
+    <title>Pepe Pilot: Compact UI</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:black; touch-action: none; }
-        #ui { position:fixed; top:15px; left:15px; color:#0f0; font-family: 'Arial', sans-serif; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 2px 2px 4px #000; font-size: 18px; }
+        #ui { position:fixed; top:12px; left:12px; color:#0f0; font-family: 'Arial', sans-serif; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; font-size: 16px; }
         
-        /* Стильный Таб-бар внизу */
+        /* Компактный Таб-бар */
         #nav-bar { 
             position: fixed; 
-            bottom: 20px; 
+            bottom: 15px; 
             left: 50%; 
             transform: translateX(-50%); 
-            width: 90%; 
-            height: 70px; 
-            background: rgba(20, 20, 20, 0.9); 
-            border: 2px solid #0f0; 
-            border-radius: 20px; 
+            width: 85%; 
+            height: 55px; /* Уменьшили высоту */
+            background: rgba(15, 15, 15, 0.92); 
+            border: 1.5px solid #0f0; 
+            border-radius: 15px; 
             display: flex; 
             justify-content: space-around; 
             align-items: center; 
             z-index: 200;
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
         }
         .nav-item { 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
             color: #0f0; 
-            font-size: 10px; 
+            font-size: 9px; /* Уменьшили текст */
             font-family: Arial; 
             text-transform: uppercase;
             font-weight: bold;
             cursor: pointer;
+            transition: 0.2s;
         }
-        .nav-item span { font-size: 24px; margin-bottom: 4px; }
-        .nav-item:active { transform: scale(0.9); color: #fff; }
+        .nav-item span { font-size: 20px; margin-bottom: 2px; } /* Уменьшили иконки */
+        .nav-item:active { transform: scale(0.9); opacity: 0.7; }
     </style>
 </head>
 <body>
@@ -49,22 +50,10 @@
 </div>
 
 <div id="nav-bar">
-    <div class="nav-item" onclick="alert('Магазин скоро откроется!')">
-        <span>🛒</span>
-        Магазин
-    </div>
-    <div class="nav-item" onclick="alert('Задания в разработке')">
-        <span>📜</span>
-        Задания
-    </div>
-    <div class="nav-item" onclick="alert('Позови друзей позже')">
-        <span>👥</span>
-        Друзья
-    </div>
-    <div class="nav-item" onclick="alert('Кошелек подключается...')">
-        <span>👛</span>
-        Кошелек
-    </div>
+    <div class="nav-item" onclick="alert('Shop')"><span>🛒</span>Магазин</div>
+    <div class="nav-item" onclick="alert('Tasks')"><span>📜</span>Задания</div>
+    <div class="nav-item" onclick="alert('Friends')"><span>👥</span>Друзья</div>
+    <div class="nav-item" onclick="alert('Wallet')"><span>👛</span>Кошелек</div>
 </div>
 
 <script>
@@ -91,27 +80,22 @@ function preload() {
 }
 
 function create() {
-    // Фон и группа монет
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
     targets = this.physics.add.group();
     for(let i = 0; i < 7; i++) spawn(this);
 
-    // Нить
     rope = this.add.graphics().setDepth(30);
 
-    // Клешня (Слой выше монет, чтобы закрывать их)
+    // Клешня (Слой выше монет)
     hook = this.add.sprite(0, 0, 'hook').setDepth(50);
-    hook.setDisplaySize(65, 65); // Немного увеличил саму клешню для массивности
+    hook.setDisplaySize(65, 65); 
     this.physics.add.existing(hook);
     hook.body.setCircle(20); 
 
-    // Самолет Пепе
     plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
-    // Клик для запуска
     this.input.on('pointerdown', (pointer) => {
-        // Проверка, чтобы клик по меню не запускал клешню
-        if (pointer.y < config.height - 100) {
+        if (pointer.y < config.height - 80) { // Запрет клика через меню
             if (!isLaunching && !isReturning && energy > 0) {
                 isLaunching = true;
                 energy--;
@@ -120,17 +104,13 @@ function create() {
         }
     });
 
-    // Физика захвата
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
             caughtItem = item;
             caughtItem.body.enable = false; 
-            
-            // Фиксация монетки
             if(caughtItem.breath) caughtItem.breath.stop();
             caughtItem.setScale(caughtItem.baseScale);
-            caughtItem.setDepth(45); // Строго под зубцы клешни
-            
+            caughtItem.setDepth(45); 
             isLaunching = false;
             isReturning = true;
         }
@@ -141,7 +121,7 @@ function create() {
 
 function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
-    let y = Phaser.Math.Between(config.height * 0.5, config.height - 150);
+    let y = Phaser.Math.Between(config.height * 0.5, config.height - 140);
     let coin = targets.create(x, y, 'usdt').setDepth(40);
     coin.setDisplaySize(55, 55);
     coin.baseScale = coin.scaleX;
@@ -166,9 +146,8 @@ function update() {
         distance = 25;
     } else if (isLaunching) {
         distance += 16;
-        if (distance > config.height - 120) { isLaunching = false; isReturning = true; }
+        if (distance > config.height - 100) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        // Замедленное вытягивание (было 14, стало 8)
         distance -= 8; 
         if (distance <= 25) {
             isReturning = false;
@@ -182,22 +161,19 @@ function update() {
         }
     }
 
-    // Принудительно держим размер клешни!
+    // Жесткая фиксация размера клешни
     hook.setDisplaySize(65, 65);
-    
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // Рисуем нить
     let endX = startX + Math.sin(angle) * (distance - 20);
     let endY = startY + Math.cos(angle) * (distance - 20);
     rope.clear().lineStyle(2, 0xffffff, 0.8).lineBetween(startX, startY, endX, endY);
 
     if (caughtItem) {
-        // Монетка глубоко внутри захвата
         caughtItem.x = hook.x;
-        caughtItem.y = hook.y + 12; 
+        caughtItem.y = hook.y + 12; // Монета внутри
         caughtItem.rotation = hook.rotation;
     }
 }
