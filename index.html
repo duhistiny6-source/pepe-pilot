@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Fixed</title>
+    <title>Pepe Pilot Final</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:black; touch-action: none; }
@@ -38,7 +38,7 @@ const game = new Phaser.Game(config);
 
 let plane, hook, rope, targets;
 let isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.03, distance = 30; // Начальная дистанция вплотную к самолету
+let angle = 0, swingSpeed = 0.03, distance = 25; 
 let money = 0, energy = 10;
 let upgrades = { chance: 0, speed: 0, power: 0 };
 
@@ -64,13 +64,11 @@ function create() {
 
     rope = this.add.graphics().setDepth(35);
 
-    // Клешня
     hook = this.add.sprite(0, 0, 'hook');
     hook.setDepth(40).setDisplaySize(60, 60); 
     this.physics.add.existing(hook);
     hook.body.setCircle(25);
 
-    // Самолет
     plane = this.add.image(config.width / 2, 120, 'plane');
     plane.setDisplaySize(280, 180).setDepth(50);
 
@@ -110,20 +108,20 @@ function spawn(scene) {
 function update() {
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
     
-    // ПРИВЯЗКА К САМОЛЕТУ: точка начала нитки плотно под корпусом
-    let startX = plane.x - 10; 
-    let startY = plane.y + 35; 
+    // ПРИВЯЗКА ВПЛОТНУЮ: Сместил точку выше к центру "живота"
+    let startX = plane.x - 12; 
+    let startY = plane.y + 25; 
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
         if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
-        distance = 30; // В покое клешня прижата к самолету
+        distance = 25; 
     } else if (isLaunching) {
         distance += 15 + (upgrades.speed * 2);
         if (distance > config.height - 100) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
         distance -= (12 + upgrades.power * 2);
-        if (distance <= 30) {
+        if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
                 money += ITEMS[caughtItem.texture.key].value;
@@ -135,15 +133,18 @@ function update() {
         }
     }
 
-    // ПОЗИЦИЯ КЛЕШНИ: строго на конце нитки
+    // Позиция центра клешни
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // ОТРИСОВКА НИТКИ: от корпуса до центра клешни
+    // РИСУЕМ НИТЬ ТОЛЬКО ДО ВЕРХА КЛЕШНИ (вычитаем радиус, чтобы не торчала)
+    let hookEdgeX = startX + Math.sin(angle) * (distance - 25);
+    let hookEdgeY = startY + Math.cos(angle) * (distance - 25);
+
     rope.clear();
     rope.lineStyle(2, 0xffffff, 1); 
-    rope.lineBetween(startX, startY, hook.x, hook.y);
+    rope.lineBetween(startX, startY, hookEdgeX, hookEdgeY);
 
     if (caughtItem) {
         caughtItem.x = hook.x;
