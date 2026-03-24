@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Safe Audio</title>
+    <title>Pepe Pilot: Fix</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
-        body { margin:0; overflow:hidden; background:#000; touch-action: none; }
+        body { margin:0; overflow:hidden; background:#111; touch-action: none; }
         #ui { position:fixed; top:12px; left:12px; color:#0f0; font-family: Arial; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; }
-        
         #nav-bar { 
             position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); 
-            width: 85%; height: 52px; background: rgba(0, 0, 0, 0.9); 
+            width: 80%; height: 50px; background: rgba(0, 0, 0, 0.9); 
             border: 1px solid #0f0; border-radius: 12px; display: flex; 
             justify-content: space-around; align-items: center; z-index: 200;
         }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #0f0; font-size: 8px; font-weight: bold; cursor: pointer; }
-        .nav-item span { font-size: 18px; margin-bottom: 2px; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #0f0; font-size: 8px; font-weight: bold; }
+        .nav-item span { font-size: 18px; }
     </style>
 </head>
 <body>
@@ -50,44 +49,48 @@ let angle = 0, swingSpeed = 0.03, distance = 25;
 let money = 0, energy = 10;
 
 function preload() {
-    // Загрузка графики
-    this.load.image('sky', 'pg.jpeg');
+    // Обработка ошибок загрузки, чтобы не было черного экрана
+    this.load.on('loaderror', (file) => {
+        console.warn('Ошибка загрузки файла: ' + file.key);
+    });
+
+    // Проверьте расширение pg.jpeg в вашем GitHub!
+    this.load.image('sky', 'pg.jpeg'); 
     this.load.image('plane', 'pepe.png');
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
     
-    // Безопасная загрузка аудио
+    // Музыка (может не грузиться на некоторых устройствах)
     this.load.audio('theme', 'music.mp3');
 }
 
 function create() {
-    // Отрисовка фона
-    this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
-
-    // Инициализация звука (без автоплея)
-    try {
-        bgMusic = this.sound.add('theme', { volume: 0.3, loop: true });
-    } catch (e) {
-        console.log("Ошибка звука:", e);
+    // Если фон не загрузился, будет просто серый цвет вместо черного экрана
+    if (this.textures.exists('sky')) {
+        this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
+    } else {
+        this.cameras.main.setBackgroundColor('#222');
     }
 
+    // Инициализация звука
+    try {
+        bgMusic = this.sound.add('theme', { volume: 0.3, loop: true });
+    } catch (e) {}
+
     targets = this.physics.add.group();
-    for(let i = 0; i < 7; i++) spawn(this);
+    for(let i = 0; i < 6; i++) spawn(this);
 
     rope = this.add.graphics().setDepth(30);
     
-    // Клешня (Фиксированный размер 60x60)
-    hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(60, 60); 
+    hook = this.add.sprite(0, 0, 'hook').setDepth(50);
+    hook.setDisplaySize(60, 60); 
     this.physics.add.existing(hook);
     hook.body.setCircle(20); 
 
     plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.input.on('pointerdown', (pointer) => {
-        // Запуск музыки только по клику!
-        if (bgMusic && !bgMusic.isPlaying) {
-            bgMusic.play();
-        }
+        if (bgMusic && !bgMusic.isPlaying) bgMusic.play();
 
         if (pointer.y < config.height - 80) {
             if (!isLaunching && !isReturning && energy > 0) {
@@ -102,8 +105,7 @@ function create() {
         if (isLaunching && !caughtItem) {
             caughtItem = item;
             caughtItem.body.enable = false; 
-            if(caughtItem.breath) caughtItem.breath.stop();
-            caughtItem.setScale(caughtItem.baseScale).setDepth(45); 
+            caughtItem.setDepth(45); 
             isLaunching = false;
             isReturning = true;
         }
@@ -114,14 +116,14 @@ function create() {
 
 function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
-    let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
+    let y = Phaser.Math.Between(config.height * 0.5, config.height - 150);
     let coin = targets.create(x, y, 'usdt').setDepth(40);
-    coin.setDisplaySize(50, 50);
-    coin.baseScale = coin.scaleX;
-    
-    coin.breath = scene.tweens.add({
-        targets: coin, scale: coin.baseScale * 1.02, duration: 1500, yoyo: true, repeat: -1
-    });
+    if (coin) {
+        coin.setDisplaySize(50, 50);
+        scene.tweens.add({
+            targets: coin, scale: coin.scaleX * 1.05, duration: 1000, yoyo: true, repeat: -1
+        });
+    }
 }
 
 function update() {
@@ -134,8 +136,8 @@ function update() {
         if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
         distance = 25;
     } else if (isLaunching) {
-        distance += 16;
-        if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
+        distance += 15;
+        if (distance > config.height - 100) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
         distance -= 8; 
         if (distance <= 25) {
@@ -150,18 +152,18 @@ function update() {
         }
     }
 
-    hook.setDisplaySize(60, 60); // Клешня не растягивается!
+    hook.setDisplaySize(60, 60);
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    let endX = startX + Math.sin(angle) * (distance - 20);
-    let endY = startY + Math.cos(angle) * (distance - 20);
-    rope.clear().lineStyle(2, 0xffffff, 0.8).lineBetween(startX, startY, endX, endY);
+    let endX = startX + Math.sin(angle) * (distance - 15);
+    let endY = startY + Math.cos(angle) * (distance - 15);
+    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
 
     if (caughtItem) {
         caughtItem.x = hook.x;
-        caughtItem.y = hook.y + 12; // Монетка внутри клешни
+        caughtItem.y = hook.y + 15; 
         caughtItem.rotation = hook.rotation;
     }
 }
