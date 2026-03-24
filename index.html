@@ -3,30 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Full</title>
+    <title>Pepe Pilot</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
-        body { margin:0; padding:0; overflow:hidden; background:#000; font-family: sans-serif; }
-        #game-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
-        .stats { position: absolute; top: 10px; left: 10px; color: #0f0; font-weight: bold; text-shadow: 2px 2px #000; font-size: 18px; }
-        #settings-btn { position: absolute; top: 10px; right: 10px; width: 42px; height: 42px; background: rgba(0, 255, 0, 0.3); border: 2px solid #0f0; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; pointer-events: auto; font-size: 24px; color: #0f0; }
-        #nav-bar { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); width: 92%; height: 70px; background: rgba(0, 20, 0, 0.95); border: 2px solid #0f0; border-radius: 18px; display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; pointer-events: auto; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #0f0; text-align: center; }
-        .nav-item i { font-style: normal; font-size: 22px; margin-bottom: 2px; }
-        .nav-item span { font-size: 8px; font-weight: bold; text-transform: uppercase; }
+        body { margin:0; overflow:hidden; background:#000; }
+        
+        /* Статистика сверху */
+        #ui { 
+            position:fixed; top:12px; left:12px; color:#0f0; font-family: Arial; font-weight:bold; 
+            z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000;
+        }
+
+        /* Навигация снизу - ИСПРАВЛЕНА */
+        #nav-bar { 
+            position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); 
+            width: 90%; height: 65px; background: rgba(0, 0, 0, 0.9); 
+            border: 1px solid #0f0; border-radius: 15px; display: flex; 
+            justify-content: space-around; align-items: center; z-index: 200;
+        }
+        .nav-item { 
+            display: flex; flex-direction: column; align-items: center; 
+            justify-content: center; color: #0f0; width: 25%; text-align: center;
+        }
+        .nav-item span:first-child { font-size: 22px; line-height: 1.2; } /* Иконка */
+        .nav-item span:last-child { 
+            font-size: 8px; font-weight: bold; text-transform: uppercase; 
+            margin-top: 2px; white-space: nowrap; 
+        } /* Текст */
+
+        /* Шестеренка */
+        #settings-btn {
+            position: fixed; top: 12px; right: 12px; width: 35px; height: 35px;
+            background: rgba(0,255,0,0.2); border: 1px solid #0f0; border-radius: 50%;
+            color: #0f0; font-size: 20px; cursor: pointer; z-index: 150;
+            display: flex; justify-content: center; align-items: center;
+        }
     </style>
 </head>
 <body>
 
-<div id="game-ui">
-    <div class="stats">💰 <span id="money">0.000</span><br>⚡ <span id="energy">100</span>/100</div>
-    <div id="settings-btn" onclick="alert('Настройки скоро будут!')">⚙️</div>
-    <div id="nav-bar">
-        <div class="nav-item"><i>🛒</i><span>Магазин</span></div>
-        <div class="nav-item"><i>📜</i><span>Задания</span></div>
-        <div class="nav-item"><i>👥</i><span>Друзья</span></div>
-        <div class="nav-item"><i>👛</i><span>Кошелек</span></div>
-    </div>
+<div id="ui">
+    <div>💰 <span id="money">0.000</span></div>
+    <div>⚡ <span id="energy">100</span>/100</div>
+</div>
+
+<div id="settings-btn" onclick="alert('Settings Clicked')">⚙️</div>
+
+<div id="nav-bar">
+    <div class="nav-item"><span>🛒</span><span>МАГАЗИН</span></div>
+    <div class="nav-item"><span>📜</span><span>ЗАДАНИЯ</span></div>
+    <div class="nav-item"><span>👥</span><span>ДРУЗЬЯ</span></div>
+    <div class="nav-item"><span>👛</span><span>КОШЕЛЕК</span></div>
 </div>
 
 <script>
@@ -39,81 +66,81 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
-let plane, hook, rope, targets, money=0, energy=100, angle=0, dist=30, isMoving=false;
+
+let plane, hook, rope, targets, money = 0, energy = 100;
+let isLaunching = false, isReturning = false, caughtItem = null;
+let angle = 0, swingSpeed = 0.03, distance = 25;
 
 function preload() {
-    // ВНИМАНИЕ: Проверь названия файлов!
     this.load.image('sky', 'pg.jpeg');
-    this.load.image('pepe', 'pepe.png');
-    this.load.image('usdt', 'usdt.png');
     this.load.image('hook', 'kleshn.png');
+    this.load.image('usdt', 'usdt.png');
+    this.load.image('plane', 'pepe.png');
 }
 
 function create() {
-    // Фон
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
     
-    // Самолет (Пепе)
-    plane = this.add.image(config.width/2, 120, 'pepe').setDisplaySize(220, 140).setDepth(10);
-    
-    // Крюк
-    hook = this.add.sprite(0, 0, 'hook').setDisplaySize(50, 50).setDepth(5);
-    this.physics.add.existing(hook);
-    
     targets = this.physics.add.group();
-    for(let i=0; i<5; i++) spawnCoin(this);
+    for(let i = 0; i < 6; i++) spawn(this);
 
-    rope = this.add.graphics().setDepth(1);
+    rope = this.add.graphics().setDepth(30);
+    hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(60, 60); 
+    this.physics.add.existing(hook);
+
+    plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.input.on('pointerdown', (p) => {
-        if (p.y > 150 && p.y < config.height - 100 && !isMoving && energy > 0) {
-            isMoving = true;
+        if (p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
+            isLaunching = true;
             energy--;
             document.getElementById('energy').innerText = energy;
         }
     });
 
-    this.physics.add.overlap(hook, targets, (h, coin) => {
-        if (isMoving && !hook.caught) {
-            hook.caught = coin;
-            isMoving = false;
+    this.physics.add.overlap(hook, targets, (h, item) => {
+        if (isLaunching && !caughtItem) {
+            caughtItem = item;
+            caughtItem.body.enable = false;
+            isLaunching = false; isReturning = true;
         }
     });
 }
 
-function spawnCoin(scene) {
+function spawn(s) {
     let x = Phaser.Math.Between(50, config.width - 50);
-    let y = Phaser.Math.Between(config.height/2, config.height - 150);
-    targets.create(x, y, 'usdt').setScale(0.12).setDepth(2);
+    let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
+    targets.create(x, y, 'usdt').setScale(0.12).setDepth(40);
 }
 
 function update() {
-    let sX = plane.x; let sY = plane.y + 20;
-    if (!isMoving && !hook.returning) {
-        angle += 0.04; dist = 35;
-    } else if (isMoving) {
-        dist += 12;
-        if (dist > config.height - 150) isMoving = false;
-    } else {
-        dist -= 8;
-        if (dist <= 35) {
-            hook.returning = false;
-            if (hook.caught) {
-                money += 0.001; hook.caught.destroy(); hook.caught = null;
+    let sX = plane.x - 5; let sY = plane.y + 15; 
+    if (!isLaunching && !isReturning) {
+        angle += swingSpeed;
+        if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
+        distance = 25;
+    } else if (isLaunching) {
+        distance += 16; 
+        if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
+    } else if (isReturning) {
+        distance -= 8; 
+        if (distance <= 25) {
+            isReturning = false;
+            if (caughtItem) {
+                money += 0.001; 
                 document.getElementById('money').innerText = money.toFixed(3);
-                spawnCoin(this);
+                caughtItem.destroy(); caughtItem = null; spawn(this);
             }
         }
     }
-    if (dist > 35 && !isMoving) hook.returning = true;
-
-    hook.x = sX + Math.sin(angle) * dist;
-    hook.y = sY + Math.cos(angle) * dist;
+    hook.x = sX + Math.sin(angle) * distance;
+    hook.y = sY + Math.cos(angle) * distance;
     hook.rotation = -angle;
-    rope.clear().lineStyle(2, 0xffffff, 0.5).lineBetween(sX, sY, hook.x, hook.y);
-    if (hook.caught) { hook.caught.x = hook.x; hook.caught.y = hook.y; }
+    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(sX, sY, hook.x, hook.y);
+    if (caughtItem) {
+        caughtItem.x = hook.x; caughtItem.y = hook.y; caughtItem.rotation = hook.rotation;
+    }
 }
 </script>
 </body>
 </html>
-           
