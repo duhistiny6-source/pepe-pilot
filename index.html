@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Audio Feedback Edition</title>
+    <title>Pepe Pilot: Equal Signals</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#111; touch-action: none; }
@@ -48,19 +48,19 @@ let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, distance = 25; 
 let money = 0, energy = 10;
 
-// Функция для генерации звукового сигнала (Beep)
+// Генератор звукового сигнала
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playSignal(freq, duration, vol) {
+function playBeep() {
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
     oscillator.connect(gainNode);
     gainNode.connect(audioCtx.destination);
-    oscillator.frequency.value = freq;
+    oscillator.frequency.value = 800; // Одинаковая частота для всех событий
     oscillator.type = 'sine';
-    gainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+    gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
     oscillator.start();
-    oscillator.stop(audioCtx.currentTime + duration);
+    oscillator.stop(audioCtx.currentTime + 0.1);
 }
 
 function preload() {
@@ -84,8 +84,8 @@ function preload() {
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
 
-    // Музыка ЕЩЕ ТИШЕ (0.01)
-    try { bgMusic = this.sound.add('theme', { volume: 0.01, loop: true }); } catch (e) {}
+    // Музыка СУПЕР ТИХО (0.005)
+    try { bgMusic = this.sound.add('theme', { volume: 0.005, loop: true }); } catch (e) {}
 
     this.input.once('pointerdown', () => {
         if (bgMusic && !bgMusic.isPlaying) bgMusic.play();
@@ -116,8 +116,7 @@ function create() {
             caughtItem.body.enable = false;
             caughtItem.setDepth(45); 
             
-            // СИГНАЛ ПРИ ЗАХВАТЕ (высокий тон)
-            playSignal(800, 0.1, 0.05);
+            playBeep(); // Сигнал при захвате
             
             isLaunching = false;
             isReturning = true;
@@ -158,8 +157,7 @@ function update() {
             if (caughtItem) {
                 money += 100;
                 
-                // СИГНАЛ ПРИ УДАРЕ (низкий тон)
-                playSignal(400, 0.2, 0.07);
+                playBeep(); // ТАКОЙ ЖЕ сигнал при ударе об самолет
                 
                 caughtItem.destroy();
                 caughtItem = null;
