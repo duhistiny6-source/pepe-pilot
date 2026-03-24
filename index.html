@@ -8,15 +8,7 @@
     <style>
         body { margin:0; overflow:hidden; background:#111; touch-action: none; }
         #ui { position:fixed; top:12px; left:12px; color:#0f0; font-family: Arial; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; }
-        #timer-display { color: #ffffff; font-size: 14px; display: none; pointer-events: auto; }
-        
-        /* Кнопка рекламы */
-        #ad-button { 
-            display: block; margin-top: 5px; background: #0f0; color: #000; 
-            border: none; padding: 5px 10px; border-radius: 5px; font-weight: bold; 
-            cursor: pointer; font-size: 10px;
-        }
-
+        #timer-display { color: #ff3333; font-size: 14px; display: none; }
         #nav-bar { 
             position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); 
             width: 82%; height: 50px; background: rgba(0, 0, 0, 0.9); 
@@ -32,10 +24,7 @@
 <div id="ui">
     💰 <span id="money">0.000</span><br>
     ⚡ <span id="energy">100</span>/100
-    <div id="timer-display">
-        Восстановление: <span id="time-left">03:00:00</span>
-        <button id="ad-button" onclick="watchAd()">СМОТРЕТЬ РЕКЛАМУ (+⚡)</button>
-    </div>
+    <div id="timer-display">Восстановление: <span id="time-left">03:00:00</span></div>
 </div>
 
 <div id="nav-bar">
@@ -60,7 +49,7 @@ let plane, hook, rope, targets, bgMusic;
 let isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, distance = 25; 
 let money = 0, energy = 100;
-let recoveryTime = 0; 
+let recoveryTime = 0; // Время до восстановления в секундах
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playCustomBeep(frequency) {
@@ -74,19 +63,6 @@ function playCustomBeep(frequency) {
     gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.08);
     oscillator.start();
     oscillator.stop(audioCtx.currentTime + 0.08);
-}
-
-// Функция рекламы
-function watchAd() {
-    let btn = document.getElementById('ad-button');
-    btn.innerText = "ЗАГРУЗКА...";
-    setTimeout(() => {
-        energy = 100;
-        recoveryTime = 0;
-        document.getElementById('timer-display').style.display = 'none';
-        btn.innerText = "СМОТРЕТЬ РЕКЛАМУ (+⚡)";
-        updateUI();
-    }, 2000);
 }
 
 function showPopUp(scene, x, y) {
@@ -130,17 +106,22 @@ function create() {
 
     rope = this.add.graphics().setDepth(30);
     hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(60, 60); 
-    hook.setTint(0xFCD21A); // Желтая клешня
     this.physics.add.existing(hook);
     hook.body.setCircle(25); 
 
     plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.input.on('pointerdown', (p) => {
+        // Запуск только если есть энергия и не идет восстановление
         if (p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
             isLaunching = true;
             energy--;
-            if (energy === 0) startRecovery();
+            
+            // Если энергия кончилась, запускаем таймер на 3 часа
+            if (energy === 0) {
+                startRecovery();
+            }
+            
             updateUI();
         }
     });
@@ -155,21 +136,25 @@ function create() {
         }
     });
 
+    // Таймер обратного отсчета (раз в секунду)
     setInterval(tick, 1000);
 }
 
 function startRecovery() {
-    recoveryTime = 3 * 60 * 60; 
+    recoveryTime = 3 * 60 * 60; // 3 часа в секундах
     document.getElementById('timer-display').style.display = 'block';
 }
 
 function tick() {
     if (recoveryTime > 0) {
         recoveryTime--;
+        
+        // Форматирование времени HH:MM:SS
         let h = Math.floor(recoveryTime / 3600).toString().padStart(2, '0');
         let m = Math.floor((recoveryTime % 3600) / 60).toString().padStart(2, '0');
         let s = (recoveryTime % 60).toString().padStart(2, '0');
         document.getElementById('time-left').innerText = `${h}:${m}:${s}`;
+
         if (recoveryTime === 0) {
             energy = 100;
             document.getElementById('timer-display').style.display = 'none';
@@ -199,33 +184,32 @@ function update() {
         angle += swingSpeed;
         if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
         distance = 25;
-        rope.clear(); // Нитка не торчит
-    } else {
-        if (isLaunching) {
-            distance += 16; 
-            if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
-        } else if (isReturning) {
-            distance -= 4; 
-            if (distance <= 25) {
-                isReturning = false;
-                if (caughtItem) {
-                    money += 0.001; 
-                    playCustomBeep(900); 
-                    showPopUp(this, plane.x, plane.y);
-                    caughtItem.destroy();
-                    caughtItem = null;
-                    spawn(this);
-                    updateUI();
-                }
+    } else if (isLaunching) {
+        distance += 16; 
+        if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
+    } else if (isReturning) {
+        distance -= 4; 
+        if (distance <= 25) {
+            isReturning = false;
+            if (caughtItem) {
+                money += 0.001; 
+                playCustomBeep(900); 
+                showPopUp(this, plane.x, plane.y);
+                caughtItem.destroy();
+                caughtItem = null;
+                spawn(this);
+                updateUI();
             }
         }
-        // Желтая нитка
-        rope.clear().lineStyle(3, 0xFCD21A, 1).lineBetween(startX, startY, hook.x, hook.y);
     }
 
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
+
+    let endX = startX + Math.sin(angle) * (distance - 15);
+    let endY = startY + Math.cos(angle) * (distance - 15);
+    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
 
     if (caughtItem) {
         caughtItem.setScale(0.12);
