@@ -108,19 +108,57 @@ function spawn(scene){
     let y = Phaser.Math.Between(config.height * 0.55, config.height - 80);
     targets.create(x, y, k).setDisplaySize(60, 60);
 }
-
-function update(){
+function update() {
     // Движение самолета
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
     
-    // Точка крепления нити строго по центру самолета
-    let startX = plane.x;
-    let startY = plane.y + 35; 
+    // ТОЧКА КРЕПЛЕНИЯ К САМОЛЕТУ (по твоему рисунку)
+    // Сдвигаем x немного влево (-10), а y к фюзеляжу (+30)
+    let startX = plane.x - 10; 
+    let startY = plane.y + 30; 
 
-    if(!isLaunching && !isReturning){
+    if (!isLaunching && !isReturning) {
         angle += swingSpeed;
-        if(angle > 0.8 || angle < -0.8) swingSpeed *= -1;
-        distance = 40; 
+        if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
+        distance = 35; // В покое клешня почти прижата к самолету
+    } else if (isLaunching) {
+        distance += 15 + (upgrades.speed * 2);
+        if (distance > config.height - 100) { isLaunching = false; isReturning = true; }
+    } else if (isReturning) {
+        distance -= (12 + upgrades.power * 2);
+        if (distance <= 35) {
+            isReturning = false;
+            if (caughtItem) {
+                money += ITEMS[caughtItem.texture.key].value;
+                caughtItem.destroy();
+                caughtItem = null;
+                spawn(this);
+                updateUI();
+            }
+        }
+    }
+
+    // Позиция клешни
+    hook.x = startX + Math.sin(angle) * distance;
+    hook.y = startY + Math.cos(angle) * distance;
+    
+    // Поворачиваем клешню по направлению нити
+    hook.rotation = -angle;
+
+    // РИСУЕМ НИТЬ
+    rope.clear();
+    rope.lineStyle(2, 0xffffff, 1); 
+    
+    // Рисуем линию ОТ самолета ДО клешни (не дальше!)
+    rope.lineBetween(startX, startY, hook.x, hook.y);
+
+    if (caughtItem) {
+        caughtItem.x = hook.x;
+        caughtItem.y = hook.y + 20;
+    }
+}
+
+ 
     }
     else if(isLaunching){
         distance += 15 + (upgrades.speed * 2);
