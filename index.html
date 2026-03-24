@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Energy & Timer</title>
+    <title>Pepe Pilot: Loader Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#111; touch-action: none; }
         #ui { position:fixed; top:12px; left:12px; color:#0f0; font-family: Arial; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; }
         #timer-display { color: #ff3333; font-size: 14px; display: none; }
         
-        /* Кнопка рекламы, которая появляется при 0 энергии */
         #ad-button { 
             display: none; position: fixed; top: 100px; left: 12px; 
             background: #ffcc00; color: #000; border: 2px solid #fff; 
@@ -18,7 +17,6 @@
             z-index: 150; cursor: pointer;
         }
 
-        /* Оверлей симуляции рекламы */
         #ad-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); z-index: 1000; color: #fff;
@@ -98,14 +96,37 @@ function showPopUp(scene, x, y) {
 }
 
 function preload() {
+    // --- ЛОГИКА ПОЛОСКИ ЗАГРУЗКИ ---
     let width = this.cameras.main.width;
     let height = this.cameras.main.height;
-    let progressBox = this.add.graphics().fillStyle(0x222222, 0.8).fillRect(width/2 - 110, height/2 - 10, 220, 20);
+    
+    // Текст "Загрузка..."
+    let loadingText = this.make.text({
+        x: width / 2, y: height / 2 - 50,
+        text: 'Загрузка ресурсов...',
+        style: { font: '20px monospace', fill: '#00ff00' }
+    }).setOrigin(0.5);
+
+    // Фон полоски (серая рамка)
+    let progressBox = this.add.graphics();
     let progressBar = this.add.graphics();
-    this.load.on('progress', (val) => {
-        progressBar.clear().fillStyle(0x00ff00, 1).fillRect(width/2 - 105, height/2 - 5, 210 * val, 10);
+    progressBox.fillStyle(0x222222, 0.8);
+    progressBox.fillRect(width / 2 - 160, height / 2 - 15, 320, 30);
+
+    // Слушаем прогресс
+    this.load.on('progress', function (value) {
+        progressBar.clear();
+        progressBar.fillStyle(0x00ff00, 1);
+        progressBar.fillRect(width / 2 - 155, height / 2 - 10, 310 * value, 20);
     });
-    this.load.on('complete', () => { progressBar.destroy(); progressBox.destroy(); });
+
+    // Удаляем всё после завершения
+    this.load.on('complete', function () {
+        progressBar.destroy();
+        progressBox.destroy();
+        loadingText.destroy();
+    });
+    // --- КОНЕЦ ЛОГИКИ ЗАГРУЗКИ ---
 
     this.load.image('sky', 'pg.jpeg');
     this.load.image('hook', 'kleshn.png');
@@ -159,10 +180,9 @@ function create() {
 function startRecovery() {
     recoveryTime = 3 * 60 * 60; 
     document.getElementById('timer-display').style.display = 'block';
-    document.getElementById('ad-button').style.display = 'block'; // Показываем кнопку рекламы
+    document.getElementById('ad-button').style.display = 'block';
 }
 
-// ФУНКЦИИ ДЛЯ РЕКЛАМЫ
 function startAd() {
     const overlay = document.getElementById('ad-overlay');
     const adTimerText = document.getElementById('ad-timer');
@@ -196,9 +216,7 @@ function tick() {
         let s = (recoveryTime % 60).toString().padStart(2, '0');
         document.getElementById('time-left').innerText = `${h}:${m}:${s}`;
 
-        if (recoveryTime === 0) {
-            completeAd();
-        }
+        if (recoveryTime === 0) completeAd();
     }
 }
 
