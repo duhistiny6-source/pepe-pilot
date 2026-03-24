@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot USDT Hunter</title>
+    <title>Pepe Pilot: USDT Gold Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:black; touch-action: none; }
-        #ui { position:fixed; top:10px; left:10px; color:#0f0; font-family:Arial; font-weight:bold; z-index: 100; pointer-events: none; }
-        #shop { position:fixed; bottom:10px; left:10px; z-index: 100; display: flex; }
-        button { padding:10px; margin:5px; font-size:14px; background: #222; color: #fff; border: 1px solid #0f0; border-radius: 5px; }
+        #ui { position:fixed; top:10px; left:10px; color:#0f0; font-family:Arial; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; }
+        #shop { position:fixed; bottom:15px; left:10px; z-index: 100; display: flex; gap: 10px; }
+        button { padding:12px; font-size:14px; background: rgba(34, 34, 34, 0.8); color: #0f0; border: 2px solid #0f0; border-radius: 8px; font-weight: bold; }
+        button:active { background: #0f0; color: #000; }
     </style>
 </head>
 <body>
@@ -42,11 +43,6 @@ let angle = 0, swingSpeed = 0.03, distance = 25;
 let money = 0, energy = 10;
 let upgrades = { chance: 0, speed: 0, power: 0 };
 
-// Оставили только USDT
-const ITEMS = {
-    usdt: { chance: 0.8, value: 100 }
-};
-
 function preload() {
     this.load.image('sky', 'pg.jpeg');
     this.load.image('plane', 'pepe.png');
@@ -56,16 +52,20 @@ function preload() {
 
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
+    
     rope = this.add.graphics().setDepth(35);
 
+    // Клешня
     hook = this.add.sprite(0, 0, 'hook').setDepth(40).setDisplaySize(60, 60); 
     this.physics.add.existing(hook);
-    hook.body.setCircle(25);
+    hook.body.setCircle(22); // Компактная физика для точности
 
+    // Самолет (Пепе)
     plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(50);
 
     targets = this.physics.add.group();
-    for(let i = 0; i < 6; i++) spawn(this);
+    // Создаем 7 красивых монет
+    for(let i = 0; i < 7; i++) spawn(this);
 
     this.input.on('pointerdown', () => {
         if (!isLaunching && !isReturning && energy > 0) {
@@ -77,8 +77,8 @@ function create() {
 
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
-            // Шанс поимки USDT
-            if (Math.random() <= (ITEMS.usdt.chance + upgrades.chance * 0.05)) { 
+            // Шанс поимки (базовый 85% + бонусы)
+            if (Math.random() <= (0.85 + upgrades.chance * 0.04)) { 
                 caughtItem = item;
                 caughtItem.body.enable = false; 
             }
@@ -91,30 +91,45 @@ function create() {
 }
 
 function spawn(scene) {
-    let x = Phaser.Math.Between(60, config.width - 60);
-    let y = Phaser.Math.Between(config.height * 0.55, config.height - 80);
-    targets.create(x, y, 'usdt').setDisplaySize(60, 60);
+    let x = Phaser.Math.Between(50, config.width - 50);
+    let y = Phaser.Math.Between(config.height * 0.5, config.height - 100);
+    
+    // Создаем монетку
+    let coin = targets.create(x, y, 'usdt');
+    coin.setDisplaySize(55, 55); // Оптимальный размер
+    
+    // Добавляем монетке легкую анимацию пульсации, чтобы она выглядела "живой"
+    scene.tweens.add({
+        targets: coin,
+        scale: 1.1,
+        duration: 800 + Math.random() * 500,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+    });
 }
 
 function update() {
+    // Покачивание самолета
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
     
+    // Точка выхода нити (ровно из центра фюзеляжа)
     let startX = plane.x - 5; 
     let startY = plane.y + 15; 
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
-        if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
+        if (angle > 0.75 || angle < -0.75) swingSpeed *= -1;
         distance = 25; 
     } else if (isLaunching) {
-        distance += 15 + (upgrades.speed * 2);
-        if (distance > config.height - 100) { isLaunching = false; isReturning = true; }
+        distance += 16 + (upgrades.speed * 2.5);
+        if (distance > config.height - 80) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        distance -= (12 + upgrades.power * 2);
+        distance -= (14 + upgrades.power * 2.5);
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
-                money += ITEMS.usdt.value;
+                money += 100;
                 caughtItem.destroy();
                 caughtItem = null;
                 spawn(this);
@@ -123,20 +138,23 @@ function update() {
         }
     }
 
+    // Позиция клешни
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
+    // Рисование нитки (не заходит в клешню)
     let endX = startX + Math.sin(angle) * (distance - 22);
     let endY = startY + Math.cos(angle) * (distance - 22);
 
     rope.clear();
-    rope.lineStyle(2, 0xffffff, 1); 
+    rope.lineStyle(2, 0xffffff, 0.9); 
     rope.lineBetween(startX, startY, endX, endY);
 
     if (caughtItem) {
         caughtItem.x = hook.x;
-        caughtItem.y = hook.y + 25;
+        caughtItem.y = hook.y + 20;
+        caughtItem.rotation = hook.rotation;
     }
 }
 
@@ -146,8 +164,8 @@ function updateUI() {
 }
 
 window.upgrade = function(type) {
-    if (money >= 200) {
-        money -= 200;
+    if (money >= 300) {
+        money -= 300;
         upgrades[type]++;
         updateUI();
     }
