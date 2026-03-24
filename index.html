@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Claw Final</title>
+    <title>Pepe Claw Moving</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:black; touch-action: none; }
-        #ui { position:fixed; top:10px; left:10px; color:#0f0; font-family:Arial; font-weight:bold; z-index: 100; pointer-events: none; }
+        #ui { position:fixed; top:10px; left:10px; color:#0f0; font-family:Arial; font-weight:bold; z-index: 100; }
         #shop { position:fixed; bottom:10px; left:10px; z-index: 100; display: flex; }
         button { padding:10px; margin:5px; font-size:14px; background: #222; color: #fff; border: 1px solid #0f0; }
     </style>
@@ -34,9 +34,9 @@ const config = {
     scene: { preload, create, update }
 };
 
-const game = new Phaser.Game(config);
+new Phaser.Game(config);
 
-let plane, hook, chainGraphics, targets;
+let plane, hook, chain, targets;
 let isLaunching=false, isReturning=false, caughtItem=null;
 let angle=0, swingSpeed=0.03, currentLen = 70;
 
@@ -63,13 +63,16 @@ function preload(){
 function create(){
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
 
-    // 1. ГРАФИКА ДЛЯ ТРОСА (Вместо белой палки - будет золотая нить)
-    chainGraphics = this.add.graphics().setDepth(30);
+    // 1. ЦЕПЬ (Спрайт, который мы будем растягивать)
+    // Вместо рисования линии, берем кусочек из pepe.png
+    chain = this.add.tileSprite(config.width/2, 130, 8, 70, 'pepe');
+    chain.setOrigin(0.5, 0).setDepth(30);
+    chain.setTilePosition(495, 480); // Вырезаем нить
 
     // 2. КЛЕШНЯ
     hook = this.add.sprite(config.width/2, 200, 'pepe');
     hook.setDepth(40).setDisplaySize(100, 90);
-    hook.setCrop(300, 600, 400, 400); // Берем желтый захват
+    hook.setCrop(300, 600, 400, 400); // Желтая клешня
 
     // 3. САМОЛЕТ
     plane = this.add.image(config.width/2, 130, 'pepe');
@@ -115,22 +118,21 @@ function spawn(scene){
 
 function update(){
     // САМОЛЕТ ПАРИТ
-    plane.y = 130 + Math.sin(this.time.now / 600) * 10;
+    plane.y = 130 + Math.sin(this.time.now / 600) * 8;
     let startY = plane.y + 40;
 
     if(!isLaunching && !isReturning){
-        // КАЧАНИЕ
         angle += swingSpeed;
-        if(angle > 0.8 || angle < -0.8) swingSpeed *= -1;
+        if(angle > 0.7 || angle < -0.7) swingSpeed *= -1;
         currentLen = 70;
     }
     else if(isLaunching){
-        // ВЫЛЕТ
-        currentLen += 14 + upgrades.speed * 2;
+        // УВЕЛИЧИВАЕМ ДЛИНУ (Клешня едет вниз)
+        currentLen += 12 + (upgrades.speed * 2);
         if(currentLen > config.height - startY) { isLaunching = false; isReturning = true; }
     }
     else if(isReturning){
-        // ВОЗВРАТ
+        // УМЕНЬШАЕМ ДЛИНУ (Клешня едет вверх)
         currentLen -= (10 + upgrades.power * 2);
         if(currentLen <= 70){
             isReturning = false;
@@ -144,27 +146,25 @@ function update(){
         }
     }
 
-    // ОБНОВЛЕНИЕ ПОЗИЦИИ КЛЕШНИ
+    // СИНХРОНИЗАЦИЯ ЦЕПИ И КЛЕШНИ
+    chain.x = plane.x;
+    chain.y = startY;
+    chain.rotation = -angle;
+    chain.height = currentLen; // ТЕПЕРЬ ЦЕПЬ РАСТЯГИВАЕТСЯ РЕАЛЬНО
+
     hook.x = plane.x + Math.sin(angle) * currentLen;
     hook.y = startY + Math.cos(angle) * currentLen;
     hook.rotation = -angle;
 
-    // РИСУЕМ ТРОС (Очищаем и рисуем заново каждый кадр)
-    chainGraphics.clear();
-    chainGraphics.lineStyle(3, 0xFFD700, 1); // Золотистый цвет (под цвет клешни)
-    chainGraphics.lineBetween(plane.x, startY, hook.x, hook.y);
-
     if(caughtItem){
         caughtItem.x = hook.x;
-        caughtItem.y = hook.y + 35;
+        caughtItem.y = hook.y + 30;
     }
 }
 
 function updateUI(){
-    const moneyEl = document.getElementById('money');
-    const energyEl = document.getElementById('energy');
-    if(moneyEl) moneyEl.innerText = money;
-    if(energyEl) energyEl.innerText = energy;
+    document.getElementById('money').innerText = money;
+    document.getElementById('energy').innerText = energy;
 }
 
 window.upgrade = function(type){
