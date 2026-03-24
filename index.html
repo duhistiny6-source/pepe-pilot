@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Fixed</title>
+    <title>Pepe Pilot Final</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:black; touch-action: none; }
@@ -34,11 +34,11 @@ const config = {
     scene: { preload, create, update }
 };
 
-new Phaser.Game(config);
+const game = new Phaser.Game(config);
 
 let plane, hook, rope, targets;
 let isLaunching=false, isReturning=false, caughtItem=null;
-let angle=0, swingSpeed=0.03, distance = 40;
+let angle=0, swingSpeed=0.03, distance = 35;
 
 let money=0, energy=10;
 let upgrades = { chance: 0, speed: 0, power: 0 };
@@ -63,7 +63,7 @@ function preload(){
 function create(){
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
 
-    // Нить под клешней и самолетом
+    // Слой для нити
     rope = this.add.graphics().setDepth(35);
 
     // Клешня
@@ -110,12 +110,12 @@ function spawn(scene){
 }
 
 function update() {
-    // Покачивание самолета
+    // Движение самолета
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
     
-    // ПРИКРЕПЛЯЕМ НИТЬ К КОРПУСУ (startX -10, startY +30 относительно центра самолета)
-    let startX = plane.x - 10; 
-    let startY = plane.y + 30; 
+    // ПРИКРЕПЛЯЕМ НИТЬ К КОРПУСУ (смещение по твоему рисунку)
+    let startX = plane.x - 12; 
+    let startY = plane.y + 35; 
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
@@ -143,7 +143,7 @@ function update() {
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // РИСУЕМ НИТЬ (Без лишних кусков сверху клешни)
+    // Отрисовка нити (строго от корпуса до центра клешни)
     rope.clear();
     rope.lineStyle(2, 0xffffff, 1); 
     rope.lineBetween(startX, startY, hook.x, hook.y);
