@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Final Polish</title>
+    <title>Pepe Pilot: Final Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#000; touch-action: none; font-family: Arial, sans-serif; }
@@ -75,15 +75,16 @@ function changeLanguage(lang) {
     toggleSettings();
 }
 
-// Звуковой движок
+// Звуковой движок (Громкость снижена)
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playBeep(freq, dur) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain); gain.connect(audioCtx.destination);
     osc.frequency.value = freq; osc.type = 'sine';
-    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+    gain.gain.setValueAtTime(0.02, audioCtx.currentTime); // Очень тихий звук
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
     osc.start(); osc.stop(audioCtx.currentTime + dur);
 }
 
@@ -93,19 +94,50 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
-let plane, hook, rope, targets, isLaunching = false, isReturning = false, caughtItem = null;
+let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, distance = 25, money = 0, energy = 100, recoveryTime = 0;
 
 function preload() {
+    // Индикатор загрузки
+    let progressBar = this.add.graphics();
+    let progressBox = this.add.graphics();
+    progressBox.fillStyle(0x222222, 0.8);
+    progressBox.fillRect(config.width/2 - 160, config.height/2 - 25, 320, 50);
+    
+    let loadingText = this.make.text({ x: config.width/2, y: config.height/2 - 50, text: 'Loading...', style: { font: '20px monospace', fill: '#ffffff' }});
+    loadingText.setOrigin(0.5, 0.5);
+
+    this.load.on('progress', function (value) {
+        progressBar.clear();
+        progressBar.fillStyle(0x00ff00, 1);
+        progressBar.fillRect(config.width/2 - 150, config.height/2 - 15, 300 * value, 30);
+    });
+    
+    this.load.on('complete', function () {
+        progressBar.destroy();
+        progressBox.destroy();
+        loadingText.destroy();
+    });
+
     this.load.image('sky', 'pg.jpeg');
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
     this.load.image('plane', 'pepe.png');
+    this.load.audio('theme', 'music.mp3');
 }
 
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
-    this.input.once('pointerdown', () => { if (audioCtx.state === 'suspended') audioCtx.resume(); });
+    
+    // Инициализация фоновой музыки
+    try {
+        bgMusic = this.sound.add('theme', { volume: 0.1, loop: true });
+    } catch (e) { console.error("Music load error", e); }
+
+    this.input.once('pointerdown', () => { 
+        if (bgMusic && !bgMusic.isPlaying) bgMusic.play();
+        if (audioCtx.state === 'suspended') audioCtx.resume(); 
+    });
 
     targets = this.physics.add.group();
     for(let i = 0; i < 6; i++) spawn(this);
@@ -124,7 +156,7 @@ function create() {
         if (isLaunching && !caughtItem) {
             caughtItem = item; caughtItem.body.enable = false;
             if (caughtItem.pulse) caughtItem.pulse.stop();
-            playBeep(400, 0.1); // Звук захвата
+            playBeep(400, 0.1); 
             isLaunching = false; isReturning = true;
         }
     });
@@ -139,8 +171,8 @@ function spawn(scene) {
 }
 
 function showValue(scene) {
-    let txt = scene.add.text(plane.x, plane.y - 40, '+0.001', { font: 'bold 22px Arial', fill: '#0f0', stroke: '#000', strokeThickness: 3 }).setDepth(100).setOrigin(0.5);
-    scene.tweens.add({ targets: txt, y: txt.y - 60, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
+    let txt = scene.add.text(plane.x, plane.y - 40, '+0.001', { font: 'bold 24px Arial', fill: '#0f0', stroke: '#000', strokeThickness: 4 }).setDepth(100).setOrigin(0.5);
+    scene.tweens.add({ targets: txt, y: txt.y - 100, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
 }
 
 function update() {
@@ -157,7 +189,7 @@ function update() {
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
-                money += 0.001; playBeep(800, 0.15); // Звук доставки
+                money += 0.001; playBeep(900, 0.15); 
                 showValue(this); caughtItem.destroy(); caughtItem = null; spawn(this); updateUI();
             }
         }
@@ -167,7 +199,7 @@ function update() {
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // Скрываем нитку под клешню за счет уменьшения длины отрисовки
+    // Скрываем нитку глубоко под клешню
     let endX = startX + Math.sin(angle) * (distance - 30);
     let endY = startY + Math.cos(angle) * (distance - 30);
     rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
