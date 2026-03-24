@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Audio Optimized</title>
+    <title>Pepe Pilot: Super Quiet Audio</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#000; touch-action: none; font-family: Arial, sans-serif; }
@@ -75,7 +75,7 @@ function changeLanguage(lang) {
     toggleSettings();
 }
 
-// Звуковой движок (Громкость снижена для тихих сигналов)
+// Звуковой движок (Экстремально тихо)
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playBeep(freq, dur) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -83,8 +83,9 @@ function playBeep(freq, dur) {
     const gain = audioCtx.createGain();
     osc.connect(gain); gain.connect(audioCtx.destination);
     osc.frequency.value = freq; osc.type = 'sine';
-    gain.gain.setValueAtTime(0.015, audioCtx.currentTime); // Тихие сигналы
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    // Громкость эффектов 0.005
+    gain.gain.setValueAtTime(0.005, audioCtx.currentTime); 
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
     osc.start(); osc.stop(audioCtx.currentTime + dur);
 }
 
@@ -103,10 +104,12 @@ function preload() {
     progressBox.fillStyle(0x222222, 0.8);
     progressBox.fillRect(config.width/2 - 160, config.height/2 - 25, 320, 50);
     
-    let loadingText = this.make.text({ x: config.width/2, y: config.height/2 - 50, text: 'Loading...', style: { font: '20px monospace', fill: '#ffffff' }});
+    let loadingText = this.make.text({ x: config.width/2, y: config.height/2 - 50, text: '0%', style: { font: '20px monospace', fill: '#ffffff' }});
     loadingText.setOrigin(0.5, 0.5);
 
     this.load.on('progress', function (value) {
+        let percent = Math.floor(value * 100);
+        loadingText.setText(percent + '%');
         progressBar.clear();
         progressBar.fillStyle(0x00ff00, 1);
         progressBar.fillRect(config.width/2 - 150, config.height/2 - 15, 300 * value, 30);
@@ -126,16 +129,22 @@ function preload() {
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
     
-    // Музыка установлена на очень низкую громкость (0.02)
+    // МУЗЫКА: Громкость 0.002 (едва слышно)
     try {
-        bgMusic = this.sound.add('theme', { volume: 0.02, loop: true });
-    } catch (e) { console.error("Music load error", e); }
+        bgMusic = this.sound.add('theme', { volume: 0.002, loop: true });
+    } catch (e) { console.error("Music error", e); }
 
-    // Активация звука при ПЕРВОМ касании для мгновенного включения
+    // Мгновенная активация при первом клике
     this.input.once('pointerdown', () => { 
         if (audioCtx.state === 'suspended') audioCtx.resume();
         if (bgMusic && !bgMusic.isPlaying) {
             bgMusic.play();
+            // Дополнительная страховка: затухание громкости до минимума
+            this.tweens.add({
+                targets: bgMusic,
+                volume: 0.002,
+                duration: 500
+            });
         }
     });
 
@@ -147,7 +156,6 @@ function create() {
     plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.input.on('pointerdown', (p) => {
-        // Проверка клика вне кнопок навигации и настроек
         if (p.y > 80 && p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
             isLaunching = true; energy--; if (energy <= 0) startRecovery(); updateUI();
         }
@@ -157,7 +165,7 @@ function create() {
         if (isLaunching && !caughtItem) {
             caughtItem = item; caughtItem.body.enable = false;
             if (caughtItem.pulse) caughtItem.pulse.stop();
-            playBeep(400, 0.1); 
+            playBeep(400, 0.08); // Короткий мягкий звук
             isLaunching = false; isReturning = true;
         }
     });
@@ -190,7 +198,7 @@ function update() {
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
-                money += 0.001; playBeep(900, 0.15); 
+                money += 0.001; playBeep(900, 0.12); 
                 showValue(this); caughtItem.destroy(); caughtItem = null; spawn(this); updateUI();
             }
         }
