@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Loading Fixed</title>
+    <title>Pepe Pilot: Hook Return</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#000; touch-action: none; font-family: Arial, sans-serif; }
@@ -41,51 +41,38 @@ const config = {
     type: Phaser.AUTO,
     width: window.innerWidth,
     height: window.innerHeight,
-    backgroundColor: '#002200', // Тот самый зеленый фон
+    backgroundColor: '#002200',
     physics: { default: 'arcade' },
     scene: { preload, create, update }
 };
 
 const game = new Phaser.Game(config);
-let plane, hook, targets, bgMusic;
+let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
+let angle = 0, swingSpeed = 0.03, distance = 25, money = 0;
 const COIN_VALUE = 0.0005;
 
 function preload() {
-    // --- ЛИНИЯ ЗАГРУЗКИ ---
     let width = this.cameras.main.width;
     let height = this.cameras.main.height;
 
-    // Фон для полоски
+    // Полоска загрузки
     let progressBox = this.add.graphics();
     let progressBar = this.add.graphics();
     progressBox.fillStyle(0x222222, 0.8);
-    progressBox.fillRect(width / 2 - 110, height / 2 - 10, 220, 30);
+    progressBox.fillRect(width / 2 - 110, height / 2 - 15, 220, 30);
 
-    // Текст процентов
-    let percentText = this.make.text({
-        x: width / 2,
-        y: height / 2 + 35,
-        text: '0%',
-        style: { font: '18px monospace', fill: '#00ff00' }
-    });
-    percentText.setOrigin(0.5, 0.5);
-
-    // Слушатель прогресса
-    this.load.on('progress', function (value) {
-        percentText.setText(parseInt(value * 100) + '%');
+    this.load.on('progress', (value) => {
         progressBar.clear();
         progressBar.fillStyle(0x00ff00, 1);
-        progressBar.fillRect(width / 2 - 100, height / 2, 200 * value, 10);
+        progressBar.fillRect(width / 2 - 100, height / 2 - 5, 200 * value, 10);
     });
 
-    // Удаление после загрузки
-    this.load.on('complete', function () {
+    this.load.on('complete', () => {
         progressBar.destroy();
         progressBox.destroy();
-        percentText.destroy();
     });
 
-    // --- ЗАГРУЗКА РЕСУРСОВ ---
+    // Ресурсы
     this.load.image('sky', 'pg.jpeg');
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
@@ -98,7 +85,6 @@ function create() {
         this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
     }
     
-    // Музыка (0.004 как просил)
     try {
         bgMusic = this.sound.add('theme', { volume: 0.004, loop: true });
     } catch (e) {}
@@ -107,23 +93,91 @@ function create() {
         if (bgMusic && !bgMusic.isPlaying) bgMusic.play();
     });
 
+    // Создаем группу целей
+    targets = this.physics.add.group();
+    for(let i = 0; i < 6; i++) spawnCoin(this);
+
+    // Рисуем трос
+    rope = this.add.graphics().setDepth(5);
+
+    // СОЗДАЕМ КЛЕШНЮ
+    if (this.textures.exists('hook')) {
+        hook = this.physics.add.sprite(0, 0, 'hook').setDisplaySize(60, 60);
+    } else {
+        hook = this.add.circle(0, 0, 20, 0xff0000); // Резервный круг
+        this.physics.add.existing(hook);
+    }
+    hook.setDepth(50);
+
     // Самолёт Пепе
     if (this.textures.exists('plane')) {
         plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
     }
-    
-    // Монетки USDT
-    targets = this.physics.add.group();
-    for(let i = 0; i < 6; i++) {
-        let x = Phaser.Math.Between(50, config.width - 50);
-        let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
-        let coin = targets.create(x, y, 'usdt').setScale(0.12).setDepth(40);
-    }
+
+    // Логика запуска
+    this.input.on('pointerdown', (p) => {
+        if (p.y > 100 && p.y < config.height - 100 && !isLaunching && !isReturning) {
+            isLaunching = true;
+        }
+    });
+
+    // Столкновение клешни с монетой
+    this.physics.add.overlap(hook, targets, (h, item) => {
+        if (isLaunching && !caughtItem) {
+            caughtItem = item;
+            caughtItem.body.enable = false;
+            isLaunching = false;
+            isReturning = true;
+        }
+    });
+}
+
+function spawnCoin(scene) {
+    let x = Phaser.Math.Between(50, config.width - 50);
+    let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
+    let coin = targets.create(x, y, 'usdt').setScale(0.12).setDepth(40);
 }
 
 function update() {
-    // Анимация покачивания самолёта
-    if (plane) plane.y = 120 + Math.sin(this.time.now / 600) * 8;
+    if (!plane || !hook) return;
+
+    plane.y = 120 + Math.sin(this.time.now / 600) * 8;
+    let startX = plane.x - 5; 
+    let startY = plane.y + 15; 
+
+    if (!isLaunching && !isReturning) {
+        angle += swingSpeed;
+        if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
+        distance = 25;
+    } else if (isLaunching) {
+        distance += 12;
+        if (distance > config.height - 150) { isLaunching = false; isReturning = true; }
+    } else if (isReturning) {
+        distance -= 8;
+        if (distance <= 25) {
+            isReturning = false;
+            if (caughtItem) {
+                money += COIN_VALUE;
+                document.getElementById('money').innerText = money.toFixed(4);
+                caughtItem.destroy();
+                caughtItem = null;
+                spawnCoin(this);
+            }
+        }
+    }
+
+    hook.x = startX + Math.sin(angle) * distance;
+    hook.y = startY + Math.cos(angle) * distance;
+    hook.rotation = -angle;
+
+    // Отрисовка троса
+    rope.clear().lineStyle(2, 0xffffff, 0.7);
+    rope.lineBetween(startX, startY, hook.x, hook.y);
+
+    if (caughtItem) {
+        caughtItem.x = hook.x;
+        caughtItem.y = hook.y + 10;
+    }
 }
 </script>
 </body>
