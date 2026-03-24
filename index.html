@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot Final</title>
+    <title>Pepe Pilot Final Fixed</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:black; touch-action: none; }
@@ -26,70 +26,78 @@
 </div>
 
 <script>
+// Глобальные переменные
+let plane, hook, rope, targets;
+let isLaunching = false;
+let isReturning = false;
+let caughtItem = null;
+let angle = 0;
+let swingSpeed = 0.03;
+let distance = 35;
+let money = 0;
+let energy = 10;
+let upgrades = { chance: 0, speed: 0, power: 0 };
+
+const ITEMS = {
+    ton: { chance: 0.9, value: 50 },
+    usdt: { chance: 0.7, value: 100 },
+    not: { chance: 0.5, value: 200 },
+    dogs: { chance: 0.3, value: 400 }
+};
+
 const config = {
     type: Phaser.AUTO,
     width: window.innerWidth,
     height: window.innerHeight,
-    physics: { default:'arcade' },
+    physics: { default: 'arcade' },
     scene: { preload, create, update }
 };
 
 const game = new Phaser.Game(config);
 
-let plane, hook, rope, targets;
-let isLaunching=false, isReturning=false, caughtItem=null;
-let angle=0, swingSpeed=0.03, distance = 35;
-
-let money=0, energy=10;
-let upgrades = { chance: 0, speed: 0, power: 0 };
-
-const ITEMS = {
-    ton:{chance:0.9, value:50},
-    usdt:{chance:0.7, value:100},
-    not:{chance:0.5, value:200},
-    dogs:{chance:0.3, value:400}
-};
-
-function preload(){
-    this.load.image('sky','pg.jpeg');
-    this.load.image('plane','pepe.png');
-    this.load.image('hook','kleshn.png');
-    this.load.image('ton','ton.png');
-    this.load.image('usdt','usdt.png');
-    this.load.image('not','not.png');
-    this.load.image('dogs','dogs.png');
+function preload() {
+    this.load.image('sky', 'pg.jpeg');
+    this.load.image('plane', 'pepe.png');
+    this.load.image('hook', 'kleshn.png');
+    this.load.image('ton', 'ton.png');
+    this.load.image('usdt', 'usdt.png');
+    this.load.image('not', 'not.png');
+    this.load.image('dogs', 'dogs.png');
 }
 
-function create(){
-    this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
+function create() {
+    this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
 
-    // Слой для нити
+    // Графика нити
     rope = this.add.graphics().setDepth(35);
 
     // Клешня
-    hook = this.add.sprite(config.width/2, 160, 'hook');
+    hook = this.add.sprite(config.width / 2, 160, 'hook');
     hook.setDepth(40).setDisplaySize(60, 60); 
     this.physics.add.existing(hook);
     hook.body.setCircle(25);
 
     // Самолет
-    plane = this.add.image(config.width/2, 120, 'plane');
+    plane = this.add.image(config.width / 2, 120, 'plane');
     plane.setDisplaySize(280, 180).setDepth(50);
 
+    // Монетки
     targets = this.physics.add.group();
-    for(let i=0; i<8; i++) spawn(this);
+    for(let i = 0; i < 8; i++) spawn(this);
 
+    // Управление
     this.input.on('pointerdown', () => {
-        if(!isLaunching && !isReturning && energy > 0){
+        if (!isLaunching && !isReturning && energy > 0) {
             isLaunching = true;
             energy--;
             updateUI();
         }
     });
 
+    // Коллизии
     this.physics.add.overlap(hook, targets, (h, item) => {
-        if(isLaunching && !caughtItem){
-            if(Math.random() <= (ITEMS[item.texture.key].chance + upgrades.chance * 0.05)) { 
+        if (isLaunching && !caughtItem) {
+            if (Math.random() <= (ITEMS[item.texture.key].chance + upgrades.chance * 0.05)) { 
                 caughtItem = item;
                 caughtItem.body.enable = false; 
             }
@@ -98,10 +106,11 @@ function create(){
         }
     });
 
-    setInterval(() => { if(energy < 10) energy++; updateUI(); }, 4000);
+    // Реген энергии
+    setInterval(() => { if (energy < 10) energy++; updateUI(); }, 4000);
 }
 
-function spawn(scene){
+function spawn(scene) {
     let keys = Object.keys(ITEMS);
     let k = keys[Phaser.Math.Between(0, keys.length - 1)];
     let x = Phaser.Math.Between(60, config.width - 60);
@@ -110,13 +119,14 @@ function spawn(scene){
 }
 
 function update() {
-    // Движение самолета
+    // 1. Движение самолета
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
     
-    // ПРИКРЕПЛЯЕМ НИТЬ К КОРПУСУ (смещение по твоему рисунку)
+    // 2. Крепление нити (по твоему рисунку)
     let startX = plane.x - 12; 
     let startY = plane.y + 35; 
 
+    // 3. Логика полета
     if (!isLaunching && !isReturning) {
         angle += swingSpeed;
         if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
@@ -138,12 +148,12 @@ function update() {
         }
     }
 
-    // Позиция клешни
+    // 4. Обновление координат клешни
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // Отрисовка нити (строго от корпуса до центра клешни)
+    // 5. Отрисовка нити (БЕЗ ТОРЧАЩИХ ПАЛОК)
     rope.clear();
     rope.lineStyle(2, 0xffffff, 1); 
     rope.lineBetween(startX, startY, hook.x, hook.y);
@@ -154,18 +164,19 @@ function update() {
     }
 }
 
-function updateUI(){
+function updateUI() {
     document.getElementById('money').innerText = money;
     document.getElementById('energy').innerText = energy;
 }
 
-window.upgrade = function(type){
-    if(money >= 200){
+window.upgrade = function(type) {
+    if (money >= 200) {
         money -= 200;
         upgrades[type]++;
         updateUI();
     }
-}
+};
 </script>
 </body>
 </html>
+
