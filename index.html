@@ -3,41 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Music & Icons</title>
+    <title>Pepe Pilot: Safe Audio</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
-        body { margin:0; overflow:hidden; background:black; touch-action: none; }
-        #ui { position:fixed; top:12px; left:12px; color:#0f0; font-family: 'Arial', sans-serif; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; font-size: 15px; }
+        body { margin:0; overflow:hidden; background:#000; touch-action: none; }
+        #ui { position:fixed; top:12px; left:12px; color:#0f0; font-family: Arial; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; }
         
-        /* Еще более компактный Таб-бар */
         #nav-bar { 
-            position: fixed; 
-            bottom: 12px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            width: 80%; 
-            height: 50px; 
-            background: rgba(10, 10, 10, 0.95); 
-            border: 1px solid #0f0; 
-            border-radius: 12px; 
-            display: flex; 
-            justify-content: space-around; 
-            align-items: center; 
-            z-index: 200;
+            position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); 
+            width: 85%; height: 52px; background: rgba(0, 0, 0, 0.9); 
+            border: 1px solid #0f0; border-radius: 12px; display: flex; 
+            justify-content: space-around; align-items: center; z-index: 200;
         }
-        .nav-item { 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            color: #0f0; 
-            font-size: 8px; 
-            font-family: Arial; 
-            text-transform: uppercase;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .nav-item span { font-size: 18px; margin-bottom: 1px; }
-        .nav-item:active { transform: scale(0.9); opacity: 0.8; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #0f0; font-size: 8px; font-weight: bold; cursor: pointer; }
+        .nav-item span { font-size: 18px; margin-bottom: 2px; }
     </style>
 </head>
 <body>
@@ -48,10 +27,10 @@
 </div>
 
 <div id="nav-bar">
-    <div class="nav-item" onclick="alert('Магазин')"><span>🛒</span>Магазин</div>
-    <div class="nav-item" onclick="alert('Задания')"><span>📜</span>Задания</div>
-    <div class="nav-item" onclick="alert('Друзья')"><span>👥</span>Друзья</div>
-    <div class="nav-item" onclick="alert('Кошелек')"><span>👛</span>Кошелек</div>
+    <div class="nav-item"><span>🛒</span>МАГАЗИН</div>
+    <div class="nav-item"><span>📜</span>ЗАДАНИЯ</div>
+    <div class="nav-item"><span>👥</span>ДРУЗЬЯ</div>
+    <div class="nav-item"><span>👛</span>КОШЕЛЕК</div>
 </div>
 
 <script>
@@ -71,38 +50,46 @@ let angle = 0, swingSpeed = 0.03, distance = 25;
 let money = 0, energy = 10;
 
 function preload() {
+    // Загрузка графики
     this.load.image('sky', 'pg.jpeg');
     this.load.image('plane', 'pepe.png');
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
-    // Загрузка твоего файла
-    this.load.audio('theme', 'music.mp3'); 
+    
+    // Безопасная загрузка аудио
+    this.load.audio('theme', 'music.mp3');
 }
 
 function create() {
+    // Отрисовка фона
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
-    
-    // Настройка музыки
-    bgMusic = this.sound.add('theme', { volume: 0.4, loop: true });
+
+    // Инициализация звука (без автоплея)
+    try {
+        bgMusic = this.sound.add('theme', { volume: 0.3, loop: true });
+    } catch (e) {
+        console.log("Ошибка звука:", e);
+    }
 
     targets = this.physics.add.group();
     for(let i = 0; i < 7; i++) spawn(this);
 
     rope = this.add.graphics().setDepth(30);
-
-    // Клешня
-    hook = this.add.sprite(0, 0, 'hook').setDepth(50);
-    hook.setDisplaySize(60, 60); 
+    
+    // Клешня (Фиксированный размер 60x60)
+    hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(60, 60); 
     this.physics.add.existing(hook);
     hook.body.setCircle(20); 
 
     plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.input.on('pointerdown', (pointer) => {
-        // Включаем музыку при первом клике
-        if (!bgMusic.isPlaying) bgMusic.play();
+        // Запуск музыки только по клику!
+        if (bgMusic && !bgMusic.isPlaying) {
+            bgMusic.play();
+        }
 
-        if (pointer.y < config.height - 70) {
+        if (pointer.y < config.height - 80) {
             if (!isLaunching && !isReturning && energy > 0) {
                 isLaunching = true;
                 energy--;
@@ -127,17 +114,13 @@ function create() {
 
 function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
-    let y = Phaser.Math.Between(config.height * 0.5, config.height - 130);
+    let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
     let coin = targets.create(x, y, 'usdt').setDepth(40);
     coin.setDisplaySize(50, 50);
     coin.baseScale = coin.scaleX;
     
     coin.breath = scene.tweens.add({
-        targets: coin,
-        scale: coin.baseScale * 1.01,
-        duration: 2000,
-        yoyo: true,
-        repeat: -1
+        targets: coin, scale: coin.baseScale * 1.02, duration: 1500, yoyo: true, repeat: -1
     });
 }
 
@@ -152,10 +135,9 @@ function update() {
         distance = 25;
     } else if (isLaunching) {
         distance += 16;
-        if (distance > config.height - 100) { isLaunching = false; isReturning = true; }
+        if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        // Плавный и медленный возврат
-        distance -= 7.5; 
+        distance -= 8; 
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
@@ -168,5 +150,26 @@ function update() {
         }
     }
 
-    hook.setDisplaySize(60, 60);
-    hook.x = startX + Math.sin(angle) *
+    hook.setDisplaySize(60, 60); // Клешня не растягивается!
+    hook.x = startX + Math.sin(angle) * distance;
+    hook.y = startY + Math.cos(angle) * distance;
+    hook.rotation = -angle;
+
+    let endX = startX + Math.sin(angle) * (distance - 20);
+    let endY = startY + Math.cos(angle) * (distance - 20);
+    rope.clear().lineStyle(2, 0xffffff, 0.8).lineBetween(startX, startY, endX, endY);
+
+    if (caughtItem) {
+        caughtItem.x = hook.x;
+        caughtItem.y = hook.y + 12; // Монетка внутри клешни
+        caughtItem.rotation = hook.rotation;
+    }
+}
+
+function updateUI() {
+    document.getElementById('money').innerText = money;
+    document.getElementById('energy').innerText = energy;
+}
+</script>
+</body>
+</html>
