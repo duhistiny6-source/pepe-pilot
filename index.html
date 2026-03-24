@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Moonbix Pro</title>
+    <title>Pepe One Body Clean</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:black; touch-action: none; }
@@ -36,7 +36,7 @@ const config = {
 
 new Phaser.Game(config);
 
-let plane, hook, rope, targets;
+let plane, hook, ropeGraphics, targets;
 let isLaunching=false, isReturning=false, caughtItem=null;
 let angle=0, swingSpeed=0.03, distance = 40;
 
@@ -52,7 +52,8 @@ const ITEMS = {
 
 function preload(){
     this.load.image('sky','pg.jpeg');
-    this.load.image('pepe','pepe.png'); // Твой самолет
+    this.load.image('pepe','pepe.png'); // Самолет остается
+    // this.load.image('hook_asset', 'claw.png'); // ЗАГРУЗИ СЮДА СВОЮ КЛЕШНЮ
     this.load.image('ton','ton.png');
     this.load.image('usdt','usdt.png');
     this.load.image('not','not.png');
@@ -62,24 +63,26 @@ function preload(){
 function create(){
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
 
-    // 1. Слой для нити
-    rope = this.add.graphics().setDepth(30);
+    // 1. Создаем графический слой для НИТИ (Rope)
+    ropeGraphics = this.add.graphics().setDepth(35);
 
-    // 2. САМОЛЕТ (без обрезки клешни, просто картинка)
-    plane = this.add.image(config.width/2, 120, 'pepe');
-    plane.setDisplaySize(280, 240).setDepth(50).setCrop(0, 0, 1000, 480);
-
-    // 3. СОЗДАЕМ КЛЕШНЮ ПРОГРАММНО (чтобы точно не было палок от картинок)
-    // Рисуем маленькую желтую клешню
+    // 2. ОТДЕЛЬНАЯ КЛЕШНЯ (Создаем программную клешню, чтобы точно не было палок)
+    // Когда ты загрузишь свой 'hook_asset', мы заменим это.
     let graphics = this.make.graphics({x: 0, y: 0, add: false});
     graphics.fillStyle(0xFFD700, 1);
-    graphics.fillRect(0, 0, 40, 40); // Это просто желтый квадрат для теста, заменишь на png
-    graphics.generateTexture('claw', 40, 40);
+    graphics.fillRect(0, 0, 40, 40); // Это просто желтый квадрат для теста
+    graphics.generateTexture('claw_temp', 40, 40);
 
-    hook = this.add.sprite(config.width/2, 160, 'claw');
+    hook = this.add.sprite(config.width/2, 160, 'claw_temp');
     hook.setDepth(40);
+    // this.add.sprite(config.width/2, 160, 'hook_asset'); // КОГДА ЗАГРУЗИШЬ, ИСПОЛЬЗУЙ ЭТУ СТРОКУ
+
     this.physics.add.existing(hook);
     hook.body.setCircle(20);
+
+    // 3. САМОЛЕТ
+    plane = this.add.image(config.width/2, 120, 'pepe');
+    plane.setDisplaySize(280, 240).setDepth(50).setCrop(0, 0, 1000, 480);
 
     targets = this.physics.add.group();
     for(let i=0; i<8; i++) spawn(this);
@@ -109,28 +112,28 @@ function create(){
 function spawn(scene){
     let keys = Object.keys(ITEMS);
     let k = keys[Phaser.Math.Between(0, keys.length - 1)];
-    let x = Phaser.Math.Between(60, config.width - 60);
-    let y = Phaser.Math.Between(config.height * 0.55, config.height - 80);
-    targets.create(x, y, k).setDisplaySize(60, 60);
+    let x = Phaser.Math.Between(80, config.width - 80);
+    let y = Phaser.Math.Between(config.height * 0.6, config.height - 80);
+    targets.create(x, y, k).setDisplaySize(65, 65);
 }
 
 function update(){
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
     let startX = plane.x;
-    let startY = plane.y + 45; 
+    let startY = plane.y + 40; 
 
     if(!isLaunching && !isReturning){
         angle += swingSpeed;
         if(angle > 0.8 || angle < -0.8) swingSpeed *= -1;
-        distance = 45;
+        distance = 35; 
     }
     else if(isLaunching){
-        distance += 15 + (upgrades.speed * 2);
-        if(distance > config.height - 100) { isLaunching = false; isReturning = true; }
+        distance += 12 + (upgrades.speed * 2.5);
+        if(distance > config.height - 120) { isLaunching = false; isReturning = true; }
     }
     else if(isReturning){
-        distance -= (12 + upgrades.power * 2);
-        if(distance <= 45){
+        distance -= (10 + upgrades.power * 2.5);
+        if(distance <= 35){
             isReturning = false;
             if(caughtItem){
                 money += ITEMS[caughtItem.texture.key].value;
@@ -147,14 +150,14 @@ function update(){
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // РИСУЕМ ОДНУ НИТЬ (Moonbix Style)
-    rope.clear();
-    rope.lineStyle(2, 0xffffff, 1); 
-    rope.lineBetween(startX, startY, hook.x, hook.y);
+    // РИСУЕМ НИТЬ (ОЧИЩАЕМ И РИСУЕМ ЗАВЕРШЕНО ЗА ПРЕДЫДУЩИЙ КАДР)
+    ropeGraphics.clear(); 
+    ropeGraphics.lineStyle(2, 0xffffff, 1); // Тонкая белая нить
+    ropeGraphics.lineBetween(startX, startY, hook.x, hook.y);
 
     if(caughtItem){
         caughtItem.x = hook.x;
-        caughtItem.y = hook.y + 25;
+        caughtItem.y = hook.y + 20; // Монетка "внутри" клешни
     }
 }
 
