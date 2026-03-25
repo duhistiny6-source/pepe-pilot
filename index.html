@@ -10,7 +10,6 @@
         body { margin:0; overflow:hidden; background:#000; touch-action: none; font-family: Arial, sans-serif; }
         #ui { position:fixed; top:12px; left:12px; color:#0f0; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; display: flex; flex-direction: column; gap: 8px; }
         
-        /* Стили для раздельного баланса */
         .balance-item { display: flex; align-items: center; gap: 5px; font-size: 18px; }
         .coin-icon { width: 22px; height: 22px; vertical-align: middle; }
         
@@ -80,6 +79,26 @@
     </div>
 </div>
 
+<div id="wallet-modal" class="modal">
+    <div class="modal-content">
+        <h3 id="txt-wallet-title">КОШЕЛЕК</h3>
+        <div class="task-item">
+            <div class="task-info">
+                <div class="task-title">Frog Pilot (COIN)</div>
+                <div class="task-reward" style="font-size: 18px; color: #ffcc00;"><span id="modal-frog">0</span> 🐸</div>
+            </div>
+        </div>
+        <div class="task-item">
+            <div class="task-info">
+                <div class="task-title">Tether (USDT)</div>
+                <div class="task-reward" style="font-size: 18px;">$<span id="modal-usdt">0.0000</span></div>
+            </div>
+        </div>
+        <button class="lang-btn" onclick="connectWallet()">ПОДКЛЮЧИТЬ TON</button>
+        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('wallet-modal')">Закрыть</div>
+    </div>
+</div>
+
 <div id="ad-overlay">
     <h2 id="txt-ad-watching">СМОТРИМ РОЛИК...</h2>
     <p id="ad-timer">Осталось: 5 сек.</p>
@@ -89,11 +108,10 @@
     <div class="nav-item"><span>🛒</span><div class="nav-text" id="nav-shop">МАГАЗИН</div></div>
     <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text" id="nav-tasks">ЗАДАНИЯ</div></div>
     <div class="nav-item"><span>👥</span><div class="nav-text" id="nav-friends">ДРУЗЬЯ</div></div>
-    <div class="nav-item" onclick="connectWallet()"><span>👛</span><div class="nav-text" id="nav-wallet">КОШЕЛЕК</div></div>
+    <div class="nav-item" onclick="openWallet()"><span>👛</span><div class="nav-text" id="nav-wallet">КОШЕЛЕК</div></div>
 </div>
 
 <script>
-// --- TON Connect и прочее без изменений ---
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     manifestUrl: 'https://duhistiny6-source.github.io/pepe-pilot/tonconnect-manifest.json',
     buttonRootId: null
@@ -106,6 +124,13 @@ async function connectWallet() {
 function toggleModal(id) {
     const m = document.getElementById(id);
     m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+}
+
+// Новая функция открытия кошелька с обновлением данных
+function openWallet() {
+    document.getElementById('modal-frog').innerText = frogMoney;
+    document.getElementById('modal-usdt').innerText = money.toFixed(4);
+    toggleModal('wallet-modal');
 }
 
 function doTask(url, reward) {
@@ -188,6 +213,7 @@ function create() {
     this.input.on('pointerdown', (p) => {
         if (document.getElementById('tasks-modal').style.display === 'flex' || 
             document.getElementById('settings-modal').style.display === 'flex' ||
+            document.getElementById('wallet-modal').style.display === 'flex' ||
             document.getElementById('ad-overlay').style.display === 'flex') return;
 
         if (p.y > 80 && p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
@@ -209,91 +235,5 @@ function create() {
 function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
     let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
-    let randomChance = Phaser.Math.Between(1, 100);
-    let textureKey = (randomChance <= 60) ? 'pilot_coin' : 'usdt';
-    let coin = targets.create(x, y, textureKey).setDepth(40);
-    coin.setScale(0.12);
-    coin.pulse = scene.tweens.add({ targets: coin, scale: 0.14, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-}
-
-// Улучшенная функция вылета текста
-function showValue(scene, val, isFrog) {
-    let color = isFrog ? '#ffcc00' : '#0f0';
-    let txt = scene.add.text(plane.x, plane.y - 40, `+${val}`, { 
-        font: 'bold 28px Arial', 
-        fill: color, 
-        stroke: '#000', 
-        strokeThickness: 5 
-    }).setOrigin(0.5).setDepth(100);
-    scene.tweens.add({ targets: txt, y: txt.y - 100, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
-}
-
-function update() {
-    plane.y = 120 + Math.sin(this.time.now / 600) * 8;
-    let startX = plane.x - 5; let startY = plane.y + 15; 
-
-    if (!isLaunching && !isReturning) {
-        angle += swingSpeed; if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
-        distance = 25;
-    } else if (isLaunching) {
-        distance += 16; if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
-    } else if (isReturning) {
-        distance -= 6; 
-        if (distance <= 25) {
-            isReturning = false;
-            if (caughtItem) {
-                // ПРОВЕРКА: Что мы поймали?
-                if (caughtItem.texture.key === 'pilot_coin') {
-                    frogMoney += FROG_VALUE;
-                    showValue(this.scene.scene, FROG_VALUE, true);
-                } else {
-                    money += USDT_VALUE;
-                    showValue(this.scene.scene, USDT_VALUE, false);
-                }
-                playBeep(900, 0.12); 
-                caughtItem.destroy(); caughtItem = null; spawn(this.scene.scene); updateUI();
-            }
-        }
-    }
-    hook.x = startX + Math.sin(angle) * distance;
-    hook.y = startY + Math.cos(angle) * distance;
-    hook.rotation = -angle;
-
-    let endX = startX + Math.sin(angle) * (distance - 30);
-    let endY = startY + Math.cos(angle) * (distance - 30);
-    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
-    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; caughtItem.rotation = hook.rotation; }
-}
-
-function updateUI() {
-    document.getElementById('money').innerText = money.toFixed(4);
-    document.getElementById('frog-money').innerText = frogMoney; // Обновляем наш новый баланс
-    document.getElementById('energy').innerText = energy;
-    const isOutOfEnergy = energy <= 0;
-    document.getElementById('timer-display').style.display = isOutOfEnergy ? 'block' : 'none';
-    document.getElementById('ad-button').style.display = isOutOfEnergy ? 'block' : 'none';
-}
-
-function tick() {
-    if (recoveryTime > 0) {
-        recoveryTime--;
-        let h = Math.floor(recoveryTime / 3600).toString().padStart(2, '0');
-        let m = Math.floor((recoveryTime % 3600) / 60).toString().padStart(2, '0');
-        let s = (recoveryTime % 60).toString().padStart(2, '0');
-        document.getElementById('time-left').innerText = `${h}:${m}:${s}`;
-        if (recoveryTime === 0) { energy = 100; updateUI(); }
-    }
-}
-
-function startAd() {
-    document.getElementById('ad-overlay').style.display = 'flex';
-    let c = 5;
-    let i = setInterval(() => {
-        c--; document.getElementById('ad-timer').innerText = `Осталось: ${c} сек.`;
-        if (c <= 0) { clearInterval(i); document.getElementById('ad-overlay').style.display = 'none'; energy = 100; recoveryTime = 0; updateUI(); }
-    }, 1000);
-}
-function startRecovery() { recoveryTime = 10800; }
-</script>
-</body>
-</html>
+    let randomChance = Phaser.Math.
+            
