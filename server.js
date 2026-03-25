@@ -79,4 +79,4 @@ bot.action('back', (ctx) => {
 });
 
 bot.launch();
-console.log("Бот Pepe Pilot успешно запущен!");    
+console.log("Бот Pepe Pilot успешно запущен!");.
