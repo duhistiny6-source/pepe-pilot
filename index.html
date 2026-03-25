@@ -124,8 +124,8 @@ function doTask(url, reward) {
 }
 
 function doAdTask() {
-    toggleModal('tasks-modal'); // Закрываем окно заданий перед рекламой
-    startAd(); // Запускаем стандартную функцию рекламы
+    toggleModal('tasks-modal');
+    startAd();
 }
 
 const translations = {
@@ -174,6 +174,7 @@ function preload() {
     this.load.image('sky', 'pg.jpeg');
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
+    this.load.image('pilot_coin', 'logo..png'); // Твоя новая монетка
     this.load.image('plane', 'pepe.png');
     this.load.audio('theme', 'music.mp3');
 }
@@ -214,8 +215,22 @@ function create() {
 function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
     let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
-    let coin = targets.create(x, y, 'usdt').setDepth(40).setScale(0.12);
-    coin.pulse = scene.tweens.add({ targets: coin, scale: 0.14, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    
+    // Бросаем кубик (60% на Frog Pilot, 40% на USDT)
+    let randomChance = Phaser.Math.Between(1, 100);
+    let textureKey = (randomChance <= 60) ? 'pilot_coin' : 'usdt';
+
+    let coin = targets.create(x, y, textureKey).setDepth(40);
+    coin.setScale(0.12); // Размер одинаковый для всех
+
+    coin.pulse = scene.tweens.add({ 
+        targets: coin, 
+        scale: 0.14, 
+        duration: 1000, 
+        yoyo: true, 
+        repeat: -1, 
+        ease: 'Sine.easeInOut' 
+    });
 }
 
 function showValue(scene) {
