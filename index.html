@@ -8,7 +8,12 @@
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#000; touch-action: none; font-family: Arial, sans-serif; }
-        #ui { position:fixed; top:12px; left:12px; color:#0f0; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; display: flex; flex-direction: column; gap: 5px; }
+        #ui { position:fixed; top:12px; left:12px; color:#0f0; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; display: flex; flex-direction: column; gap: 8px; }
+        
+        /* Стили для раздельного баланса */
+        .balance-item { display: flex; align-items: center; gap: 5px; font-size: 18px; }
+        .coin-icon { width: 22px; height: 22px; vertical-align: middle; }
+        
         #timer-display { color: #ff3333; font-size: 13px; display: none; }
         #ad-button { display: none; pointer-events: auto; background: #ffcc00; color: #000; border: 1px solid #fff; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor: pointer; width: fit-content; margin-top: 5px; }
         #settings-btn { position: fixed; top: 12px; right: 12px; font-size: 28px; cursor: pointer; z-index: 1001; filter: drop-shadow(1px 1px 2px #000); }
@@ -36,7 +41,10 @@
 <div id="settings-btn" onclick="toggleModal('settings-modal')">⚙️</div>
 
 <div id="ui">
-    <div>💰 <span id="money">0.0000</span></div>
+    <div class="balance-item">💰 <span id="money">0.0000</span></div>
+    <div class="balance-item">
+        <img src="logo..png" class="coin-icon"> <span id="frog-money">0</span>
+    </div>
     <div>⚡ <span id="energy">100</span>/100</div>
     <div id="timer-display"><span id="txt-recovery">Восстановление</span>: <span id="time-left">03:00:00</span></div>
     <button id="ad-button" onclick="startAd()">📺 СМОТРЕТЬ РЕКЛАМУ</button>
@@ -54,7 +62,6 @@
 <div id="tasks-modal" class="modal">
     <div class="modal-content">
         <h3 id="txt-tasks-title">ЗАДАНИЯ</h3>
-        
         <div class="task-item">
             <div class="task-info">
                 <div class="task-title">Посмотреть рекламу</div>
@@ -62,7 +69,6 @@
             </div>
             <button class="task-btn" onclick="doAdTask()">📺 СМОТРЕТЬ</button>
         </div>
-
         <div class="task-item">
             <div class="task-info">
                 <div class="task-title">Подписаться на канал</div>
@@ -70,15 +76,6 @@
             </div>
             <button class="task-btn" onclick="doTask('https://t.me/your_channel', 100)">GO</button>
         </div>
-
-        <div class="task-item">
-            <div class="task-info">
-                <div class="task-title">Вступить в группу</div>
-                <div class="task-reward">+50 ⚡ Энергии</div>
-            </div>
-            <button class="task-btn" onclick="doTask('https://t.me/your_group', 50)">GO</button>
-        </div>
-
         <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('tasks-modal')">Закрыть</div>
     </div>
 </div>
@@ -96,7 +93,7 @@
 </div>
 
 <script>
-// --- TON Connect ---
+// --- TON Connect и прочее без изменений ---
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     manifestUrl: 'https://duhistiny6-source.github.io/pepe-pilot/tonconnect-manifest.json',
     buttonRootId: null
@@ -106,13 +103,11 @@ async function connectWallet() {
     try { await tonConnectUI.connectWallet(); alert("Кошелек успешно подключен!"); } catch (e) { console.error(e); }
 }
 
-// --- Управление модалками ---
 function toggleModal(id) {
     const m = document.getElementById(id);
     m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
 }
 
-// --- Логика Заданий ---
 function doTask(url, reward) {
     window.open(url, '_blank');
     setTimeout(() => {
@@ -123,10 +118,7 @@ function doTask(url, reward) {
     }, 2000);
 }
 
-function doAdTask() {
-    toggleModal('tasks-modal');
-    startAd();
-}
+function doAdTask() { toggleModal('tasks-modal'); startAd(); }
 
 const translations = {
     ru: { recovery: "Восстановление", ad_btn: "📺 СМОТРЕТЬ РЕКЛАМУ", settings: "НАСТРОЙКИ", close: "Закрыть", watching: "СМОТРИМ РОЛИК...", left: "Осталось", shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК" },
@@ -167,14 +159,16 @@ const config = {
 
 const game = new Phaser.Game(config);
 let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.03, distance = 25, money = 0, energy = 100, recoveryTime = 0;
-const COIN_VALUE = 0.0005;
+let angle = 0, swingSpeed = 0.03, distance = 25, money = 0, frogMoney = 0, energy = 100, recoveryTime = 0;
+
+const USDT_VALUE = 0.0005;
+const FROG_VALUE = 10;
 
 function preload() {
     this.load.image('sky', 'pg.jpeg');
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
-    this.load.image('pilot_coin', 'logo..png'); // Твоя новая монетка
+    this.load.image('pilot_coin', 'logo..png');
     this.load.image('plane', 'pepe.png');
     this.load.audio('theme', 'music.mp3');
 }
@@ -215,26 +209,22 @@ function create() {
 function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
     let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
-    
-    // Бросаем кубик (60% на Frog Pilot, 40% на USDT)
     let randomChance = Phaser.Math.Between(1, 100);
     let textureKey = (randomChance <= 60) ? 'pilot_coin' : 'usdt';
-
     let coin = targets.create(x, y, textureKey).setDepth(40);
-    coin.setScale(0.12); // Размер одинаковый для всех
-
-    coin.pulse = scene.tweens.add({ 
-        targets: coin, 
-        scale: 0.14, 
-        duration: 1000, 
-        yoyo: true, 
-        repeat: -1, 
-        ease: 'Sine.easeInOut' 
-    });
+    coin.setScale(0.12);
+    coin.pulse = scene.tweens.add({ targets: coin, scale: 0.14, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 }
 
-function showValue(scene) {
-    let txt = scene.add.text(plane.x, plane.y - 40, `+${COIN_VALUE}`, { font: 'bold 24px Arial', fill: '#0f0', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5).setDepth(100);
+// Улучшенная функция вылета текста
+function showValue(scene, val, isFrog) {
+    let color = isFrog ? '#ffcc00' : '#0f0';
+    let txt = scene.add.text(plane.x, plane.y - 40, `+${val}`, { 
+        font: 'bold 28px Arial', 
+        fill: color, 
+        stroke: '#000', 
+        strokeThickness: 5 
+    }).setOrigin(0.5).setDepth(100);
     scene.tweens.add({ targets: txt, y: txt.y - 100, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
 }
 
@@ -252,8 +242,15 @@ function update() {
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
-                money += COIN_VALUE; playBeep(900, 0.12); 
-                showValue(this.scene.scene);
+                // ПРОВЕРКА: Что мы поймали?
+                if (caughtItem.texture.key === 'pilot_coin') {
+                    frogMoney += FROG_VALUE;
+                    showValue(this.scene.scene, FROG_VALUE, true);
+                } else {
+                    money += USDT_VALUE;
+                    showValue(this.scene.scene, USDT_VALUE, false);
+                }
+                playBeep(900, 0.12); 
                 caughtItem.destroy(); caughtItem = null; spawn(this.scene.scene); updateUI();
             }
         }
@@ -265,12 +262,12 @@ function update() {
     let endX = startX + Math.sin(angle) * (distance - 30);
     let endY = startY + Math.cos(angle) * (distance - 30);
     rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
-
     if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; caughtItem.rotation = hook.rotation; }
 }
 
 function updateUI() {
     document.getElementById('money').innerText = money.toFixed(4);
+    document.getElementById('frog-money').innerText = frogMoney; // Обновляем наш новый баланс
     document.getElementById('energy').innerText = energy;
     const isOutOfEnergy = energy <= 0;
     document.getElementById('timer-display').style.display = isOutOfEnergy ? 'block' : 'none';
@@ -293,13 +290,7 @@ function startAd() {
     let c = 5;
     let i = setInterval(() => {
         c--; document.getElementById('ad-timer').innerText = `Осталось: ${c} сек.`;
-        if (c <= 0) { 
-            clearInterval(i); 
-            document.getElementById('ad-overlay').style.display = 'none'; 
-            energy = 100; 
-            recoveryTime = 0; 
-            updateUI(); 
-        }
+        if (c <= 0) { clearInterval(i); document.getElementById('ad-overlay').style.display = 'none'; energy = 100; recoveryTime = 0; updateUI(); }
     }, 1000);
 }
 function startRecovery() { recoveryTime = 10800; }
