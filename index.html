@@ -12,19 +12,10 @@
         #timer-display { color: #ff3333; font-size: 13px; display: none; }
         #ad-button { display: none; pointer-events: auto; background: #ffcc00; color: #000; border: 1px solid #fff; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor: pointer; width: fit-content; margin-top: 5px; }
         #settings-btn { position: fixed; top: 12px; right: 12px; font-size: 28px; cursor: pointer; z-index: 1001; filter: drop-shadow(1px 1px 2px #000); }
-        
-        #nav-bar { 
-            position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); 
-            width: 85%; height: 50px; 
-            background: rgba(0, 0, 0, 0.9); 
-            border: 1px solid #333; border-radius: 12px; 
-            display: flex; justify-content: space-around; align-items: center; z-index: 200; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
+        #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 85%; height: 50px; background: rgba(0, 0, 0, 0.9); border: 1px solid #333; border-radius: 12px; display: flex; justify-content: space-around; align-items: center; z-index: 200; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; font-weight: bold; flex: 1; opacity: 0.9; cursor: pointer; }
         .nav-item span { font-size: 18px; }
         .nav-text { font-size: 8px; margin-top: 1px; color: #bbb; text-transform: uppercase; }
-
         #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
         .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 240px; }
         .lang-btn { background: #333; color: #0f0; border: 1px solid #0f0; padding: 12px 20px; margin: 10px 0; cursor: pointer; border-radius: 10px; font-weight: bold; width: 100%; }
@@ -64,22 +55,17 @@
 </div>
 
 <script>
-// --- Инициализация TON Connect ---
+// --- TON Connect ---
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     manifestUrl: 'https://duhistiny6-source.github.io/pepe-pilot/tonconnect-manifest.json',
     buttonRootId: null
 });
 
 async function connectWallet() {
-    try {
-        const connectedWallet = await tonConnectUI.connectWallet();
-        console.log("Кошелек подключен:", connectedWallet);
-        alert("Кошелек успешно подключен!");
-    } catch (error) {
-        console.error("Ошибка подключения:", error);
-    }
+    try { await tonConnectUI.connectWallet(); alert("Кошелек успешно подключен!"); } catch (e) { console.error(e); }
 }
 
+// --- Логика игры ---
 const translations = {
     ru: { recovery: "Восстановление", ad_btn: "📺 СМОТРЕТЬ РЕКЛАМУ", settings: "НАСТРОЙКИ", close: "Закрыть", watching: "СМОТРИМ РОЛИК...", left: "Осталось", shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК" },
     en: { recovery: "Recovery", ad_btn: "📺 WATCH AD", settings: "SETTINGS", close: "Close", watching: "WATCHING AD...", left: "Left", shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET" }
@@ -152,6 +138,8 @@ function create() {
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
             caughtItem = item; caughtItem.body.enable = false;
+            if (caughtItem.pulse) caughtItem.pulse.stop();
+            playBeep(400, 0.08); 
             isLaunching = false; isReturning = true;
         }
     });
@@ -161,7 +149,13 @@ function create() {
 function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
     let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
-    targets.create(x, y, 'usdt').setDepth(40).setScale(0.12);
+    let coin = targets.create(x, y, 'usdt').setDepth(40).setScale(0.12);
+    coin.pulse = scene.tweens.add({ targets: coin, scale: 0.14, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+}
+
+function showValue(scene) {
+    let txt = scene.add.text(plane.x, plane.y - 40, `+${COIN_VALUE}`, { font: 'bold 24px Arial', fill: '#0f0', stroke: '#000', strokeThickness: 4 }).setDepth(100).setOrigin(0.5);
+    scene.tweens.add({ targets: txt, y: txt.y - 100, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
 }
 
 function update() {
@@ -178,7 +172,9 @@ function update() {
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
-                money += COIN_VALUE; caughtItem.destroy(); caughtItem = null; spawn(this); updateUI();
+                money += COIN_VALUE; playBeep(900, 0.12); 
+                showValue(this.scene.scene); // Исправлено получение сцены
+                caughtItem.destroy(); caughtItem = null; spawn(this.scene.scene); updateUI();
             }
         }
     }
@@ -186,12 +182,11 @@ function update() {
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // ИСПРАВЛЕННАЯ СТРОЧКА ТРОСА:
     let endX = startX + Math.sin(angle) * (distance - 30);
     let endY = startY + Math.cos(angle) * (distance - 30);
     rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
 
-    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; }
+    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; caughtItem.rotation = hook.rotation; }
 }
 
 function updateUI() {
@@ -221,7 +216,7 @@ function startAd() {
         if (c <= 0) { clearInterval(i); document.getElementById('ad-overlay').style.display = 'none'; energy = 100; recoveryTime = 0; updateUI(); }
     }, 1000);
 }
-function startRecovery() { recoveryTime = 10800; } // Таймер на 3 часа
+function startRecovery() { recoveryTime = 10800; }
 </script>
 </body>
 </html>
