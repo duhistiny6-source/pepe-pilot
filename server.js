@@ -1,7 +1,7 @@
 const { Telegraf, Markup } = require('telegraf');
 
 // Токен твоего бота
-const bot = new Telegraf('8463237050:AAEY_6qMWI8aw5Uxo3j4wP_ikAov-L65Qm0');
+const bot = new Telegraf( 8463237050:AAHzx0IFrrqaJ14mxj17xmhJIOr3P7eLfQ0 );
 
 // Твой ID для уведомлений
 const ADMIN_ID = '8559465665'; 
