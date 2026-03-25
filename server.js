@@ -4,8 +4,8 @@ const http = require('http');
 // 1. Твой токен
 const bot = new Telegraf('8463237050:AAHzx0IFrrqaJ14mxj17xmhJIOr3P7eLfQ0');
 
-// 2. Ссылка на GitHub Pages (твоя игра)
-const gameUrl = 'https://duhistiny6.github.io/pepe-pilot/'; 
+// 2. Твоя РЕАЛЬНАЯ ссылка из BotFather (теперь точно правильная)
+const gameUrl = 'https://duhistiny6-source.github.io/pepe-pilot/'; 
 
 bot.start((ctx) => {
   ctx.reply(
@@ -19,10 +19,10 @@ bot.start((ctx) => {
 bot.launch().then(() => {
   console.log('Бот Pepe Pilot успешно запущен!');
 }).catch((err) => {
-  console.error('Ошибка запуска:', err);
+  console.error('Ошибка запуска бота:', err);
 });
 
-// 3. Чтобы Render был доволен и не закрывал бота
+// 3. Сервер для Render (чтобы всё работало стабильно)
 http.createServer((req, res) => {
   res.writeHead(200);
   res.end('Bot is working perfectly');
