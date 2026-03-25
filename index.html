@@ -1,199 +1,152 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot</title>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
-    <style>
-        body { margin:0; overflow:hidden; background:#000; font-family: 'Arial', sans-serif; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game UI</title>
 
-        /* ГЛАВНЫЙ КОНТЕЙНЕР МЕШОЧКА */
-        #wallet-wrapper {
-            position: fixed;
-            top: 15px;
-            left: 15px;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+<style>
+body {
+    margin:0;
+    overflow:hidden;
+    background:#000;
+    font-family: Arial;
+}
 
-        /* САМ МЕШОЧЕК С БАЛАНСОМ ВНУТРИ */
-        #bag-button {
-            background: rgba(20, 20, 20, 0.85); /* Темный фон */
-            border: 2px solid #0f0; /* Неоновая рамка */
-            border-radius: 12px;
-            padding: 5px 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            pointer-events: auto;
-            box-shadow: 0 4px 10px rgba(0, 255, 0, 0.2);
-            transition: transform 0.1s;
-        }
-        #bag-button:active { transform: scale(0.95); }
+#ui {
+    position:fixed;
+    top:12px;
+    left:12px;
+    z-index:100;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
 
-        .bag-icon { font-size: 24px; }
+#bag-btn {
+    cursor:pointer;
+    font-size:16px;
+    background:rgba(0,0,0,0.6);
+    padding:8px 12px;
+    border-radius:10px;
+    border:1px solid #00ff88;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:#00ff88;
+}
 
-        .balance-values {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
+#energy-block {
+    font-size:15px;
+    color:#ffcc00;
+    margin-left:4px;
+}
 
-        .val-item {
-            color: #fff;
-            font-size: 11px;
-            font-weight: bold;
-            line-height: 1.2;
-            text-transform: uppercase;
-        }
-        .val-item span { color: #0f0; font-size: 13px; }
+/* Модалка */
+.modal {
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.9);
+    z-index:2000;
+    color:#fff;
+    justify-content:center;
+    align-items:center;
+}
 
-        /* ЭНЕРГИЯ ПОД МЕШОЧКОМ */
-        #energy-box {
-            margin-top: 4px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 2px 10px;
-            border-radius: 20px;
-            color: #ffcc00;
-            font-size: 12px;
-            font-weight: bold;
-            border: 1px solid rgba(255, 204, 0, 0.3);
-        }
+.modal-content {
+    background:#111;
+    padding:20px;
+    border-radius:12px;
+    border:1px solid #00ff88;
+    width:300px;
+}
 
-        /* Остальное */
-        #settings-btn { position: fixed; top: 15px; right: 15px; font-size: 26px; z-index: 1001; cursor: pointer; }
-        #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 85%; height: 50px; background: rgba(0,0,0,0.9); border-radius: 12px; display: flex; justify-content: space-around; align-items: center; z-index: 200; border: 1px solid #333; }
-        .nav-item { color: #fff; text-align: center; font-size: 10px; }
-    </style>
+.close-btn {
+    margin-top:15px;
+    padding:6px 10px;
+    cursor:pointer;
+    background:#00ff88;
+    color:#000;
+    border:none;
+    border-radius:6px;
+}
+</style>
 </head>
+
 <body>
 
-<div id="settings-btn" onclick="toggleModal('settings-modal')">⚙️</div>
-
-<div id="wallet-wrapper">
-    <div id="bag-button" onclick="openAssets()">
-        <div class="bag-icon">💰</div>
-        <div class="balance-values">
-            <div class="val-item">PILOT: <span id="frog-money">0</span></div>
-            <div class="val-item">USDT: <span id="money">0.0000</span></div>
-        </div>
+<!-- UI -->
+<div id="ui">
+    <div id="bag-btn" onclick="openBag()">
+        👜 Баланс: <span id="balance">0</span>
     </div>
-    <div id="energy-box">⚡ <span id="energy">100</span>/100</div>
+
+    <div id="energy-block">
+        ⚡ Энергия: <span id="energy">100</span>
+    </div>
 </div>
 
-<div id="game-container"></div>
+<!-- Мешок / инвентарь -->
+<div class="modal" id="bag-modal">
+    <div class="modal-content">
+        <h3>Ваш баланс</h3>
+        <p>Frog: <span id="frog">0</span></p>
+        <p>Pilot: <span id="pilot">0</span></p>
+        <p>USDT: <span id="usdt">0</span></p>
+
+        <button class="close-btn" onclick="closeBag()">Закрыть</button>
+    </div>
+</div>
 
 <script>
-// Переменные баланса
-let money = 0;
-let frogMoney = 0;
+// Баланс
+let frog = 0;
+let pilot = 0;
+let usdt = 0;
 let energy = 100;
 
-function openAssets() {
-    alert("Ваш кошелек открыт! Здесь будут функции вывода.");
-}
-
+// Обновление UI
 function updateUI() {
-    document.getElementById('money').innerText = money.toFixed(4);
-    document.getElementById('frog-money').innerText = Math.floor(frogMoney);
-    document.getElementById('energy').innerText = energy;
+    document.getElementById("frog").innerText = frog;
+    document.getElementById("pilot").innerText = pilot;
+    document.getElementById("usdt").innerText = usdt;
+    document.getElementById("energy").innerText = energy;
+
+    // общий баланс (пример)
+    document.getElementById("balance").innerText = frog + pilot + usdt;
 }
 
-// Конфигурация игры
-const config = {
-    type: Phaser.AUTO,
-    width: window.innerWidth,
-    height: window.innerHeight,
-    physics: { default: 'arcade' },
-    scene: { preload, create, update }
-};
-
-const game = new Phaser.Game(config);
-
-function preload() {
-    this.load.image('sky', 'pg.jpeg');
-    this.load.image('hook', 'kleshn.png');
-    this.load.image('usdt', 'usdt.png');
-    this.load.image('pilot_coin', 'logo..png');
-    this.load.image('plane', 'pepe.png');
+// Открыть мешок
+function openBag() {
+    document.getElementById("bag-modal").style.display = "flex";
 }
 
-let plane, hook, targets, isLaunching = false, isReturning = false, distance = 25, angle = 0;
-
-function create() {
-    this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
-    targets = this.physics.add.group();
-    for(let i=0; i<5; i++) spawn(this);
-    
-    hook = this.add.sprite(0, 0, 'hook').setDisplaySize(50, 50).setDepth(10);
-    this.physics.add.existing(hook);
-    plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(250, 150);
-
-    this.input.on('pointerdown', (p) => {
-        // Защита от случайного пуска при нажатии на мешочек (в углу 150x100)
-        if (p.x < 160 && p.y < 100) return;
-        
-        if (!isLaunching && !isReturning && energy > 0) {
-            isLaunching = true;
-            energy--;
-            updateUI();
-        }
-    });
-
-    this.physics.add.overlap(hook, targets, (h, item) => {
-        if (isLaunching) {
-            this.caught = item;
-            this.caught.body.enable = false;
-            isLaunching = false;
-            isReturning = true;
-        }
-    });
+// Закрыть
+function closeBag() {
+    document.getElementById("bag-modal").style.display = "none";
 }
 
-function spawn(scene) {
-    let x = Phaser.Math.Between(50, config.width - 50);
-    let y = Phaser.Math.Between(config.height * 0.4, config.height - 100);
-    let type = (Math.random() > 0.7) ? 'usdt' : 'pilot_coin';
-    targets.create(x, y, type).setScale(0.12);
+// Пример начисления (можешь вызвать из игры)
+function addRewards() {
+    frog += Math.floor(Math.random() * 5);
+    pilot += Math.floor(Math.random() * 3);
+    usdt += Math.floor(Math.random() * 2);
+
+    energy -= 1;
+    if (energy < 0) energy = 0;
+
+    updateUI();
 }
 
-function update() {
-    let startX = plane.x; 
-    let startY = plane.y + 20;
+// тест: каждые 2 сек добавляет
+setInterval(addRewards, 2000);
 
-    if (!isLaunching && !isReturning) {
-        angle += 0.03; 
-        distance = 30;
-    } else if (isLaunching) {
-        distance += 15;
-        if (distance > config.height - 100) { isLaunching = false; isReturning = true; }
-    } else {
-        distance -= 10;
-        if (distance <= 30) {
-            isReturning = false;
-            if (this.caught) {
-                if (this.caught.texture.key === 'usdt') money += 0.0005;
-                else frogMoney += 10;
-                this.caught.destroy();
-                this.caught = null;
-                spawn(this.scene.scene);
-                updateUI();
-            }
-        }
-    }
-
-    hook.x = startX + Math.sin(Math.sin(angle)) * distance;
-    hook.y = startY + Math.cos(Math.sin(angle)) * distance;
-    if (this.caught) { this.caught.x = hook.x; this.caught.y = hook.y + 10; }
-}
-
-function toggleModal(id) {
-    // Ваша логика модалок
-}
+updateUI();
 </script>
+
 </body>
 </html>
