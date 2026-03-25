@@ -82,7 +82,7 @@
         <div class="balance-item">
             <img src="logo..png" class="coin-icon"> <span>PLT:</span> <span id="frog-money" style="color:#ffcc00">0</span>
         </div>
-        <div id="timer-display"><span id="txt-recovery">Rec</span>: <span id="time-left">03:00:00</span></div>
+        <div id="timer-display"><span id="txt-recovery">Rec</span>: <span id="time-left">02:00:00</span></div>
     </div>
 </div>
 
@@ -149,7 +149,7 @@ function doTask(url, reward) {
     window.open(url, '_blank');
     setTimeout(() => {
         energy = Math.min(100, energy + reward);
-        recoveryTime = 0;
+        recoveryTime = 0; // Сбрасываем таймер при выполнении задания
         updateUI();
         alert("Задание выполнено!");
     }, 2000);
@@ -200,6 +200,7 @@ let angle = 0, swingSpeed = 0.03, distance = 25, money = 0, frogMoney = 0, energ
 
 const USDT_VALUE = 0.0005;
 const FROG_VALUE = 10;
+const RECOVERY_DURATION = 7200; // 2 часа в секундах (2 * 60 * 60)
 
 function preload() {
     this.load.image('sky', 'pg.jpeg');
@@ -229,7 +230,10 @@ function create() {
             document.getElementById('ad-overlay').style.display === 'flex') return;
 
         if (p.y > 80 && p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
-            isLaunching = true; energy--; if (energy <= 0) startRecovery(); updateUI();
+            isLaunching = true; 
+            energy--; 
+            if (energy <= 0) startRecovery(); // Запускаем таймер, если энергия кончилась
+            updateUI();
         }
     });
 
@@ -250,7 +254,16 @@ function spawn(scene) {
     let randomChance = Phaser.Math.Between(1, 100);
     let textureKey = (randomChance <= 60) ? 'pilot_coin' : 'usdt';
     let coin = targets.create(x, y, textureKey).setDepth(40);
-    coin.setScale(0.12);
+    
+    // Делаем визуальный размер одинаковым
+    if (textureKey === 'pilot_coin') {
+        coin.setScale(0.12); // Размер для нашей монеты
+        coin.setTint(0xcccccc); // Немного затемняем PLT, чтобы меньше блестела
+    } else {
+        coin.setScale(0.12); // Устанавливаем такой же размер для USDT
+    }
+    
+    // Корректируем пульсацию под новый масштаб
     coin.pulse = scene.tweens.add({ targets: coin, scale: 0.14, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 }
 
@@ -326,10 +339,17 @@ function startAd() {
     let c = 5;
     let i = setInterval(() => {
         c--; document.getElementById('ad-timer').innerText = `Осталось: ${c} сек.`;
-        if (c <= 0) { clearInterval(i); document.getElementById('ad-overlay').style.display = 'none'; energy = 100; recoveryTime = 0; updateUI(); }
+        if (c <= 0) { 
+            clearInterval(i); 
+            document.getElementById('ad-overlay').style.display = 'none'; 
+            energy = 100; // Восстанавливаем энергию
+            recoveryTime = 0; // Сбрасываем таймер
+            updateUI(); 
+        }
     }, 1000);
 }
-function startRecovery() { recoveryTime = 10800; }
+function startRecovery() { recoveryTime = RECOVERY_DURATION; } // Используем константу 2 часа
 </script>
 </body>
 </html>
+
