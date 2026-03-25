@@ -1,15 +1,16 @@
 const { Telegraf, Markup } = require('telegraf');
 const http = require('http');
 
-// Твой токен уже вставлен
+// 1. Твой токен (уже вставлен)
 const bot = new Telegraf('8463237050:AAHzx0IFrrqaJ14mxj17xmhJIOr3P7eLfQ0');
 
-// Ссылка на твое приложение в Render
-const gameUrl = 'https://pepe-pilot.onrender.com'; 
+// 2. Ссылка на игру в GitHub Pages (замени 'ИМЯ_АККАУНТА' на свой логин GitHub)
+// Если твой логин duhistiny6, то ссылка будет: https://duhistiny6.github.io/pepe-pilot/
+const gameUrl = 'https://duhistiny6.github.io/pepe-pilot/'; 
 
 bot.start((ctx) => {
   ctx.reply(
-    'Привет! Готов к полету? Жми кнопку ниже!',
+    'Привет! Pepe Pilot готов к взлету. Жми на кнопку ниже, чтобы запустить игру!',
     Markup.inlineKeyboard([
       [Markup.button.webApp('Лететь! 🚀', gameUrl)]
     ])
@@ -19,11 +20,11 @@ bot.start((ctx) => {
 bot.launch().then(() => {
   console.log('Бот Pepe Pilot успешно запущен!');
 }).catch((err) => {
-  console.error('Ошибка запуска:', err);
+  console.error('Ошибка запуска бота:', err);
 });
 
-// Заглушка сервера для Render (чтобы не было ошибки портов)
+// 3. Мини-сервер для Render, чтобы он не отключал бота
 http.createServer((req, res) => {
   res.writeHead(200);
-  res.end('Bot is live');
+  res.end('Server is running');
 }).listen(process.env.PORT || 8080);
