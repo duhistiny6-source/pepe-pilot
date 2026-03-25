@@ -35,7 +35,7 @@
 <div id="settings-modal" class="modal">
     <div class="modal-content">
         <h3>НАСТРОЙКИ</h3>
-        <button onclick="setLang('ru')" style="width:100%; padding:10px; margin:5px 0; border-radius:10px; border:1px solid #0f0; background:#222; color:#0f0;">РУССКИЙ</button>
+        <button onclick="setLang('ru')" style="width:100%; padding:10px; margin:5px 0; border-radius:10px; border:1px solid #0f0; background:#222; color:#0f0; font-weight:bold;">РУССКИЙ</button>
         <button onclick="setLang('en')" style="width:100%; padding:10px; margin:5px 0; border-radius:10px; border:1px solid #444; background:#222; color:#fff;">ENGLISH</button>
         <p style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('settings-modal')">Закрыть</p>
     </div>
@@ -43,11 +43,11 @@
 
 <div id="wallet-modal" class="modal">
     <div class="modal-content">
-        <h3>ПОДКЛЮЧИТЬ КОШЕЛЕК</h3>
+        <h3>КОШЕЛЕК</h3>
         <div id="ton-connect-button"></div>
         <div style="text-align:left; background:#222; padding:10px; border-radius:10px; margin-top:10px;">
-            <p style="font-size:12px; margin:0;">Frog Coins: <span id="m-frog" style="color:#ffcc00">0</span></p>
-            <p style="font-size:12px; margin:5px 0 0 0;">USDT: <span id="m-usdt" style="color:#0f0">0.0000</span></p>
+            <p style="font-size:14px; margin:0;">Frog Coins: <span id="m-frog" style="color:#ffcc00">0</span> 🐸</p>
+            <p style="font-size:14px; margin:5px 0 0 0;">USDT: $<span id="m-usdt" style="color:#0f0">0.0000</span></p>
         </div>
         <p style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('wallet-modal')">Закрыть</p>
     </div>
@@ -61,9 +61,8 @@
 </div>
 
 <script>
-let frog = 10, usdt = 0.0000, energy = 100;
+let frog = 0, usdt = 0, energy = 100;
 
-// TON Connect инициализация
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     manifestUrl: 'https://duhistiny6-source.github.io/pepe-pilot/tonconnect-manifest.json',
     buttonRootId: 'ton-connect-button'
@@ -78,7 +77,7 @@ function toggleModal(id) {
     m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
 }
 
-function setLang(lang) { alert('Язык изменен на ' + lang); toggleModal('settings-modal'); }
+function setLang(lang) { toggleModal('settings-modal'); }
 
 const config = {
     type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight,
@@ -101,21 +100,19 @@ function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
     
     try {
-        let m = this.sound.add('music', { loop: true, volume: 0.2 });
+        let m = this.sound.add('music', { loop: true, volume: 0.25 });
         this.input.once('pointerdown', () => { if(!m.isPlaying) m.play(); });
-    } catch(e) { console.log("Audio load error"); }
+    } catch(e) {}
 
     targets = this.physics.add.group();
     for(let i=0; i<6; i++) spawn(this);
 
-    // Слой 1: Нитка (под всем)
+    // Нитка (Слой 5)
     rope = this.add.graphics().setDepth(5);
-    
-    // Слой 2: Самолет
+    // Самолет (Слой 20)
     plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(280, 180).setDepth(20);
-    
-    // Слой 3: Клешня (поверх нитки)
-    hook = this.add.sprite(0, 0, 'hook').setDisplaySize(55, 55).setDepth(30);
+    // Клешня (Слой 30 — ПЕРЕКРЫВАЕТ нитку)
+    hook = this.add.sprite(0, 0, 'hook').setScale(0.18).setDepth(30); // Тот самый исходный масштаб
     this.physics.add.existing(hook);
 
     this.input.on('pointerdown', (p) => {
@@ -141,8 +138,6 @@ function spawn(scene) {
     let y = Phaser.Math.Between(config.height*0.4, config.height-160);
     let key = (Math.random() > 0.4) ? 'pilot_coin' : 'usdt';
     let coin = targets.create(x, y, key).setScale(0.12).setDepth(15);
-    
-    // Возвращаем пульсацию
     coin.pulse = scene.tweens.add({
         targets: coin, scale: 0.15, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
     });
@@ -164,9 +159,8 @@ function update() {
                 let isF = caughtItem.texture.key === 'pilot_coin';
                 if(isF) frog += 10; else usdt += 0.0005;
                 
-                // Эффект цифр
                 let txt = this.add.text(plane.x, plane.y - 40, isF ? '+10' : '+0.0005', { 
-                    font: 'bold 24px Arial', fill: isF ? '#ffcc00' : '#0f0', stroke: '#000', strokeThickness: 4
+                    font: 'bold 24px Arial', fill: isF ? '#ffcc00' : '#0f0', stroke: '#000', strokeThickness: 3
                 }).setDepth(100).setOrigin(0.5);
                 this.tweens.add({ targets: txt, y: txt.y-80, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
                 
@@ -179,8 +173,8 @@ function update() {
     hook.y = sY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // Отрисовка нитки: начинается от самолета, заканчивается ВНУТРИ клешни
-    rope.clear().lineStyle(2, 0xffffff, 0.6).lineBetween(sX, sY, hook.x, hook.y);
+    // Отрисовка нитки строго до центра клешни
+    rope.clear().lineStyle(2, 0xffffff, 0.5).lineBetween(sX, sY, hook.x, hook.y);
 
     if(caughtItem) {
         caughtItem.x = hook.x; caughtItem.y = hook.y + 10;
