@@ -6,56 +6,33 @@
     <title>Pepe Pilot: Crypto Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { margin:0; padding:0; overflow:hidden; background:#000; touch-action: none; font-family: 'Segoe UI', Arial, sans-serif; }
         
         #top-bar { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 35px; 
-            background: rgba(0, 0, 0, 0.4); 
-            z-index: 1000; 
-            backdrop-filter: blur(2px);
-            display: flex;
-            align-items: center;
+            position: fixed; top: 0; left: 0; width: 100%; height: 35px; 
+            background: rgba(0, 0, 0, 0.4); z-index: 1000; backdrop-filter: blur(2px);
+            display: flex; align-items: center;
         }
 
         #energy-container {
-            position: absolute;
-            left: 12px;
-            color: #0f0;
-            font-size: 13px;
-            font-weight: bold;
-            text-shadow: 1px 1px 1px #000;
+            position: absolute; left: 12px; color: #0f0; font-size: 13px;
+            font-weight: bold; text-shadow: 1px 1px 1px #000;
         }
 
         #balance-container { 
-            width: 100%;
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 15px; 
-            color: #fff; 
-            font-size: 11px;
+            width: 100%; display: flex; align-items: center; justify-content: center; 
+            gap: 15px; color: #fff; font-size: 11px;
         }
 
         .balance-item { display: flex; align-items: center; gap: 4px; }
         .coin-icon { width: 14px; height: 14px; }
         
-        /* Стили для блока восстановления слева */
         #recovery-block {
-            display: none; /* Скрыт по умолчанию */
-            pointer-events: auto;
-            position: fixed; 
-            top: 40px; 
-            left: 12px;
-            z-index: 1001;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            align-items: flex-start;
+            display: none; pointer-events: auto; position: fixed; 
+            top: 40px; left: 12px; z-index: 1001;
+            display: flex; flex-direction: column; gap: 4px; align-items: flex-start;
         }
 
         #timer-display { color: #ff3333; font-size: 10px; text-shadow: 1px 1px 1px #000; display: none; }
@@ -63,7 +40,12 @@
         
         #settings-btn { position: fixed; top: 7px; right: 10px; font-size: 18px; cursor: pointer; z-index: 1001; opacity: 0.8; }
         
-        #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 85%; height: 50px; background: rgba(0, 0, 0, 0.9); border: 1px solid #333; border-radius: 12px; display: flex; justify-content: space-around; align-items: center; z-index: 200; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        #nav-bar { 
+            position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); 
+            width: 85%; height: 50px; background: rgba(0, 0, 0, 0.9); border: 1px solid #333; 
+            border-radius: 12px; display: flex; justify-content: space-around; align-items: center; 
+            z-index: 200; box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
+        }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; font-weight: bold; flex: 1; opacity: 0.9; cursor: pointer; }
         .nav-item span { font-size: 18px; }
         .nav-text { font-size: 8px; margin-top: 1px; color: #bbb; text-transform: uppercase; }
@@ -87,7 +69,6 @@
 
 <div id="top-bar">
     <div id="energy-container">⚡ <span id="energy">100</span></div>
-    
     <div id="balance-container">
         <div class="balance-item"><span>USDT:</span> <span id="money" style="color:#0f0">0.0000</span></div>
         <div class="balance-item">
@@ -120,14 +101,28 @@
             </div>
             <button class="task-btn" onclick="doAdTask()">📺 СМОТРЕТЬ</button>
         </div>
-        <div class="task-item">
-            <div class="task-info">
-                <div class="task-title">Подписаться на канал</div>
-                <div class="task-reward">+100 ⚡ Энергии</div>
-            </div>
-            <button class="task-btn" onclick="doTask('https://t.me/your_channel', 100)">GO</button>
-        </div>
         <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('tasks-modal')">Закрыть</div>
+    </div>
+</div>
+
+<div id="friends-modal" class="modal">
+    <div class="modal-content">
+        <h3 id="txt-friends-title">ДРУЗЬЯ</h3>
+        <p style="font-size: 11px; color: #bbb;">Приглашай друзей и получай <span style="color:#0f0">10%</span> от их добычи!</p>
+        
+        <div style="background: #222; padding: 10px; border-radius: 10px; margin: 15px 0; border: 1px dashed #555;">
+            <div style="font-size: 10px; color: #888; margin-bottom: 5px;">Твоя ссылка:</div>
+            <div id="ref-link-text" style="font-size: 10px; word-break: break-all; color: #0f0;">https://t.me/your_bot?start=12345</div>
+        </div>
+
+        <button class="lang-btn" onclick="copyRefLink()" style="margin-top: 0; padding: 8px;">КОПИРОВАТЬ</button>
+        
+        <div style="margin-top: 15px; text-align: left;">
+            <div style="font-size: 11px; border-bottom: 1px solid #333; padding-bottom: 5px;">Друзья (0):</div>
+            <div style="padding: 15px 0; color: #555; font-size: 10px; text-align: center;">Список пока пуст</div>
+        </div>
+
+        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('friends-modal')">Закрыть</div>
     </div>
 </div>
 
@@ -139,11 +134,15 @@
 <div id="nav-bar">
     <div class="nav-item"><span>🛒</span><div class="nav-text" id="nav-shop">МАГАЗИН</div></div>
     <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text" id="nav-tasks">ЗАДАНИЯ</div></div>
-    <div class="nav-item"><span>👥</span><div class="nav-text" id="nav-friends">ДРУЗЬЯ</div></div>
+    <div class="nav-item" onclick="toggleModal('friends-modal')"><span>👥</span><div class="nav-text" id="nav-friends">ДРУЗЬЯ</div></div>
     <div class="nav-item" onclick="connectWallet()"><span>👛</span><div class="nav-text" id="nav-wallet">КОШЕЛЕК</div></div>
 </div>
 
 <script>
+// Настройка Telegram WebApp
+const webapp = window.Telegram?.WebApp;
+if (webapp) webapp.expand();
+
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     manifestUrl: 'https://duhistiny6-source.github.io/pepe-pilot/tonconnect-manifest.json',
     buttonRootId: null
@@ -156,16 +155,17 @@ async function connectWallet() {
 function toggleModal(id) {
     const m = document.getElementById(id);
     m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+    // При открытии модалки друзей обновляем ссылку
+    if (id === 'friends-modal' && m.style.display === 'flex') {
+        const userId = webapp?.initDataUnsafe?.user?.id || "12345";
+        document.getElementById('ref-link-text').innerText = `https://t.me/PepePilotBot?start=${userId}`;
+    }
 }
 
-function doTask(url, reward) {
-    window.open(url, '_blank');
-    setTimeout(() => {
-        energy = Math.min(100, energy + reward);
-        recoveryTime = 0;
-        updateUI();
-        alert("Задание выполнено!");
-    }, 2000);
+function copyRefLink() {
+    const link = document.getElementById('ref-link-text').innerText;
+    navigator.clipboard.writeText(link);
+    alert("Ссылка скопирована!");
 }
 
 function doAdTask() { toggleModal('tasks-modal'); startAd(); }
@@ -237,11 +237,8 @@ function create() {
     plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.input.on('pointerdown', (p) => {
-        if (document.getElementById('tasks-modal').style.display === 'flex' || 
-            document.getElementById('settings-modal').style.display === 'flex' ||
-            document.getElementById('ad-overlay').style.display === 'flex') return;
-
-        if (p.y > 80 && p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
+        if (p.y < 35 || p.y > config.height - 65) return; // Чтобы не кликать сквозь меню
+        if (!isLaunching && !isReturning && energy > 0) {
             isLaunching = true; energy--; if (energy <= 0) startRecovery(); updateUI();
         }
     });
@@ -265,29 +262,21 @@ function spawn(scene) {
     let coin = targets.create(x, y, textureKey).setDepth(40);
     
     if (textureKey === 'pilot_coin') {
-        coin.setScale(0.10); 
-        coin.setTint(0xffffff); // Вернули полную яркость (белый тинт = оригинал)
+        coin.setScale(0.10); coin.setTint(0xffffff);
     } else {
         coin.setScale(0.12); 
     }
     
     coin.pulse = scene.tweens.add({ 
-        targets: coin, 
-        scale: textureKey === 'pilot_coin' ? 0.11 : 0.14, 
-        duration: 1000, 
-        yoyo: true, 
-        repeat: -1, 
-        ease: 'Sine.easeInOut' 
+        targets: coin, scale: textureKey === 'pilot_coin' ? 0.11 : 0.14, 
+        duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' 
     });
 }
 
 function showValue(scene, val, isFrog) {
     let color = isFrog ? '#ffcc00' : '#0f0';
     let txt = scene.add.text(plane.x, plane.y - 40, `+${val}`, { 
-        font: 'bold 28px Arial', 
-        fill: color, 
-        stroke: '#000', 
-        strokeThickness: 5 
+        font: 'bold 28px Arial', fill: color, stroke: '#000', strokeThickness: 5 
     }).setOrigin(0.5).setDepth(100);
     scene.tweens.add({ targets: txt, y: txt.y - 100, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
 }
@@ -332,9 +321,7 @@ function updateUI() {
     document.getElementById('money').innerText = money.toFixed(4);
     document.getElementById('frog-money').innerText = frogMoney;
     document.getElementById('energy').innerText = energy;
-    
     const isOutOfEnergy = energy <= 0;
-    // Показываем/скрываем блок восстановления целиком
     document.getElementById('recovery-block').style.display = isOutOfEnergy ? 'flex' : 'none';
     document.getElementById('timer-display').style.display = isOutOfEnergy ? 'block' : 'none';
     document.getElementById('ad-button').style.display = isOutOfEnergy ? 'block' : 'none';
