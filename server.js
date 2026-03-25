@@ -63,7 +63,7 @@ bot.action('partner', (ctx) => {
     const botUser = ctx.botInfo.username;
     const refLink = `https://t.me/${botUser}?start=${ctx.from.id}`;
     
-    ctx.reply(`🤝 **Партнёрка (10% тебе)**\n\n💰 Твой доход: ${user.totalRef} руб.\n🔗 Ссылка для друзей:\n${refLink}`, 
+    ctx.reply(`🤝 **Партнёрка (10% тебе)**\n\n💰 Твой доход: ${user.totalRef} руб.\n🔗 Ссылка для друзей:\n${refLink}`,  
     Markup.inlineKeyboard([
         [Markup.button.switchToChat('✉️ Позвать друга', refLink)],
         [Markup.button.callback('⬅️ Назад', 'back')]
@@ -79,4 +79,4 @@ bot.action('back', (ctx) => {
 });
 
 bot.launch();
-console.log("Бот Pepe Pilot успешно запущен!");
+console.log("Бот Pepe Pilot успешно запущен!");    
