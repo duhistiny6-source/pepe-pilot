@@ -12,18 +12,18 @@
         #ad-button { display: none; pointer-events: auto; background: #ffcc00; color: #000; border: 1px solid #fff; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor: pointer; width: fit-content; margin-top: 5px; }
         #settings-btn { position: fixed; top: 12px; right: 12px; font-size: 28px; cursor: pointer; z-index: 1001; filter: drop-shadow(1px 1px 2px #000); }
         
-        /* Панель управления цветом как шестерёнка */
+        /* ОБНОВЛЕННАЯ ПАНЕЛЬ УПРАВЛЕНИЯ */
         #nav-bar { 
             position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); 
-            width: 90%; height: 60px; 
-            background: rgba(120, 135, 145, 0.85); /* Серый металлик как шестерня */
-            border: 1px solid #ffffff; border-radius: 15px; 
+            width: 85%; height: 50px; 
+            background: rgba(0, 0, 0, 0.9); /* Чёрный цвет */
+            border: 1px solid #333; border-radius: 12px; 
             display: flex; justify-content: space-around; align-items: center; z-index: 200; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #1a1a1a; font-weight: bold; flex: 1; }
-        .nav-item span { font-size: 20px; filter: drop-shadow(1px 1px 1px rgba(255,255,255,0.5)); }
-        .nav-text { font-size: 9px; margin-top: 2px; color: #000; text-shadow: 0 0 1px rgba(255,255,255,0.5); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; font-weight: bold; flex: 1; opacity: 0.9; }
+        .nav-item span { font-size: 18px; } /* Значки меньше */
+        .nav-text { font-size: 8px; margin-top: 1px; color: #bbb; text-transform: uppercase; } /* Текст меньше */
 
         #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
         .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 240px; }
@@ -64,6 +64,7 @@
 </div>
 
 <script>
+// Весь остальной JS код оставлен без изменений, как ты и просил
 const translations = {
     ru: { recovery: "Восстановление", ad_btn: "📺 СМОТРЕТЬ РЕКЛАМУ (+50⚡)", settings: "НАСТРОЙКИ", close: "Закрыть", watching: "СМОТРИМ РОЛИК...", left: "Осталось", shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК" },
     en: { recovery: "Recovery", ad_btn: "📺 WATCH AD (+50⚡)", settings: "SETTINGS", close: "Close", watching: "WATCHING AD...", left: "Left", shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET" }
@@ -105,7 +106,7 @@ const config = {
 const game = new Phaser.Game(config);
 let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, distance = 25, money = 0, energy = 100, recoveryTime = 0;
-const COIN_VALUE = 0.0005; // Твой новый номинал
+const COIN_VALUE = 0.0005;
 
 function preload() {
     let progressBar = this.add.graphics();
@@ -137,10 +138,7 @@ function preload() {
 
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
-    
-    try {
-        bgMusic = this.sound.add('theme', { volume: 0.004, loop: true }); // Громкость 0.004
-    } catch (e) {}
+    try { bgMusic = this.sound.add('theme', { volume: 0.004, loop: true }); } catch (e) {}
 
     this.input.once('pointerdown', () => { 
         if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -215,7 +213,7 @@ function update() {
 }
 
 function updateUI() {
-    document.getElementById('money').innerText = money.toFixed(4); // 4 знака для 0.0005
+    document.getElementById('money').innerText = money.toFixed(4);
     document.getElementById('energy').innerText = energy;
     const isOutOfEnergy = energy <= 0;
     document.getElementById('timer-display').style.display = isOutOfEnergy ? 'block' : 'none';
