@@ -18,15 +18,14 @@
         .nav-item span { font-size: 18px; }
         .nav-text { font-size: 8px; margin-top: 1px; color: #bbb; text-transform: uppercase; }
 
-        /* Стили для окон (настройки, задания и т.д.) */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
         .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 280px; max-width: 90%; }
         
         .task-item { background: #222; border: 1px solid #444; border-radius: 10px; padding: 10px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
         .task-info { text-align: left; }
-        .task-title { font-size: 14px; font-weight: bold; color: #fff; }
-        .task-reward { font-size: 12px; color: #0f0; }
-        .task-btn { background: #0f0; color: #000; border: none; padding: 5px 10px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .task-title { font-size: 13px; font-weight: bold; color: #fff; }
+        .task-reward { font-size: 11px; color: #0f0; }
+        .task-btn { background: #0f0; color: #000; border: none; padding: 6px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
         
         .lang-btn { background: #333; color: #0f0; border: 1px solid #0f0; padding: 12px 20px; margin: 10px 0; cursor: pointer; border-radius: 10px; font-weight: bold; width: 100%; }
         #ad-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
@@ -56,6 +55,14 @@
     <div class="modal-content">
         <h3 id="txt-tasks-title">ЗАДАНИЯ</h3>
         
+        <div class="task-item">
+            <div class="task-info">
+                <div class="task-title">Посмотреть рекламу</div>
+                <div class="task-reward">+100 ⚡ Энергии</div>
+            </div>
+            <button class="task-btn" onclick="doAdTask()">📺 СМОТРЕТЬ</button>
+        </div>
+
         <div class="task-item">
             <div class="task-info">
                 <div class="task-title">Подписаться на канал</div>
@@ -108,14 +115,17 @@ function toggleModal(id) {
 // --- Логика Заданий ---
 function doTask(url, reward) {
     window.open(url, '_blank');
-    // Даем награду через небольшую паузу (имитация проверки)
     setTimeout(() => {
-        energy += reward;
-        if (energy > 100) energy = 100; // Ограничение максимума
-        recoveryTime = 0; // Сбрасываем таймер, если получили энергию
+        energy = Math.min(100, energy + reward);
+        recoveryTime = 0;
         updateUI();
-        alert("Задание выполнено! Награда начислена.");
+        alert("Задание выполнено!");
     }, 2000);
+}
+
+function doAdTask() {
+    toggleModal('tasks-modal'); // Закрываем окно заданий перед рекламой
+    startAd(); // Запускаем стандартную функцию рекламы
 }
 
 const translations = {
@@ -181,9 +191,9 @@ function create() {
     plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.input.on('pointerdown', (p) => {
-        // Проверка, чтобы не кликать сквозь модалки
         if (document.getElementById('tasks-modal').style.display === 'flex' || 
-            document.getElementById('settings-modal').style.display === 'flex') return;
+            document.getElementById('settings-modal').style.display === 'flex' ||
+            document.getElementById('ad-overlay').style.display === 'flex') return;
 
         if (p.y > 80 && p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
             isLaunching = true; energy--; if (energy <= 0) startRecovery(); updateUI();
@@ -268,7 +278,13 @@ function startAd() {
     let c = 5;
     let i = setInterval(() => {
         c--; document.getElementById('ad-timer').innerText = `Осталось: ${c} сек.`;
-        if (c <= 0) { clearInterval(i); document.getElementById('ad-overlay').style.display = 'none'; energy = 100; recoveryTime = 0; updateUI(); }
+        if (c <= 0) { 
+            clearInterval(i); 
+            document.getElementById('ad-overlay').style.display = 'none'; 
+            energy = 100; 
+            recoveryTime = 0; 
+            updateUI(); 
+        }
     }, 1000);
 }
 function startRecovery() { recoveryTime = 10800; }
