@@ -1,11 +1,10 @@
-const { Telegraf, Markup } = require('telegraf');
+ const { Telegraf, Markup } = require('telegraf');
 const http = require('http');
 
-// 1. Твой токен (уже вставлен)
+// 1. Твой токен
 const bot = new Telegraf('8463237050:AAHzx0IFrrqaJ14mxj17xmhJIOr3P7eLfQ0');
 
-// 2. Ссылка на игру в GitHub Pages (замени 'ИМЯ_АККАУНТА' на свой логин GitHub)
-// Если твой логин duhistiny6, то ссылка будет: https://duhistiny6.github.io/pepe-pilot/
+// 2. Ссылка на твою игру (я составил её по твоему профилю)
 const gameUrl = 'https://duhistiny6.github.io/pepe-pilot/'; 
 
 bot.start((ctx) => {
@@ -23,7 +22,7 @@ bot.launch().then(() => {
   console.error('Ошибка запуска бота:', err);
 });
 
-// 3. Мини-сервер для Render, чтобы он не отключал бота
+// 3. Сервер для Render (чтобы не было черного экрана)
 http.createServer((req, res) => {
   res.writeHead(200);
   res.end('Server is running');
