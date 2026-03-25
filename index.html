@@ -3,71 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Hard Fixed</title>
+    <title>Pepe Pilot: Gray Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#000; touch-action: none; font-family: Arial, sans-serif; }
-        #ui { position:fixed; top:12px; left:12px; color:#0f0; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; }
-        #settings-btn { position: fixed; top: 12px; right: 12px; font-size: 30px; cursor: pointer; z-index: 5000; }
-        #settings-modal { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.95); z-index: 6000; color: #fff; 
-            justify-content: center; align-items: center; flex-direction: column; 
-        }
-        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 30px; border-radius: 20px; text-align: center; }
-        .lang-btn { background: #333; color: #0f0; border: 1px solid #0f0; padding: 15px; margin: 10px 0; cursor: pointer; border-radius: 10px; width: 200px; font-weight: bold; }
+        #ui { position:fixed; top:12px; left:12px; color:#0f0; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; display: flex; flex-direction: column; gap: 5px; }
+        #timer-display { color: #ff3333; font-size: 13px; display: none; }
+        #ad-button { display: none; pointer-events: auto; background: #ffcc00; color: #000; border: 1px solid #fff; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor: pointer; width: fit-content; margin-top: 5px; }
+        #settings-btn { position: fixed; top: 12px; right: 12px; font-size: 28px; cursor: pointer; z-index: 1001; filter: drop-shadow(1px 1px 2px #000); }
+        
+        /* Панель управления цветом как шестерёнка */
         #nav-bar { 
-            position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); 
-            width: 90%; height: 55px; background: rgba(0, 0, 0, 0.95); 
-            border: 1px solid #0f0; border-radius: 12px; 
+            position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); 
+            width: 90%; height: 60px; 
+            background: rgba(120, 135, 145, 0.85); /* Серый металлик как шестерня */
+            border: 1px solid #ffffff; border-radius: 15px; 
             display: flex; justify-content: space-around; align-items: center; z-index: 200; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #0f0; font: bold 10px Arial; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #1a1a1a; font-weight: bold; flex: 1; }
+        .nav-item span { font-size: 20px; filter: drop-shadow(1px 1px 1px rgba(255,255,255,0.5)); }
+        .nav-text { font-size: 9px; margin-top: 2px; color: #000; text-shadow: 0 0 1px rgba(255,255,255,0.5); }
+
+        #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
+        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 240px; }
+        .lang-btn { background: #333; color: #0f0; border: 1px solid #0f0; padding: 12px 20px; margin: 10px 0; cursor: pointer; border-radius: 10px; font-weight: bold; width: 100%; }
+        #ad-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
     </style>
 </head>
 <body>
 
-<div id="settings-btn" onclick="openSettings()">⚙️</div>
+<div id="settings-btn" onclick="toggleSettings()">⚙️</div>
 
 <div id="ui">
     <div>💰 <span id="money">0.0000</span></div>
     <div>⚡ <span id="energy">100</span>/100</div>
+    <div id="timer-display"><span id="txt-recovery">Восстановление</span>: <span id="time-left">03:00:00</span></div>
+    <button id="ad-button" onclick="startAd()">📺 СМОТРЕТЬ РЕКЛАМУ (+50⚡)</button>
 </div>
 
 <div id="settings-modal">
     <div class="modal-content">
-        <h3>НАСТРОЙКИ</h3>
-        <button class="lang-btn" onclick="closeSettings()">РУССКИЙ</button>
-        <button class="lang-btn" onclick="closeSettings()">ENGLISH</button>
-        <p onclick="closeSettings()" style="cursor:pointer; color:#888; margin-top:15px;">Закрыть</p>
+        <h3 id="txt-settings-title">НАСТРОЙКИ</h3>
+        <button class="lang-btn" onclick="changeLanguage('ru')">РУССКИЙ</button>
+        <button class="lang-btn" onclick="changeLanguage('en')">ENGLISH</button>
+        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleSettings()" id="txt-close">Закрыть</div>
     </div>
 </div>
 
+<div id="ad-overlay">
+    <h2 id="txt-ad-watching">СМОТРИМ РОЛИК...</h2>
+    <p id="ad-timer">Осталось: 5 сек.</p>
+</div>
+
 <div id="nav-bar">
-    <div class="nav-item"><span>🛒</span><div>МАГАЗИН</div></div>
-    <div class="nav-item"><span>📜</span><div>ЗАДАНИЯ</div></div>
-    <div class="nav-item"><span>👥</span><div>ДРУЗЬЯ</div></div>
-    <div class="nav-item"><span>👛</span><div>КОШЕЛЕК</div></div>
+    <div class="nav-item"><span>🛒</span><div class="nav-text" id="nav-shop">МАГАЗИН</div></div>
+    <div class="nav-item"><span>📜</span><div class="nav-text" id="nav-tasks">ЗАДАНИЯ</div></div>
+    <div class="nav-item"><span>👥</span><div class="nav-text" id="nav-friends">ДРУЗЬЯ</div></div>
+    <div class="nav-item"><span>👛</span><div class="nav-text" id="nav-wallet">КОШЕЛЕК</div></div>
 </div>
 
 <script>
-// Глобальные функции для UI
-function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; }
-function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+const translations = {
+    ru: { recovery: "Восстановление", ad_btn: "📺 СМОТРЕТЬ РЕКЛАМУ (+50⚡)", settings: "НАСТРОЙКИ", close: "Закрыть", watching: "СМОТРИМ РОЛИК...", left: "Осталось", shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК" },
+    en: { recovery: "Recovery", ad_btn: "📺 WATCH AD (+50⚡)", settings: "SETTINGS", close: "Close", watching: "WATCHING AD...", left: "Left", shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET" }
+};
+
+let currentLang = 'ru';
+function toggleSettings() { const m = document.getElementById('settings-modal'); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; }
+function changeLanguage(lang) {
+    currentLang = lang; const t = translations[lang];
+    document.getElementById('txt-recovery').innerText = t.recovery;
+    document.getElementById('ad-button').innerText = t.ad_btn;
+    document.getElementById('txt-settings-title').innerText = t.settings;
+    document.getElementById('txt-close').innerText = t.close;
+    document.getElementById('txt-ad-watching').innerText = t.watching;
+    document.getElementById('nav-shop').innerText = t.shop;
+    document.getElementById('nav-tasks').innerText = t.tasks;
+    document.getElementById('nav-friends').innerText = t.friends;
+    document.getElementById('nav-wallet').innerText = t.wallet;
+    toggleSettings();
+}
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playBeep(freq, dur) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.frequency.value = freq; osc.type = 'sine';
+    gain.gain.setValueAtTime(0.005, audioCtx.currentTime); 
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+    osc.start(); osc.stop(audioCtx.currentTime + dur);
+}
 
 const config = {
     type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight,
-    backgroundColor: '#002200',
-    physics: { default: 'arcade' },
-    scene: { preload, create, update }
+    physics: { default: 'arcade' }, scene: { preload, create, update }
 };
 
 const game = new Phaser.Game(config);
-let plane, hook, rope, targets, bgMusic;
-let isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.015, distance = 0, money = 0; // Скорость качания уменьшена в 2 раза
+let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
+let angle = 0, swingSpeed = 0.03, distance = 25, money = 0, energy = 100, recoveryTime = 0;
+const COIN_VALUE = 0.0005; // Твой новый номинал
 
 function preload() {
+    let progressBar = this.add.graphics();
+    let progressBox = this.add.graphics();
+    progressBox.fillStyle(0x222222, 0.8);
+    progressBox.fillRect(config.width/2 - 160, config.height/2 - 25, 320, 50);
+    
+    let loadingText = this.make.text({ x: config.width/2, y: config.height/2 - 50, text: '0%', style: { font: '20px monospace', fill: '#ffffff' }});
+    loadingText.setOrigin(0.5, 0.5);
+
+    this.load.on('progress', function (value) {
+        let percent = Math.floor(value * 100);
+        loadingText.setText(percent + '%');
+        progressBar.clear();
+        progressBar.fillStyle(0x00ff00, 1);
+        progressBar.fillRect(config.width/2 - 150, config.height/2 - 15, 300 * value, 30);
+    });
+    
+    this.load.on('complete', function () {
+        progressBar.destroy(); progressBox.destroy(); loadingText.destroy();
+    });
+
     this.load.image('sky', 'pg.jpeg');
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
@@ -76,88 +136,110 @@ function preload() {
 }
 
 function create() {
-    this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
-    bgMusic = this.sound.add('theme', { volume: 0.1, loop: true });
+    this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
+    
+    try {
+        bgMusic = this.sound.add('theme', { volume: 0.004, loop: true }); // Громкость 0.004
+    } catch (e) {}
+
+    this.input.once('pointerdown', () => { 
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        if (bgMusic && !bgMusic.isPlaying) bgMusic.play();
+    });
 
     targets = this.physics.add.group();
-    for(let i = 0; i < 6; i++) spawnCoin(this);
-
-    // ВАЖНО: Порядок отрисовки (Сначала нитка, потом всё остальное)
+    for(let i = 0; i < 6; i++) spawn(this);
     rope = this.add.graphics().setDepth(5);
-    hook = this.physics.add.sprite(0, 0, 'hook').setDisplaySize(60, 60).setDepth(20); // Клешня выше нитки
-    plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(280, 180).setDepth(30);
+    hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(60, 60); 
+    this.physics.add.existing(hook);
+    plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.input.on('pointerdown', (p) => {
-        if (!this.sound.locked && !bgMusic.isPlaying) bgMusic.play();
-        if (p.y > 100 && p.y < config.height - 100 && !isLaunching && !isReturning) {
-            isLaunching = true;
+        if (p.y > 80 && p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
+            isLaunching = true; energy--; if (energy <= 0) startRecovery(); updateUI();
         }
     });
 
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
-            caughtItem = item;
-            caughtItem.body.enable = false;
-            isLaunching = false;
-            isReturning = true;
+            caughtItem = item; caughtItem.body.enable = false;
+            if (caughtItem.pulse) caughtItem.pulse.stop();
+            playBeep(400, 0.08); 
+            isLaunching = false; isReturning = true;
         }
     });
+    setInterval(tick, 1000);
 }
 
-function spawnCoin(scene) {
+function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
     let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
-    let coin = targets.create(x, y, 'usdt').setScale(0.12).setDepth(15);
-    scene.tweens.add({ targets: coin, scale: 0.15, duration: 800, yoyo: true, repeat: -1 });
+    let coin = targets.create(x, y, 'usdt').setDepth(40).setScale(0.12);
+    coin.pulse = scene.tweens.add({ targets: coin, scale: 0.14, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+}
+
+function showValue(scene) {
+    let txt = scene.add.text(plane.x, plane.y - 40, `+${COIN_VALUE}`, { font: 'bold 24px Arial', fill: '#0f0', stroke: '#000', strokeThickness: 4 }).setDepth(100).setOrigin(0.5);
+    scene.tweens.add({ targets: txt, y: txt.y - 100, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
 }
 
 function update() {
-    // Движение самолета
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
-    
-    // ЖЕСТКАЯ ПРИВЯЗКА: Точка старта нитки прямо под центром самолета
-    let startX = plane.x - 5; 
-    let startY = plane.y + 65; 
+    let startX = plane.x - 5; let startY = plane.y + 15; 
 
     if (!isLaunching && !isReturning) {
-        angle += swingSpeed;
-        if (angle > 0.5 || angle < -0.5) swingSpeed *= -1; // Узкий и плавный ход
-        distance = 0;
+        angle += swingSpeed; if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
+        distance = 25;
     } else if (isLaunching) {
-        distance += 10; // Скорость вылета
-        if (distance > config.height - 180) { isLaunching = false; isReturning = true; }
+        distance += 16; if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        distance -= 10;
-        if (distance <= 0) {
-            distance = 0;
+        distance -= 6; 
+        if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
-                money += 0.0005;
-                document.getElementById('money').innerText = money.toFixed(4);
-                caughtItem.destroy();
-                caughtItem = null;
-                spawnCoin(this);
+                money += COIN_VALUE; playBeep(900, 0.12); 
+                showValue(this); caughtItem.destroy(); caughtItem = null; spawn(this); updateUI();
             }
         }
     }
 
-    // Позиция клешни (всегда следует за углом и дистанцией от точки привязки)
-    hook.x = startX + Math.sin(angle) * (distance + 15); // +15 чтобы не сливалась совсем в ноль
-    hook.y = startY + Math.cos(angle) * (distance + 15);
+    hook.x = startX + Math.sin(angle) * distance;
+    hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // Отрисовка нитки: начинается ВСЕГДА из startY самолета
-    rope.clear().lineStyle(3, 0x333333, 0.9); // Темный стальной цвет
-    if (distance > 0) {
-        rope.lineBetween(startX, startY, hook.x, hook.y);
-    }
+    let endX = startX + Math.sin(angle) * (distance - 30);
+    let endY = startY + Math.cos(angle) * (distance - 30);
+    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
 
-    if (caughtItem) {
-        caughtItem.x = hook.x;
-        caughtItem.y = hook.y + 15;
-        caughtItem.rotation = hook.rotation;
+    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; caughtItem.rotation = hook.rotation; }
+}
+
+function updateUI() {
+    document.getElementById('money').innerText = money.toFixed(4); // 4 знака для 0.0005
+    document.getElementById('energy').innerText = energy;
+    const isOutOfEnergy = energy <= 0;
+    document.getElementById('timer-display').style.display = isOutOfEnergy ? 'block' : 'none';
+    document.getElementById('ad-button').style.display = isOutOfEnergy ? 'block' : 'none';
+}
+
+function tick() {
+    if (recoveryTime > 0) {
+        recoveryTime--;
+        let m = Math.floor(recoveryTime / 60).toString().padStart(2, '0'), s = (recoveryTime % 60).toString().padStart(2, '0');
+        document.getElementById('time-left').innerText = `00:${m}:${s}`;
+        if (recoveryTime === 0) { energy = 100; updateUI(); }
     }
 }
+
+function startAd() {
+    document.getElementById('ad-overlay').style.display = 'flex';
+    let c = 5;
+    let i = setInterval(() => {
+        c--; document.getElementById('ad-timer').innerText = `Осталось: ${c} сек.`;
+        if (c <= 0) { clearInterval(i); document.getElementById('ad-overlay').style.display = 'none'; energy = 100; recoveryTime = 0; updateUI(); }
+    }, 1000);
+}
+function startRecovery() { recoveryTime = 180; }
 </script>
 </body>
 </html>
