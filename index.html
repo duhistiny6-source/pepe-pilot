@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -7,16 +7,34 @@
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
-        body { margin:0; overflow:hidden; background:#000; touch-action: none; font-family: Arial, sans-serif; }
-        #ui { position:fixed; top:12px; left:12px; color:#0f0; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; display: flex; flex-direction: column; gap: 8px; }
+        body { margin:0; padding:0; overflow:hidden; background:#000; touch-action: none; font-family: 'Segoe UI', Arial, sans-serif; }
         
-        /* Стили для раздельного баланса */
-        .balance-item { display: flex; align-items: center; gap: 5px; font-size: 18px; }
-        .coin-icon { width: 22px; height: 22px; vertical-align: middle; }
+        /* Компактная верхняя панель в одну строку */
+        #ui { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 30px; 
+            background: rgba(0, 0, 0, 0.4); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 15px; 
+            z-index: 1000; 
+            color: #fff; 
+            font-size: 12px;
+            backdrop-filter: blur(2px);
+        }
+
+        .balance-item { display: flex; align-items: center; gap: 4px; }
+        .coin-icon { width: 14px; height: 14px; }
+        .energy-text { color: #0f0; font-weight: bold; }
         
-        #timer-display { color: #ff3333; font-size: 13px; display: none; }
-        #ad-button { display: none; pointer-events: auto; background: #ffcc00; color: #000; border: 1px solid #fff; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor: pointer; width: fit-content; margin-top: 5px; }
-        #settings-btn { position: fixed; top: 12px; right: 12px; font-size: 28px; cursor: pointer; z-index: 1001; filter: drop-shadow(1px 1px 2px #000); }
+        #timer-display { color: #ff3333; font-size: 11px; display: none; }
+        #ad-button { display: none; pointer-events: auto; background: #ffcc00; color: #000; border: none; padding: 2px 8px; font-size: 10px; font-weight: bold; border-radius: 4px; cursor: pointer; position: fixed; top: 35px; left: 50%; transform: translateX(-50%); }
+        
+        #settings-btn { position: fixed; top: 5px; right: 10px; font-size: 18px; cursor: pointer; z-index: 1001; opacity: 0.8; }
         
         #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 85%; height: 50px; background: rgba(0, 0, 0, 0.9); border: 1px solid #333; border-radius: 12px; display: flex; justify-content: space-around; align-items: center; z-index: 200; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; font-weight: bold; flex: 1; opacity: 0.9; cursor: pointer; }
@@ -41,14 +59,15 @@
 <div id="settings-btn" onclick="toggleModal('settings-modal')">⚙️</div>
 
 <div id="ui">
-    <div class="balance-item">💰 <span id="money">0.0000</span></div>
+    <div class="balance-item"><span>USDT:</span> <span id="money" style="color:#0f0">0.0000</span></div>
     <div class="balance-item">
-        <img src="logo..png" class="coin-icon"> <span id="frog-money">0</span>
+        <img src="logo..png" class="coin-icon"> <span>PLT:</span> <span id="frog-money" style="color:#ffcc00">0</span>
     </div>
-    <div>⚡ <span id="energy">100</span>/100</div>
-    <div id="timer-display"><span id="txt-recovery">Восстановление</span>: <span id="time-left">03:00:00</span></div>
-    <button id="ad-button" onclick="startAd()">📺 СМОТРЕТЬ РЕКЛАМУ</button>
+    <div class="balance-item">⚡ <span class="energy-text"><span id="energy">100</span>/100</span></div>
+    <div id="timer-display"><span id="txt-recovery">Rec</span>: <span id="time-left">03:00:00</span></div>
 </div>
+
+<button id="ad-button" onclick="startAd()">📺 СМОТРЕТЬ РЕКЛАМУ</button>
 
 <div id="settings-modal" class="modal">
     <div class="modal-content">
@@ -93,7 +112,6 @@
 </div>
 
 <script>
-// --- TON Connect и прочее без изменений ---
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     manifestUrl: 'https://duhistiny6-source.github.io/pepe-pilot/tonconnect-manifest.json',
     buttonRootId: null
@@ -121,8 +139,8 @@ function doTask(url, reward) {
 function doAdTask() { toggleModal('tasks-modal'); startAd(); }
 
 const translations = {
-    ru: { recovery: "Восстановление", ad_btn: "📺 СМОТРЕТЬ РЕКЛАМУ", settings: "НАСТРОЙКИ", close: "Закрыть", watching: "СМОТРИМ РОЛИК...", left: "Осталось", shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК" },
-    en: { recovery: "Recovery", ad_btn: "📺 WATCH AD", settings: "SETTINGS", close: "Close", watching: "WATCHING AD...", left: "Left", shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET" }
+    ru: { recovery: "Rec", ad_btn: "📺 СМОТРЕТЬ РЕКЛАМУ", settings: "НАСТРОЙКИ", close: "Закрыть", watching: "СМОТРИМ РОЛИК...", left: "Осталось", shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК" },
+    en: { recovery: "Rec", ad_btn: "📺 WATCH AD", settings: "SETTINGS", close: "Close", watching: "WATCHING AD...", left: "Left", shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET" }
 };
 
 let currentLang = 'ru';
@@ -174,7 +192,9 @@ function preload() {
 }
 
 function create() {
-    this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
+    // Подтягиваем фон максимально вверх
+    this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height).setOrigin(0.5, 0.5);
+    
     try { bgMusic = this.sound.add('theme', { volume: 0.004, loop: true }); } catch (e) {}
     this.input.once('pointerdown', () => { if (bgMusic && !bgMusic.isPlaying) bgMusic.play(); });
 
@@ -216,7 +236,6 @@ function spawn(scene) {
     coin.pulse = scene.tweens.add({ targets: coin, scale: 0.14, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 }
 
-// Улучшенная функция вылета текста
 function showValue(scene, val, isFrog) {
     let color = isFrog ? '#ffcc00' : '#0f0';
     let txt = scene.add.text(plane.x, plane.y - 40, `+${val}`, { 
@@ -242,7 +261,6 @@ function update() {
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
-                // ПРОВЕРКА: Что мы поймали?
                 if (caughtItem.texture.key === 'pilot_coin') {
                     frogMoney += FROG_VALUE;
                     showValue(this.scene.scene, FROG_VALUE, true);
@@ -267,7 +285,7 @@ function update() {
 
 function updateUI() {
     document.getElementById('money').innerText = money.toFixed(4);
-    document.getElementById('frog-money').innerText = frogMoney; // Обновляем наш новый баланс
+    document.getElementById('frog-money').innerText = frogMoney;
     document.getElementById('energy').innerText = energy;
     const isOutOfEnergy = energy <= 0;
     document.getElementById('timer-display').style.display = isOutOfEnergy ? 'block' : 'none';
