@@ -10,19 +10,18 @@
         body { margin:0; overflow:hidden; background:#000; touch-action: none; font-family: Arial, sans-serif; }
         #ui { position:fixed; top:12px; left:12px; color:#0f0; font-weight:bold; z-index: 100; pointer-events: none; text-shadow: 1px 1px 2px #000; display: flex; flex-direction: column; gap: 8px; }
         
-        /* Стили для кликабельных элементов баланса */
+        /* Стили для кнопки баланса */
         .balance-item { 
             display: flex; 
             align-items: center; 
-            gap: 5px; 
-            font-size: 18px; 
-            pointer-events: auto; /* Делаем мешочек и монету нажимаемыми */
+            gap: 8px; 
+            font-size: 20px; 
+            pointer-events: auto; 
             cursor: pointer;
-            transition: transform 0.1s;
         }
-        .balance-item:active { transform: scale(1.1); }
-        .coin-icon { width: 22px; height: 22px; vertical-align: middle; }
         
+        .energy-display { font-size: 18px; color: #ffcc00; display: flex; align-items: center; gap: 5px; }
+
         #timer-display { color: #ff3333; font-size: 13px; display: none; }
         #ad-button { display: none; pointer-events: auto; background: #ffcc00; color: #000; border: 1px solid #fff; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor: pointer; width: fit-content; margin-top: 5px; }
         #settings-btn { position: fixed; top: 12px; right: 12px; font-size: 28px; cursor: pointer; z-index: 1001; filter: drop-shadow(1px 1px 2px #000); }
@@ -49,34 +48,29 @@
 <div id="settings-btn" onclick="toggleModal('settings-modal')">⚙️</div>
 
 <div id="ui">
-    <div class="balance-item" onclick="showFullBalance()">💰 <span id="money">0.0000</span></div>
-    <div class="balance-item" onclick="showFullBalance()">
-        <img src="logo..png" class="coin-icon"> <span id="frog-money">0</span>
-    </div>
-    <div>⚡ <span id="energy">100</span>/100</div>
+    <div class="balance-item" onclick="showFullBalance()">💰 БАЛАНС</div>
+    <div class="energy-display">⚡ <span id="energy">100</span></div>
+    
     <div id="timer-display"><span id="txt-recovery">Восстановление</span>: <span id="time-left">03:00:00</span></div>
     <button id="ad-button" onclick="startAd()">📺 СМОТРЕТЬ РЕКЛАМУ</button>
 </div>
 
 <div id="balance-modal" class="modal">
     <div class="modal-content">
-        <h3 id="txt-balance-title">МОИ МОНЕТЫ</h3>
-        
+        <h3 id="txt-balance-title">ВАШИ АКТИВЫ</h3>
         <div class="task-item">
             <div class="task-info">
                 <div class="task-title">Frog Pilot</div>
-                <div class="task-reward" style="font-size: 20px;"><span id="modal-frog">0</span> 🐸</div>
+                <div class="task-reward" style="font-size: 18px; color: #ffcc00;"><span id="modal-frog">0</span> 🐸</div>
             </div>
         </div>
-
         <div class="task-item">
             <div class="task-info">
-                <div class="task-title">USDT Balance</div>
-                <div class="task-reward" style="font-size: 20px;">$<span id="modal-usdt">0.0000</span></div>
+                <div class="task-title">Tether (USDT)</div>
+                <div class="task-reward" style="font-size: 18px;">$<span id="modal-usdt">0.0000</span></div>
             </div>
         </div>
-
-        <div style="margin-top:15px; color:#0f0; font-weight:bold; cursor:pointer;" onclick="toggleModal('balance-modal')">ОТЛИЧНО!</div>
+        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('balance-modal')">Закрыть</div>
     </div>
 </div>
 
@@ -86,20 +80,6 @@
         <button class="lang-btn" onclick="changeLanguage('ru')">РУССКИЙ</button>
         <button class="lang-btn" onclick="changeLanguage('en')">ENGLISH</button>
         <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('settings-modal')">Закрыть</div>
-    </div>
-</div>
-
-<div id="tasks-modal" class="modal">
-    <div class="modal-content">
-        <h3 id="txt-tasks-title">ЗАДАНИЯ</h3>
-        <div class="task-item">
-            <div class="task-info">
-                <div class="task-title">Посмотреть рекламу</div>
-                <div class="task-reward">+100 ⚡ Энергии</div>
-            </div>
-            <button class="task-btn" onclick="doAdTask()">📺 СМОТРЕТЬ</button>
-        </div>
-        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('tasks-modal')">Закрыть</div>
     </div>
 </div>
 
@@ -116,11 +96,10 @@
 </div>
 
 <script>
-// --- Основные переменные ---
+// --- Переменные ---
 let money = 0, frogMoney = 0, energy = 100, recoveryTime = 0;
 const USDT_VALUE = 0.0005, FROG_VALUE = 10;
 
-// Функция для показа баланса при нажатии на мешочек
 function showFullBalance() {
     document.getElementById('modal-frog').innerText = frogMoney;
     document.getElementById('modal-usdt').innerText = money.toFixed(4);
@@ -141,24 +120,26 @@ async function connectWallet() {
     try { await tonConnectUI.connectWallet(); alert("Кошелек успешно подключен!"); } catch (e) { console.error(e); }
 }
 
-function startAd() {
-    document.getElementById('ad-overlay').style.display = 'flex';
-    let c = 5;
-    let i = setInterval(() => {
-        c--; document.getElementById('ad-timer').innerText = `Осталось: ${c} сек.`;
-        if (c <= 0) { clearInterval(i); document.getElementById('ad-overlay').style.display = 'none'; energy = 100; updateUI(); }
-    }, 1000);
+// --- Звуковой движок ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playBeep(freq, dur) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.frequency.value = freq; osc.type = 'sine';
+    gain.gain.setValueAtTime(0.005, audioCtx.currentTime); 
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+    osc.start(); osc.stop(audioCtx.currentTime + dur);
 }
 
-function doAdTask() { toggleModal('tasks-modal'); startAd(); }
-
-// --- Phaser игра ---
+// --- Игра Phaser ---
 const config = {
     type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight,
     physics: { default: 'arcade' }, scene: { preload, create, update }
 };
 const game = new Phaser.Game(config);
-let plane, hook, rope, targets, isLaunching = false, isReturning = false, caughtItem = null;
+let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, distance = 25;
 
 function preload() {
@@ -167,19 +148,27 @@ function preload() {
     this.load.image('usdt', 'usdt.png');
     this.load.image('pilot_coin', 'logo..png');
     this.load.image('plane', 'pepe.png');
+    this.load.audio('theme', 'music.mp3');
 }
 
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
+    
+    // Музыка
+    try { 
+        bgMusic = this.sound.add('theme', { volume: 0.2, loop: true }); 
+        this.input.once('pointerdown', () => { if (!bgMusic.isPlaying) bgMusic.play(); });
+    } catch (e) {}
+
     targets = this.physics.add.group();
     for(let i = 0; i < 6; i++) spawn(this);
+    
     rope = this.add.graphics().setDepth(5);
     hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(60, 60); 
     this.physics.add.existing(hook);
     plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.input.on('pointerdown', (p) => {
-        // Чтобы не стрелять крюком, если нажали на баланс или кнопки
         if (p.y < 130 || p.y > config.height - 80) return;
         if (!isLaunching && !isReturning && energy > 0) {
             isLaunching = true; energy--; updateUI();
@@ -189,6 +178,8 @@ function create() {
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
             caughtItem = item; caughtItem.body.enable = false;
+            if (caughtItem.pulse) caughtItem.pulse.stop(); // Останавливаем пульсацию при захвате
+            playBeep(400, 0.1); 
             isLaunching = false; isReturning = true;
         }
     });
@@ -199,6 +190,16 @@ function spawn(scene) {
     let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
     let key = (Phaser.Math.Between(1, 100) <= 60) ? 'pilot_coin' : 'usdt';
     let coin = targets.create(x, y, key).setDepth(40).setScale(0.12);
+    
+    // Возвращаем пульсацию монеток
+    coin.pulse = scene.tweens.add({
+        targets: coin,
+        scale: 0.15,
+        duration: 800,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+    });
 }
 
 function update() {
@@ -214,6 +215,7 @@ function update() {
             if (caughtItem) {
                 if (caughtItem.texture.key === 'pilot_coin') frogMoney += FROG_VALUE;
                 else money += USDT_VALUE;
+                playBeep(800, 0.1);
                 caughtItem.destroy(); caughtItem = null; spawn(this.scene.scene); updateUI();
             }
         }
@@ -226,10 +228,9 @@ function update() {
 }
 
 function updateUI() {
-    document.getElementById('money').innerText = money.toFixed(4);
-    document.getElementById('frog-money').innerText = frogMoney;
     document.getElementById('energy').innerText = energy;
 }
 </script>
 </body>
 </html>
+                   
