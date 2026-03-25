@@ -1,10 +1,10 @@
- const { Telegraf, Markup } = require('telegraf');
+const { Telegraf, Markup } = require('telegraf');
 const http = require('http');
 
-// 1. Твой токен
+// 1. Твой токен (проверенный)
 const bot = new Telegraf('8463237050:AAHzx0IFrrqaJ14mxj17xmhJIOr3P7eLfQ0');
 
-// 2. Ссылка на твою игру (я составил её по твоему профилю)
+// 2. Ссылка на игру (GitHub Pages)
 const gameUrl = 'https://duhistiny6.github.io/pepe-pilot/'; 
 
 bot.start((ctx) => {
@@ -22,8 +22,8 @@ bot.launch().then(() => {
   console.error('Ошибка запуска бота:', err);
 });
 
-// 3. Сервер для Render (чтобы не было черного экрана)
+// 3. Создаем сервер, чтобы Render не ругался на порты
 http.createServer((req, res) => {
   res.writeHead(200);
-  res.end('Server is running');
+  res.end('Bot is Live');
 }).listen(process.env.PORT || 8080);
