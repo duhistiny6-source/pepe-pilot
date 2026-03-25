@@ -67,7 +67,7 @@
 // --- Инициализация TON Connect ---
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     manifestUrl: 'https://duhistiny6-source.github.io/pepe-pilot/tonconnect-manifest.json',
-    buttonRootId: null // Кнопку вызываем сами
+    buttonRootId: null
 });
 
 async function connectWallet() {
@@ -185,7 +185,12 @@ function update() {
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
-    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, hook.x, hook.y);
+
+    // ИСПРАВЛЕННАЯ СТРОЧКА ТРОСА:
+    let endX = startX + Math.sin(angle) * (distance - 30);
+    let endY = startY + Math.cos(angle) * (distance - 30);
+    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
+
     if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; }
 }
 
@@ -216,7 +221,7 @@ function startAd() {
         if (c <= 0) { clearInterval(i); document.getElementById('ad-overlay').style.display = 'none'; energy = 100; recoveryTime = 0; updateUI(); }
     }, 1000);
 }
-function startRecovery() { recoveryTime = 10800; } // 3 часа в секундах
+function startRecovery() { recoveryTime = 10800; } // Таймер на 3 часа
 </script>
 </body>
 </html>
