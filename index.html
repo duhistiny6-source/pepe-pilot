@@ -9,7 +9,6 @@
     <style>
         body { margin:0; padding:0; overflow:hidden; background:#000; touch-action: none; font-family: 'Segoe UI', Arial, sans-serif; }
         
-        /* Общая панель для фона */
         #top-bar { 
             position: fixed; 
             top: 0; 
@@ -23,7 +22,6 @@
             align-items: center;
         }
 
-        /* Энергия в левом углу */
         #energy-container {
             position: absolute;
             left: 12px;
@@ -33,7 +31,6 @@
             text-shadow: 1px 1px 1px #000;
         }
 
-        /* Баланс по центру одной строкой */
         #balance-container { 
             width: 100%;
             display: flex; 
@@ -41,7 +38,7 @@
             justify-content: center; 
             gap: 15px; 
             color: #fff; 
-            font-size: 12px;
+            font-size: 11px;
         }
 
         .balance-item { display: flex; align-items: center; gap: 4px; }
@@ -149,7 +146,7 @@ function doTask(url, reward) {
     window.open(url, '_blank');
     setTimeout(() => {
         energy = Math.min(100, energy + reward);
-        recoveryTime = 0; // Сбрасываем таймер при выполнении задания
+        recoveryTime = 0;
         updateUI();
         alert("Задание выполнено!");
     }, 2000);
@@ -200,7 +197,7 @@ let angle = 0, swingSpeed = 0.03, distance = 25, money = 0, frogMoney = 0, energ
 
 const USDT_VALUE = 0.0005;
 const FROG_VALUE = 10;
-const RECOVERY_DURATION = 7200; // 2 часа в секундах (2 * 60 * 60)
+const RECOVERY_DURATION = 7200; 
 
 function preload() {
     this.load.image('sky', 'pg.jpeg');
@@ -213,7 +210,6 @@ function preload() {
 
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
-    
     try { bgMusic = this.sound.add('theme', { volume: 0.004, loop: true }); } catch (e) {}
     this.input.once('pointerdown', () => { if (bgMusic && !bgMusic.isPlaying) bgMusic.play(); });
 
@@ -230,10 +226,7 @@ function create() {
             document.getElementById('ad-overlay').style.display === 'flex') return;
 
         if (p.y > 80 && p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
-            isLaunching = true; 
-            energy--; 
-            if (energy <= 0) startRecovery(); // Запускаем таймер, если энергия кончилась
-            updateUI();
+            isLaunching = true; energy--; if (energy <= 0) startRecovery(); updateUI();
         }
     });
 
@@ -255,16 +248,22 @@ function spawn(scene) {
     let textureKey = (randomChance <= 60) ? 'pilot_coin' : 'usdt';
     let coin = targets.create(x, y, textureKey).setDepth(40);
     
-    // Делаем визуальный размер одинаковым
+    // ПРОВЕРКА РАЗМЕРОВ И ЯРКОСТИ
     if (textureKey === 'pilot_coin') {
-        coin.setScale(0.12); // Размер для нашей монеты
-        coin.setTint(0xcccccc); // Немного затемняем PLT, чтобы меньше блестела
+        coin.setScale(0.10); // Уменьшили, чтобы визуально было как USDT
+        coin.setTint(0xaaaaaa); // Затемнили сильнее
     } else {
-        coin.setScale(0.12); // Устанавливаем такой же размер для USDT
+        coin.setScale(0.12); // Оставили стандарт
     }
     
-    // Корректируем пульсацию под новый масштаб
-    coin.pulse = scene.tweens.add({ targets: coin, scale: 0.14, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    coin.pulse = scene.tweens.add({ 
+        targets: coin, 
+        scale: textureKey === 'pilot_coin' ? 0.11 : 0.14, 
+        duration: 1000, 
+        yoyo: true, 
+        repeat: -1, 
+        ease: 'Sine.easeInOut' 
+    });
 }
 
 function showValue(scene, val, isFrog) {
@@ -340,16 +339,12 @@ function startAd() {
     let i = setInterval(() => {
         c--; document.getElementById('ad-timer').innerText = `Осталось: ${c} сек.`;
         if (c <= 0) { 
-            clearInterval(i); 
-            document.getElementById('ad-overlay').style.display = 'none'; 
-            energy = 100; // Восстанавливаем энергию
-            recoveryTime = 0; // Сбрасываем таймер
-            updateUI(); 
+            clearInterval(i); document.getElementById('ad-overlay').style.display = 'none'; 
+            energy = 100; recoveryTime = 0; updateUI(); 
         }
     }, 1000);
 }
-function startRecovery() { recoveryTime = RECOVERY_DURATION; } // Используем константу 2 часа
+function startRecovery() { recoveryTime = RECOVERY_DURATION; }
 </script>
 </body>
 </html>
-
