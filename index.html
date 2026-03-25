@@ -3,61 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot: Original Edition</title>
+    <title>Pepe Pilot Classic</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
         body { margin:0; overflow:hidden; background:#000; touch-action: none; font-family: 'Arial', sans-serif; }
         #ui { position:fixed; top:12px; left:12px; z-index: 100; pointer-events: none; }
-        .stat { display: flex; align-items: center; gap: 5px; color: #0f0; font-weight: bold; text-shadow: 1px 1px 2px #000; margin-bottom: 5px; }
+        .stat { display: flex; align-items: center; gap: 8px; color: #0f0; font-weight: bold; text-shadow: 2px 2px 2px #000; margin-bottom: 5px; font-size: 18px; }
         
-        #settings-btn { position: fixed; top: 12px; right: 12px; font-size: 24px; cursor: pointer; z-index: 1001; pointer-events: auto; opacity: 0.8; }
+        #settings-btn { position: fixed; top: 15px; right: 15px; font-size: 26px; cursor: pointer; z-index: 1001; pointer-events: auto; opacity: 0.7; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; color: #fff; justify-content: center; align-items: center; }
-        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 280px; box-shadow: 0 0 20px rgba(0,255,0,0.2); }
+        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 280px; box-shadow: 0 0 15px rgba(0,255,0,0.3); }
         
-        .btn-close { margin-top: 15px; color: #888; cursor: pointer; display: inline-block; }
+        .btn-close { margin-top: 20px; color: #aaa; cursor: pointer; text-decoration: underline; }
 
-        #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 90%; height: 60px; background: rgba(0, 0, 0, 0.9); border: 1px solid #333; border-radius: 15px; display: flex; justify-content: space-around; align-items: center; z-index: 200; }
+        #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 92%; height: 65px; background: rgba(0, 0, 0, 0.95); border: 1px solid #333; border-radius: 18px; display: flex; justify-content: space-around; align-items: center; z-index: 200; }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; flex: 1; cursor: pointer; pointer-events: auto; }
-        .nav-text { font-size: 8px; margin-top: 4px; color: #bbb; text-transform: uppercase; }
+        .nav-text { font-size: 9px; margin-top: 5px; color: #888; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
-<div id="settings-btn" onclick="openModal('settings-modal')">⚙️</div>
+<div id="settings-btn" onclick="openM('settings-modal')">⚙️</div>
 
 <div id="ui">
-    <div class="stat" style="cursor:pointer; pointer-events:auto;" onclick="openModal('stats-modal')">💰 БАЛАНС</div>
+    <div class="stat" style="cursor:pointer; pointer-events:auto;" onclick="openM('stats-modal')">💰 БАЛАНС</div>
     <div class="stat" style="color:#ffcc00">⚡ <span id="energy">100</span></div>
 </div>
 
 <div id="stats-modal" class="modal">
     <div class="modal-content">
-        <h3 style="color:#0f0">ВАШИ ДОСТИЖЕНИЯ</h3>
-        <div style="text-align:left; background:#222; padding:15px; border-radius:12px;">
-            <p>🐸 Frog Coins: <span id="s-frog">0</span></p>
-            <p>💵 USDT: <span id="s-usdt">0.0000</span></p>
+        <h3 style="color:#0f0; margin-top:0;">ВАШ БАЛАНС</h3>
+        <div style="text-align:left; background:#222; padding:15px; border-radius:12px; border: 1px solid #333;">
+            <p style="margin: 5px 0;">🐸 Монеты: <span id="s-frog" style="color:#ffcc00">0</span></p>
+            <p style="margin: 5px 0;">💵 USDT: <span id="s-usdt" style="color:#0f0">0.0000</span></p>
         </div>
-        <div class="btn-close" onclick="closeModal('stats-modal')">Закрыть</div>
+        <div class="btn-close" onclick="closeM('stats-modal')">Закрыть</div>
     </div>
 </div>
 
 <div id="wallet-modal" class="modal">
     <div class="modal-content">
-        <h3>КОШЕЛЕК</h3>
-        <div id="ton-connect-button" style="display:flex; justify-content:center; margin:20px 0;"></div>
-        <p style="font-size:12px; color:#aaa;">Подключите TON кошелек для вывода</p>
-        <div class="btn-close" onclick="closeModal('wallet-modal')">Закрыть</div>
+        <h3>ПОДКЛЮЧЕНИЕ</h3>
+        <div id="ton-connect-button" style="margin: 20px 0;"></div>
+        <p style="font-size:11px; color:#666;">Используйте TON Connect для синхронизации</p>
+        <div class="btn-close" onclick="closeM('wallet-modal')">Отмена</div>
     </div>
 </div>
 
 <div id="settings-modal" class="modal">
     <div class="modal-content">
-        <h3>SETTINGS</h3>
-        <button style="width:100%; padding:10px; margin:5px 0; background:#333; color:#fff; border:1px solid #555; border-radius:8px;">ENGLISH</button>
-        <button style="width:100%; padding:10px; margin:5px 0; background:#333; color:#fff; border:1px solid #555; border-radius:8px;">РУССКИЙ</button>
-        <div class="btn-close" onclick="closeModal('settings-modal')">Back</div>
+        <h3>НАСТРОЙКИ</h3>
+        <button style="width:100%; padding:12px; margin:8px 0; background:#222; color:#fff; border:1px solid #0f0; border-radius:10px;">РУССКИЙ</button>
+        <button style="width:100%; padding:12px; margin:8px 0; background:#222; color:#fff; border:1px solid #444; border-radius:10px;">ENGLISH</button>
+        <div class="btn-close" onclick="closeM('settings-modal')">Закрыть</div>
     </div>
 </div>
 
@@ -65,25 +65,26 @@
     <div class="nav-item"><span>🛒</span><div class="nav-text">МАГАЗИН</div></div>
     <div class="nav-item"><span>📜</span><div class="nav-text">ЗАДАНИЯ</div></div>
     <div class="nav-item"><span>👥</span><div class="nav-text">ДРУЗЬЯ</div></div>
-    <div class="nav-item" onclick="openModal('wallet-modal')"><span>👛</span><div class="nav-text">КОШЕЛЕК</div></div>
+    <div class="nav-item" onclick="openM('wallet-modal')"><span>👛</span><div class="nav-text">КОШЕЛЕК</div></div>
 </div>
 
 <script>
 let frog = 0, usdt = 0, energy = 100;
 
+// Инициализация кошелька
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     manifestUrl: 'https://duhistiny6-source.github.io/pepe-pilot/tonconnect-manifest.json',
     buttonRootId: 'ton-connect-button'
 });
 
-function openModal(id) {
+function openM(id) {
     if(id === 'stats-modal') {
         document.getElementById('s-frog').innerText = frog;
         document.getElementById('s-usdt').innerText = usdt.toFixed(4);
     }
     document.getElementById(id).style.display = 'flex';
 }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function closeM(id) { document.getElementById(id).style.display = 'none'; }
 
 const config = {
     type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight,
@@ -91,7 +92,7 @@ const config = {
 };
 const game = new Phaser.Game(config);
 let plane, hook, rope, targets, isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.03, distance = 35;
+let angle = 0, swingSpeed = 0.03, distance = 32;
 
 function preload() {
     this.load.image('sky', 'pg.jpeg');
@@ -106,17 +107,20 @@ function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
     
     try {
-        let m = this.sound.add('music', { loop: true, volume: 0.3 });
+        let m = this.sound.add('music', { loop: true, volume: 0.2 });
         this.input.once('pointerdown', () => { if(!m.isPlaying) m.play(); });
     } catch(e) {}
 
     targets = this.physics.add.group();
     for(let i=0; i<6; i++) spawn(this);
 
+    // Слой 5: Нитка (под всеми)
     rope = this.add.graphics().setDepth(5);
+    
+    // Слой 20: Самолет
     plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(280, 180).setDepth(20);
     
-    // Возвращаем ту самую аккуратную клешню
+    // Слой 30: Клешня (аккуратный размер 0.1)
     hook = this.add.sprite(0, 0, 'hook').setScale(0.1).setDepth(30); 
     this.physics.add.existing(hook);
 
@@ -132,7 +136,7 @@ function create() {
         if(isLaunching && !caughtItem) {
             caughtItem = item; 
             caughtItem.body.enable = false;
-            if(caughtItem.pulse) caughtItem.pulse.stop();
+            if(caughtItem.p) caughtItem.p.stop();
             isLaunching = false; isReturning = true;
         }
     });
@@ -140,37 +144,38 @@ function create() {
 
 function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width-50);
-    let y = Phaser.Math.Between(config.height*0.4, config.height-160);
+    let y = Phaser.Math.Between(config.height*0.4, config.height-180);
     let key = (Math.random() > 0.4) ? 'pilot_coin' : 'usdt';
     let coin = targets.create(x, y, key).setScale(0.12).setDepth(15);
     
-    // Пульсация монеток
-    coin.pulse = scene.tweens.add({
-        targets: coin, scale: 0.15, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
+    // Пульсация
+    coin.p = scene.tweens.add({
+        targets: coin, scale: 0.15, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
     });
 }
 
 function update() {
-    plane.y = 120 + Math.sin(this.time.now/600)*8;
-    let sX = plane.x - 5, sY = plane.y + 25;
+    // Покачивание самолета
+    plane.y = 120 + Math.sin(this.time.now/600)*6;
+    let sX = plane.x - 4, sY = plane.y + 28; // Точка выхода нитки
 
     if(!isLaunching && !isReturning) {
-        angle += swingSpeed; if(angle > 0.8 || angle < -0.8) swingSpeed *= -1;
+        angle += swingSpeed; if(angle > 0.7 || angle < -0.7) swingSpeed *= -1;
     } else if(isLaunching) {
-        distance += 15; if(distance > config.height-140) { isLaunching = false; isReturning = true; }
+        distance += 14; if(distance > config.height-150) { isLaunching = false; isReturning = true; }
     } else if(isReturning) {
         distance -= 10;
-        if(distance <= 35) {
+        if(distance <= 32) {
             isReturning = false;
             if(caughtItem) {
                 let isF = caughtItem.texture.key === 'pilot_coin';
                 if(isF) frog += 10; else usdt += 0.0005;
                 
-                // Эффект цифр +10
-                let txt = this.add.text(plane.x, plane.y - 40, isF ? '+10' : '+0.0005', { 
-                    font: 'bold 24px Arial', fill: isF ? '#ffcc00' : '#0f0'
+                // Всплывающий текст
+                let txt = this.add.text(plane.x, plane.y - 50, isF ? '+10' : '+0.0005', { 
+                    font: 'bold 22px Arial', fill: isF ? '#ffcc00' : '#0f0', stroke: '#000', strokeThickness: 4
                 }).setDepth(100).setOrigin(0.5);
-                this.tweens.add({ targets: txt, y: txt.y-80, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
+                this.tweens.add({ targets: txt, y: txt.y-70, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
                 
                 caughtItem.destroy(); caughtItem = null; spawn(this);
             }
@@ -181,15 +186,14 @@ function update() {
     hook.y = sY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 
-    // Нитка рисуется до центра клешни, но перекрывается ее спрайтом
-    rope.clear().lineStyle(2, 0xffffff, 0.5).lineBetween(sX, sY, hook.x, hook.y);
+    // Отрисовка нитки
+    rope.clear().lineStyle(2, 0xeeeeee, 0.5).lineBetween(sX, sY, hook.x, hook.y);
 
     if(caughtItem) {
-        caughtItem.x = hook.x; caughtItem.y = hook.y + 8;
+        caughtItem.x = hook.x; caughtItem.y = hook.y + 12;
         caughtItem.rotation = hook.rotation;
     }
 }
 </script>
 </body>
 </html>
-       
