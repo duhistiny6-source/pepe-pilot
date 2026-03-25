@@ -12,19 +12,29 @@
         #timer-display { color: #ff3333; font-size: 13px; display: none; }
         #ad-button { display: none; pointer-events: auto; background: #ffcc00; color: #000; border: 1px solid #fff; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor: pointer; width: fit-content; margin-top: 5px; }
         #settings-btn { position: fixed; top: 12px; right: 12px; font-size: 28px; cursor: pointer; z-index: 1001; filter: drop-shadow(1px 1px 2px #000); }
+        
         #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 85%; height: 50px; background: rgba(0, 0, 0, 0.9); border: 1px solid #333; border-radius: 12px; display: flex; justify-content: space-around; align-items: center; z-index: 200; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; font-weight: bold; flex: 1; opacity: 0.9; cursor: pointer; }
         .nav-item span { font-size: 18px; }
         .nav-text { font-size: 8px; margin-top: 1px; color: #bbb; text-transform: uppercase; }
-        #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
-        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 240px; }
+
+        /* Стили для окон (настройки, задания и т.д.) */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
+        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 280px; max-width: 90%; }
+        
+        .task-item { background: #222; border: 1px solid #444; border-radius: 10px; padding: 10px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+        .task-info { text-align: left; }
+        .task-title { font-size: 14px; font-weight: bold; color: #fff; }
+        .task-reward { font-size: 12px; color: #0f0; }
+        .task-btn { background: #0f0; color: #000; border: none; padding: 5px 10px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        
         .lang-btn { background: #333; color: #0f0; border: 1px solid #0f0; padding: 12px 20px; margin: 10px 0; cursor: pointer; border-radius: 10px; font-weight: bold; width: 100%; }
         #ad-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
     </style>
 </head>
 <body>
 
-<div id="settings-btn" onclick="toggleSettings()">⚙️</div>
+<div id="settings-btn" onclick="toggleModal('settings-modal')">⚙️</div>
 
 <div id="ui">
     <div>💰 <span id="money">0.0000</span></div>
@@ -33,12 +43,36 @@
     <button id="ad-button" onclick="startAd()">📺 СМОТРЕТЬ РЕКЛАМУ</button>
 </div>
 
-<div id="settings-modal">
+<div id="settings-modal" class="modal">
     <div class="modal-content">
         <h3 id="txt-settings-title">НАСТРОЙКИ</h3>
         <button class="lang-btn" onclick="changeLanguage('ru')">РУССКИЙ</button>
         <button class="lang-btn" onclick="changeLanguage('en')">ENGLISH</button>
-        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleSettings()" id="txt-close">Закрыть</div>
+        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('settings-modal')" id="txt-close">Закрыть</div>
+    </div>
+</div>
+
+<div id="tasks-modal" class="modal">
+    <div class="modal-content">
+        <h3 id="txt-tasks-title">ЗАДАНИЯ</h3>
+        
+        <div class="task-item">
+            <div class="task-info">
+                <div class="task-title">Подписаться на канал</div>
+                <div class="task-reward">+100 ⚡ Энергии</div>
+            </div>
+            <button class="task-btn" onclick="doTask('https://t.me/your_channel', 100)">GO</button>
+        </div>
+
+        <div class="task-item">
+            <div class="task-info">
+                <div class="task-title">Вступить в группу</div>
+                <div class="task-reward">+50 ⚡ Энергии</div>
+            </div>
+            <button class="task-btn" onclick="doTask('https://t.me/your_group', 50)">GO</button>
+        </div>
+
+        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('tasks-modal')">Закрыть</div>
     </div>
 </div>
 
@@ -49,7 +83,7 @@
 
 <div id="nav-bar">
     <div class="nav-item"><span>🛒</span><div class="nav-text" id="nav-shop">МАГАЗИН</div></div>
-    <div class="nav-item"><span>📜</span><div class="nav-text" id="nav-tasks">ЗАДАНИЯ</div></div>
+    <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text" id="nav-tasks">ЗАДАНИЯ</div></div>
     <div class="nav-item"><span>👥</span><div class="nav-text" id="nav-friends">ДРУЗЬЯ</div></div>
     <div class="nav-item" onclick="connectWallet()"><span>👛</span><div class="nav-text" id="nav-wallet">КОШЕЛЕК</div></div>
 </div>
@@ -65,14 +99,31 @@ async function connectWallet() {
     try { await tonConnectUI.connectWallet(); alert("Кошелек успешно подключен!"); } catch (e) { console.error(e); }
 }
 
-// --- Логика игры ---
+// --- Управление модалками ---
+function toggleModal(id) {
+    const m = document.getElementById(id);
+    m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+}
+
+// --- Логика Заданий ---
+function doTask(url, reward) {
+    window.open(url, '_blank');
+    // Даем награду через небольшую паузу (имитация проверки)
+    setTimeout(() => {
+        energy += reward;
+        if (energy > 100) energy = 100; // Ограничение максимума
+        recoveryTime = 0; // Сбрасываем таймер, если получили энергию
+        updateUI();
+        alert("Задание выполнено! Награда начислена.");
+    }, 2000);
+}
+
 const translations = {
     ru: { recovery: "Восстановление", ad_btn: "📺 СМОТРЕТЬ РЕКЛАМУ", settings: "НАСТРОЙКИ", close: "Закрыть", watching: "СМОТРИМ РОЛИК...", left: "Осталось", shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК" },
     en: { recovery: "Recovery", ad_btn: "📺 WATCH AD", settings: "SETTINGS", close: "Close", watching: "WATCHING AD...", left: "Left", shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET" }
 };
 
 let currentLang = 'ru';
-function toggleSettings() { const m = document.getElementById('settings-modal'); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; }
 function changeLanguage(lang) {
     currentLang = lang; const t = translations[lang];
     document.getElementById('txt-recovery').innerText = t.recovery;
@@ -84,7 +135,7 @@ function changeLanguage(lang) {
     document.getElementById('nav-tasks').innerText = t.tasks;
     document.getElementById('nav-friends').innerText = t.friends;
     document.getElementById('nav-wallet').innerText = t.wallet;
-    toggleSettings();
+    toggleModal('settings-modal');
 }
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -130,6 +181,10 @@ function create() {
     plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.input.on('pointerdown', (p) => {
+        // Проверка, чтобы не кликать сквозь модалки
+        if (document.getElementById('tasks-modal').style.display === 'flex' || 
+            document.getElementById('settings-modal').style.display === 'flex') return;
+
         if (p.y > 80 && p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
             isLaunching = true; energy--; if (energy <= 0) startRecovery(); updateUI();
         }
@@ -154,7 +209,7 @@ function spawn(scene) {
 }
 
 function showValue(scene) {
-    let txt = scene.add.text(plane.x, plane.y - 40, `+${COIN_VALUE}`, { font: 'bold 24px Arial', fill: '#0f0', stroke: '#000', strokeThickness: 4 }).setDepth(100).setOrigin(0.5);
+    let txt = scene.add.text(plane.x, plane.y - 40, `+${COIN_VALUE}`, { font: 'bold 24px Arial', fill: '#0f0', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5).setDepth(100);
     scene.tweens.add({ targets: txt, y: txt.y - 100, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
 }
 
@@ -173,7 +228,7 @@ function update() {
             isReturning = false;
             if (caughtItem) {
                 money += COIN_VALUE; playBeep(900, 0.12); 
-                showValue(this.scene.scene); // Исправлено получение сцены
+                showValue(this.scene.scene);
                 caughtItem.destroy(); caughtItem = null; spawn(this.scene.scene); updateUI();
             }
         }
