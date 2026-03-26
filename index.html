@@ -9,78 +9,28 @@
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
         body { margin:0; padding:0; overflow:hidden; background:#000; touch-action: none; font-family: 'Segoe UI', Arial, sans-serif; }
-        
-        #top-bar { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 35px; 
-            background: rgba(0, 0, 0, 0.4); 
-            z-index: 1000; 
-            backdrop-filter: blur(2px);
-            display: flex;
-            align-items: center;
-        }
-
-        #energy-container {
-            position: absolute;
-            left: 12px;
-            color: #0f0;
-            font-size: 13px;
-            font-weight: bold;
-            text-shadow: 1px 1px 1px #000;
-        }
-
-        #balance-container { 
-            width: 100%;
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 15px; 
-            color: #fff; 
-            font-size: 11px;
-        }
-
+        #top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 35px; background: rgba(0, 0, 0, 0.4); z-index: 1000; backdrop-filter: blur(2px); display: flex; align-items: center; }
+        #energy-container { position: absolute; left: 12px; color: #0f0; font-size: 13px; font-weight: bold; text-shadow: 1px 1px 1px #000; }
+        #balance-container { width: 100%; display: flex; align-items: center; justify-content: center; gap: 15px; color: #fff; font-size: 11px; }
         .balance-item { display: flex; align-items: center; gap: 4px; }
         .coin-icon { width: 14px; height: 14px; }
-        
-        #recovery-block {
-            display: none; 
-            pointer-events: auto;
-            position: fixed; 
-            top: 40px; 
-            left: 12px;
-            z-index: 1001;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            align-items: flex-start;
-        }
-
+        #recovery-block { display: none; pointer-events: auto; position: fixed; top: 40px; left: 12px; z-index: 1001; flex-direction: column; gap: 4px; align-items: flex-start; }
         #timer-display { color: #ff3333; font-size: 10px; text-shadow: 1px 1px 1px #000; display: none; }
         #ad-button { background: #ffcc00; color: #000; border: none; padding: 2px 8px; font-size: 10px; font-weight: bold; border-radius: 4px; cursor: pointer; display: none; }
-        
         #settings-btn { position: fixed; top: 7px; right: 10px; font-size: 18px; cursor: pointer; z-index: 1001; opacity: 0.8; }
-        
         #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 85%; height: 50px; background: rgba(0, 0, 0, 0.9); border: 1px solid #333; border-radius: 12px; display: flex; justify-content: space-around; align-items: center; z-index: 200; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; font-weight: bold; flex: 1; opacity: 0.9; cursor: pointer; }
         .nav-item span { font-size: 18px; }
         .nav-text { font-size: 8px; margin-top: 1px; color: #bbb; text-transform: uppercase; }
-
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
         .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 280px; max-width: 90%; }
-        
         .task-item { background: #222; border: 1px solid #444; border-radius: 10px; padding: 10px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
         .task-info { text-align: left; }
         .task-title { font-size: 13px; font-weight: bold; color: #fff; }
         .task-reward { font-size: 11px; color: #0f0; }
         .task-btn { background: #0f0; color: #000; border: none; padding: 6px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
-        
         .lang-btn { background: #333; color: #0f0; border: 1px solid #0f0; padding: 12px 20px; margin: 10px 0; cursor: pointer; border-radius: 10px; font-weight: bold; width: 100%; }
         #ad-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
-        
-        /* Стили для ссылки реферала */
         #ref-link-display { background: #000; padding: 8px; border-radius: 5px; font-size: 10px; color: #0f0; margin: 10px 0; word-break: break-all; border: 1px dashed #444; }
     </style>
 </head>
@@ -135,8 +85,8 @@
 
 <div id="friends-modal" class="modal">
     <div class="modal-content">
-        <h3 id="txt-friends-title">ДРУЗЬЯ</h3>
-        <p style="font-size: 11px; color: #ccc;">Приглашай друзей и получай бонусы!</p>
+        <h3 id="txt-friends-title">ДРУЗЬЯ (0)</h3>
+        <p style="font-size: 11px; color: #ccc;">Приглашай друзей и получай 10% от их сбора!</p>
         <div id="ref-link-display">Загрузка ссылки...</div>
         <button class="lang-btn" onclick="shareInvite()" style="background:#0088cc; border:none; color:#fff;">📢 ПРИГЛАСИТЬ</button>
         <button class="lang-btn" onclick="copyLink()">📋 КОПИРОВАТЬ</button>
@@ -157,14 +107,39 @@
 </div>
 
 <script>
-// Инициализация Telegram WebApp
+// --- КОНФИГУРАЦИЯ СЕРВЕРА ---
+// ЗАМЕНИ НА СВОЙ URL ОТ RENDER (например https://pepe-bot.onrender.com)
+const RENDER_URL = "https://pepe-pilot.onrender.com"; 
+
 const tg = window.Telegram.WebApp;
 tg.expand();
+const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : "guest";
 
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     manifestUrl: 'https://duhistiny6-source.github.io/pepe-pilot/tonconnect-manifest.json',
     buttonRootId: null
 });
+
+// Загрузка данных пользователя из БД
+async function loadUserData() {
+    try {
+        const response = await fetch(`${RENDER_URL}/api/user/${userId}`);
+        const data = await response.json();
+        frogMoney = data.balancePLT || 0;
+        document.getElementById('txt-friends-title').innerText = `ДРУЗЬЯ (${data.friendsCount || 0})`;
+        updateUI();
+    } catch (e) { console.error("Ошибка загрузки данных:", e); }
+}
+
+async function saveCollect(amount) {
+    try {
+        await fetch(`${RENDER_URL}/api/collect`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tgId: userId, amount: amount })
+        });
+    } catch (e) { console.error("Ошибка сохранения монет:", e); }
+}
 
 async function connectWallet() {
     try { await tonConnectUI.connectWallet(); alert("Кошелек успешно подключен!"); } catch (e) { console.error(e); }
@@ -175,15 +150,14 @@ function toggleModal(id) {
     m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
 }
 
-// Логика друзей
 function openFriends() {
     generateRefLink();
+    loadUserData(); // Обновить количество друзей
     toggleModal('friends-modal');
 }
 
 function generateRefLink() {
-    const botUsername = "YOUR_BOT_USERNAME"; // ЗАМЕНИ НА ЮЗЕРНЕЙМ СВОЕГО БОТА БЕЗ @
-    const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "guest";
+    const botUsername = "pepe_pilot_bot"; // ЗАМЕНИ НА РЕАЛЬНЫЙ ЮЗЕРНЕЙМ БОТА
     const link = `https://t.me/${botUsername}?start=ref${userId}`;
     document.getElementById('ref-link-display').innerText = link;
     return link;
@@ -280,7 +254,6 @@ function create() {
 
     this.input.on('pointerdown', (p) => {
         if (document.querySelector('.modal[style*="flex"]') || document.getElementById('ad-overlay').style.display === 'flex') return;
-
         if (p.y > 80 && p.y < config.height - 80 && !isLaunching && !isReturning && energy > 0) {
             isLaunching = true; energy--; if (energy <= 0) startRecovery(); updateUI();
         }
@@ -290,11 +263,11 @@ function create() {
         if (isLaunching && !caughtItem) {
             caughtItem = item; caughtItem.body.enable = false;
             if (caughtItem.pulse) caughtItem.pulse.stop();
-            playBeep(400, 0.08); 
-            isLaunching = false; isReturning = true;
+            playBeep(400, 0.08); isLaunching = false; isReturning = true;
         }
     });
     setInterval(tick, 1000);
+    loadUserData(); // Загрузка данных при старте
 }
 
 function spawn(scene) {
@@ -303,31 +276,13 @@ function spawn(scene) {
     let randomChance = Phaser.Math.Between(1, 100);
     let textureKey = (randomChance <= 60) ? 'pilot_coin' : 'usdt';
     let coin = targets.create(x, y, textureKey).setDepth(40);
-    
-    if (textureKey === 'pilot_coin') {
-        coin.setScale(0.10); 
-    } else {
-        coin.setScale(0.12); 
-    }
-    
-    coin.pulse = scene.tweens.add({ 
-        targets: coin, 
-        scale: textureKey === 'pilot_coin' ? 0.11 : 0.14, 
-        duration: 1000, 
-        yoyo: true, 
-        repeat: -1, 
-        ease: 'Sine.easeInOut' 
-    });
+    coin.setScale(textureKey === 'pilot_coin' ? 0.10 : 0.12);
+    coin.pulse = scene.tweens.add({ targets: coin, scale: textureKey === 'pilot_coin' ? 0.11 : 0.14, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 }
 
 function showValue(scene, val, isFrog) {
     let color = isFrog ? '#ffcc00' : '#0f0';
-    let txt = scene.add.text(plane.x, plane.y - 40, `+${val}`, { 
-        font: 'bold 28px Arial', 
-        fill: color, 
-        stroke: '#000', 
-        strokeThickness: 5 
-    }).setOrigin(0.5).setDepth(100);
+    let txt = scene.add.text(plane.x, plane.y - 40, `+${val}`, { font: 'bold 28px Arial', fill: color, stroke: '#000', strokeThickness: 5 }).setOrigin(0.5).setDepth(100);
     scene.tweens.add({ targets: txt, y: txt.y - 100, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
 }
 
@@ -345,22 +300,20 @@ function update() {
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
+                let amount = 0;
                 if (caughtItem.texture.key === 'pilot_coin') {
-                    frogMoney += FROG_VALUE;
-                    showValue(this.scene.scene, FROG_VALUE, true);
+                    amount = FROG_VALUE; frogMoney += amount; showValue(this.scene.scene, amount, true);
                 } else {
-                    money += USDT_VALUE;
-                    showValue(this.scene.scene, USDT_VALUE, false);
+                    amount = USDT_VALUE; money += amount; showValue(this.scene.scene, amount, false);
                 }
-                playBeep(900, 0.12); 
-                caughtItem.destroy(); caughtItem = null; spawn(this.scene.scene); updateUI();
+                saveCollect(amount); // СОХРАНЕНИЕ В БАЗУ
+                playBeep(900, 0.12); caughtItem.destroy(); caughtItem = null; spawn(this.scene.scene); updateUI();
             }
         }
     }
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
-
     let endX = startX + Math.sin(angle) * (distance - 30);
     let endY = startY + Math.cos(angle) * (distance - 30);
     rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
@@ -393,10 +346,7 @@ function startAd() {
     let c = 5;
     let i = setInterval(() => {
         c--; document.getElementById('ad-timer').innerText = `Осталось: ${c} сек.`;
-        if (c <= 0) { 
-            clearInterval(i); document.getElementById('ad-overlay').style.display = 'none'; 
-            energy = 100; recoveryTime = 0; updateUI(); 
-        }
+        if (c <= 0) { clearInterval(i); document.getElementById('ad-overlay').style.display = 'none'; energy = 100; recoveryTime = 0; updateUI(); }
     }, 1000);
 }
 function startRecovery() { recoveryTime = RECOVERY_DURATION; }
