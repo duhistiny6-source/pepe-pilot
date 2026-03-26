@@ -1,4 +1,4 @@
-const config = {
+    const config = {
     type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight,
     physics: { default: 'arcade' }, scene: { preload, create, update }
 };
@@ -84,13 +84,27 @@ function update() {
             isReturning = false;
             if (caughtItem) {
                 let amount = 0;
+                let coinType = '';
+                
+                // Исправлено: определяем тип и вызываем обновленную saveCollect
                 if (caughtItem.texture.key === 'pilot_coin') {
-                    amount = FROG_VALUE; window.frogMoney += amount; showValue(this.scene.scene, amount, true);
+                    amount = FROG_VALUE; 
+                    window.frogMoney += amount; 
+                    coinType = 'plt';
+                    showValue(this.scene.scene, amount, true);
                 } else {
-                    amount = USDT_VALUE; window.usdtMoney += amount; showValue(this.scene.scene, amount, false);
+                    amount = USDT_VALUE; 
+                    window.usdtMoney += amount; 
+                    coinType = 'usdt';
+                    showValue(this.scene.scene, amount, false);
                 }
-                saveCollect(amount); 
-                playBeep(900, 0.12); caughtItem.destroy(); caughtItem = null; spawn(this.scene.scene); updateUI();
+                
+                saveCollect(amount, coinType); 
+                playBeep(900, 0.12); 
+                caughtItem.destroy(); 
+                caughtItem = null; 
+                spawn(this.scene.scene); 
+                updateUI();
             }
         }
     }
@@ -104,6 +118,7 @@ function update() {
 }
 
 function updateUI() {
+    // Исправлено: отображение USDT с 4 знаками после запятой
     document.getElementById('money').innerText = window.usdtMoney.toFixed(4);
     document.getElementById('frog-money').innerText = window.frogMoney;
     document.getElementById('energy').innerText = window.energy;
