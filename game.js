@@ -1,4 +1,4 @@
-    const config = {
+const config = {
     type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight,
     physics: { default: 'arcade' }, scene: { preload, create, update }
 };
@@ -50,6 +50,8 @@ function create() {
         }
     });
     setInterval(tick, 1000);
+    
+    // Загружаем данные пользователя сразу при старте игры
     loadUserData(); 
 }
 
@@ -86,25 +88,24 @@ function update() {
                 let amount = 0;
                 let coinType = '';
                 
-                // Исправлено: определяем тип и вызываем обновленную saveCollect
+                // Определяем тип пойманного предмета
                 if (caughtItem.texture.key === 'pilot_coin') {
                     amount = FROG_VALUE; 
-                    window.frogMoney += amount; 
                     coinType = 'plt';
                     showValue(this.scene.scene, amount, true);
                 } else {
                     amount = USDT_VALUE; 
-                    window.usdtMoney += amount; 
                     coinType = 'usdt';
                     showValue(this.scene.scene, amount, false);
                 }
                 
+                // Отправляем на сервер для сохранения в БД
                 saveCollect(amount, coinType); 
+                
                 playBeep(900, 0.12); 
                 caughtItem.destroy(); 
                 caughtItem = null; 
                 spawn(this.scene.scene); 
-                updateUI();
             }
         }
     }
@@ -118,10 +119,11 @@ function update() {
 }
 
 function updateUI() {
-    // Исправлено: отображение USDT с 4 знаками после запятой
+    // Отображаем USDT с 4 знаками, Лягушек — как целое число
     document.getElementById('money').innerText = window.usdtMoney.toFixed(4);
-    document.getElementById('frog-money').innerText = window.frogMoney;
+    document.getElementById('frog-money').innerText = Math.floor(window.frogMoney);
     document.getElementById('energy').innerText = window.energy;
+    
     const isOutOfEnergy = window.energy <= 0;
     document.getElementById('recovery-block').style.display = isOutOfEnergy ? 'flex' : 'none';
     document.getElementById('timer-display').style.display = isOutOfEnergy ? 'block' : 'none';
@@ -154,3 +156,5 @@ function startAd() {
     }, 1000);
 }
 function startRecovery() { window.recoveryTime = RECOVERY_DURATION; }
+
+ 
