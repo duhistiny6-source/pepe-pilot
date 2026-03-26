@@ -12,11 +12,11 @@ app.use(cors());
 app.use(express.json());
 const bot = new Telegraf(botToken);
 
-// Модель данных с поддержкой обеих валют
+// Модель данных с USDT
 const userSchema = new mongoose.Schema({
     tgId: { type: String, unique: true },
     balancePLT: { type: Number, default: 0 },
-    balanceUSDT: { type: Number, default: 0 },
+    balanceUSDT: { type: Number, default: 0 }, // Поле для USDT
     referredBy: { type: String, default: null },
     friendsCount: { type: Number, default: 0 }
 });
@@ -31,45 +31,34 @@ bot.start(async (ctx) => {
         user = await User.create({ tgId, referredBy: refId });
         if (refId) await User.findOneAndUpdate({ tgId: refId }, { $inc: { friendsCount: 1 } });
     }
-    ctx.reply('🚀 Летим! Собирай монеты.', 
+    ctx.reply('🚀 Pepe Pilot! Собирай PLT и USDT.', 
         Markup.inlineKeyboard([[Markup.button.webApp('Играть! 🎮', gameUrl)]])
     );
 });
 
-// Эндпоинт для сохранения
+// Сохранение результатов (PLT + USDT)
 app.post('/api/collect', async (req, res) => {
     const { tgId, amount, amountUSDT } = req.body;
-    
-    // Логирование в Render, чтобы вы видели, приходят ли USDT
-    console.log(`[LOG] Сохранение для ${tgId}: PLT=${amount}, USDT=${amountUSDT}`);
+    console.log(`[SAVE] User: ${tgId} | PLT: ${amount} | USDT: ${amountUSDT}`);
 
     try {
         const user = await User.findOne({ tgId });
         if (user) {
-            // Превращаем в числа и прибавляем
             user.balancePLT += (Number(amount) || 0);
-            user.balanceUSDT += (Number(amountUSDT) || 0);
+            user.balanceUSDT += (Number(amountUSDT) || 0); // Сохраняем USDT
             await user.save();
 
-            // Реферальный бонус 10% на обе валюты
             if (user.referredBy) {
                 await User.findOneAndUpdate(
                     { tgId: user.referredBy },
-                    { $inc: { 
-                        balancePLT: (Number(amount) || 0) * 0.1, 
-                        balanceUSDT: (Number(amountUSDT) || 0) * 0.1 
-                    }}
+                    { $inc: { balancePLT: (amount || 0) * 0.1, balanceUSDT: (amountUSDT || 0) * 0.1 } }
                 );
             }
         }
         res.json({ success: true });
-    } catch (e) {
-        console.error("Ошибка сохранения:", e);
-        res.status(500).json({ error: e.message });
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Эндпоинт для загрузки баланса в игру
 app.get('/api/user/:tgId', async (req, res) => {
     try {
         const user = await User.findOne({ tgId: req.params.tgId });
@@ -80,6 +69,5 @@ app.get('/api/user/:tgId', async (req, res) => {
 const PORT = process.env.PORT || 8080;
 mongoose.connect(MONGO_URI).then(() => {
     bot.launch();
-    app.listen(PORT, "0.0.0.0", () => console.log(`Работаем на порту ${PORT}`));
+    app.listen(PORT, "0.0.0.0", () => console.log(`Server on ${PORT}`));
 });
-        
