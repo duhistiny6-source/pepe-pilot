@@ -13,11 +13,11 @@ app.use(cors());
 app.use(express.json());
 const bot = new Telegraf(botToken);
 
-// --- МОДЕЛЬ ДАННЫХ (ИСПРАВЛЕНО: Добавлен balanceUSDT) ---
+// --- МОДЕЛЬ ДАННЫХ ---
 const userSchema = new mongoose.Schema({
     tgId: { type: String, unique: true },
     balancePLT: { type: Number, default: 0 },
-    balanceUSDT: { type: Number, default: 0 }, // Теперь USDT будут сохраняться
+    balanceUSDT: { type: Number, default: 0 }, // Поле для USDT
     referredBy: { type: String, default: null },
     friendsCount: { type: Number, default: 0 }
 });
@@ -34,62 +34,78 @@ bot.start(async (ctx) => {
         if (refId === tgId) refId = null;
 
         user = await User.create({ tgId, referredBy: refId });
-        
         if (refId) {
             await User.findOneAndUpdate({ tgId: refId }, { $inc: { friendsCount: 1 } });
         }
     }
 
-    ctx.reply('🚀 Добро пожаловать в Pepe Pilot!\n\nЗа каждого друга ты получаешь 10% от его заработка пожизненно!',
+    ctx.reply('🚀 Pepe Pilot запущен!\n\nПриглашай друзей через /ref и получай 10% от их сборов!',
         Markup.inlineKeyboard([[Markup.button.webApp('Играть! 🎮', gameUrl)]])
     );
 });
 
+// Команда для получения ссылки
+bot.command('ref', (ctx) => {
+    const refLink = `https://t.me/PepePilot_bot?start=ref${ctx.from.id}`; 
+    ctx.reply(`Твоя реферальная ссылка:\n${refLink}`);
+});
+
 // --- API ДЛЯ ИГРЫ ---
-// 1. Получить данные игрока (теперь возвращает и USDT)
+
+// 1. Получить данные игрока
 app.get('/api/user/:tgId', async (req, res) => {
     try {
         let user = await User.findOne({ tgId: req.params.tgId });
-        if (!user) user = { balancePLT: 0, balanceUSDT: 0, friendsCount: 0 };
-        res.json(user);
+        if (!user) {
+            user = await User.create({ tgId: req.params.tgId });
+        }
+        res.json({
+            balancePLT: user.balancePLT || 0,
+            balanceUSDT: user.balanceUSDT || 0,
+            friendsCount: user.friendsCount || 0
+        });
     } catch (e) { res.status(500).json(e); }
 });
 
-// 2. Сохранить улов PLT и USDT + 10% рефереру
+// 2. Сохранить монеты (PLT и USDT)
 app.post('/api/collect', async (req, res) => {
-    const { tgId, amount, amountUSDT } = req.body; // Принимаем оба типа монет
+    const { tgId, amount, amountUSDT } = req.body;
+    
+    // Лог для проверки в Render Logs
+    console.log(`[SAVE] User: ${tgId} | PLT: +${amount} | USDT: +${amountUSDT}`);
+
     try {
         const user = await User.findOne({ tgId });
         if (user) {
-            // Прибавляем PLT и USDT
-            user.balancePLT += (amount || 0);
-            user.balanceUSDT += (amountUSDT || 0);
+            // Прибавляем оба значения
+            user.balancePLT = (user.balancePLT || 0) + (Number(amount) || 0);
+            user.balanceUSDT = (user.balanceUSDT || 0) + (Number(amountUSDT) || 0);
             await user.save();
 
-            // Бонус рефереру (10% от обоих валют)
+            // Реферальный бонус 10%
             if (user.referredBy) {
-                const bonusPLT = (amount || 0) * 0.1;
-                const bonusUSDT = (amountUSDT || 0) * 0.1;
                 await User.findOneAndUpdate(
                     { tgId: user.referredBy }, 
-                    { $inc: { balancePLT: bonusPLT, balanceUSDT: bonusUSDT } }
+                    { $inc: { 
+                        balancePLT: (Number(amount) || 0) * 0.1, 
+                        balanceUSDT: (Number(amountUSDT) || 0) * 0.1 
+                    }}
                 );
             }
         }
         res.json({ success: true });
-    } catch (e) { res.status(500).json(e); }
+    } catch (e) { 
+        console.error("Save error:", e);
+        res.status(500).json(e); 
+    }
 });
 
-// --- ЗАПУСК (Настройки для Render) ---
+// --- ЗАПУСК ---
 const PORT = process.env.PORT || 8080; 
-
 mongoose.connect(MONGO_URI).then(() => {
     console.log("MongoDB connected!");
     bot.launch();
-    
     app.listen(PORT, "0.0.0.0", () => {
         console.log(`Server is running on port ${PORT}`);
     });
-}).catch(err => {
-    console.error("MongoDB connection error:", err);
 });
