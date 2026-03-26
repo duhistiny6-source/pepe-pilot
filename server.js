@@ -3,83 +3,80 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
-// 1. Настройки
+// --- НАСТРОЙКИ ---
 const botToken = '8463237050:AAHzx0IFrrqaJ14mxj17xmhJIOr3P7eLfQ0';
 const gameUrl = 'https://duhistiny6-source.github.io/pepe-pilot/'; 
-const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://admin:pass@cluster.mongodb.net/pepegame"; // Сюда потом вставишь ссылку из Atlas
+const MONGO_URI = "mongodb+srv://duhistiny6_db_user:N8ub2EJ8UMTFACaM@cluster0.wegdg5f.mongodb.net/pepe_game?retryWrites=true&w=majority";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-
 const bot = new Telegraf(botToken);
 
-// 2. Модель данных (База данных)
+// --- МОДЕЛЬ ДАННЫХ ---
 const userSchema = new mongoose.Schema({
     tgId: { type: String, unique: true },
     balancePLT: { type: Number, default: 0 },
     referredBy: { type: String, default: null },
-    friends: [{ type: String }]
+    friendsCount: { type: Number, default: 0 }
 });
 const User = mongoose.model('User', userSchema);
 
-// 3. Логика бота (Команда /start с рефералом)
+// --- ЛОГИКА БОТА ---
 bot.start(async (ctx) => {
-    const startPayload = ctx.payload; // Это то, что идет после ?start=
     const tgId = ctx.from.id.toString();
+    const startPayload = ctx.payload; // параметр из ссылки ?start=refXXX
 
-    // Если зашел по рефералке (например /start ref123)
-    if (startPayload && startPayload.startsWith('ref')) {
-        const referrerId = startPayload.replace('ref', '');
+    let user = await User.findOne({ tgId });
+    if (!user) {
+        let refId = (startPayload && startPayload.startsWith('ref')) ? startPayload.replace('ref', '') : null;
+        // Нельзя пригласить самого себя
+        if (refId === tgId) refId = null;
+
+        user = await User.create({ tgId, referredBy: refId });
         
-        let user = await User.findOne({ tgId });
-        if (!user) {
-            // Создаем нового игрока и связываем с пригласителем
-            await User.create({ tgId, referredBy: referrerId });
-            await User.findOneAndUpdate({ tgId: referrerId }, { $addToSet: { friends: tgId } });
+        if (refId) {
+            await User.findOneAndUpdate({ tgId: refId }, { $inc: { friendsCount: 1 } });
         }
     }
 
-    ctx.reply(
-        'Привет! Pepe Pilot готов к взлету. Собирай PLT и приглашай друзей (10% бонус)! 🚀',
-        Markup.inlineKeyboard([
-            [Markup.button.webApp('Лететь! 🚀', gameUrl)]
-        ])
+    ctx.reply('🚀 Добро пожаловать в Pepe Pilot!\n\nЗа каждого друга ты получаешь 10% от его заработка пожизненно!',
+        Markup.inlineKeyboard([[Markup.button.webApp('Играть! 🎮', gameUrl)]])
     );
 });
 
-// 4. API для Игры (Сохранение баланса)
+// --- API ДЛЯ ИГРЫ ---
+// 1. Получить данные игрока при входе
+app.get('/api/user/:tgId', async (req, res) => {
+    try {
+        let user = await User.findOne({ tgId: req.params.tgId });
+        if (!user) user = { balancePLT: 0, friendsCount: 0 };
+        res.json(user);
+    } catch (e) { res.status(500).json(e); }
+});
+
+// 2. Сохранить улов + 10% рефереру
 app.post('/api/collect', async (req, res) => {
     const { tgId, amount } = req.body;
-    const user = await User.findOne({ tgId });
+    try {
+        const user = await User.findOne({ tgId });
+        if (user) {
+            user.balancePLT += amount;
+            await user.save();
 
-    if (user) {
-        user.balancePLT += amount;
-        await user.save();
-
-        // Начисляем 10% пригласившему (Реферальный бонус)
-        if (user.referredBy) {
-            const bonus = amount * 0.1;
-            await User.findOneAndUpdate({ tgId: user.referredBy }, { $inc: { balancePLT: bonus } });
+            if (user.referredBy) {
+                const bonus = amount * 0.1;
+                await User.findOneAndUpdate({ tgId: user.referredBy }, { $inc: { balancePLT: bonus } });
+            }
         }
-    }
-    res.json({ success: true });
+        res.json({ success: true });
+    } catch (e) { res.status(500).json(e); }
 });
 
-// Получение данных игрока (Баланс и друзья)
-app.get('/api/user/:tgId', async (req, res) => {
-    const user = await User.findOne({ tgId: req.params.tgId });
-    if (user) {
-        res.json({ balance: user.balancePLT, friendsCount: user.friends.length });
-    } else {
-        res.json({ balance: 0, friendsCount: 0 });
-    }
-});
-
-// 5. Запуск всего вместе
+// --- ЗАПУСК ---
 const PORT = process.env.PORT || 8080;
 mongoose.connect(MONGO_URI).then(() => {
-    console.log('База данных подключена');
+    console.log("MongoDB connected!");
     bot.launch();
-    app.listen(PORT, () => console.log(`Сервер запущен на порту ${PORT}`));
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 });
