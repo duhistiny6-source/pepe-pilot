@@ -1,4 +1,4 @@
-const config = {
+ const config = {
     type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight,
     physics: { default: 'arcade' }, scene: { preload, create, update }
 };
@@ -17,8 +17,9 @@ function preload() {
 
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
-    
-    try { bgMusic = this.sound.add('theme', { volume: 0.05, loop: true }); } catch (e) {}
+    try { 
+        bgMusic = this.sound.add('theme', { volume: 0.05, loop: true }); 
+    } catch (e) {}
     this.input.once('pointerdown', () => { if (bgMusic && !bgMusic.isPlaying) bgMusic.play(); });
 
     targets = this.physics.add.group();
@@ -39,7 +40,8 @@ function create() {
         if (isLaunching && !caughtItem) {
             caughtItem = item; 
             caughtItem.body.enable = false;
-            playBeep(450, 0.1); // ЗВУК ПРИ ЗАХВАТЕ
+            if (caughtItem.pulse) caughtItem.pulse.stop();
+            if (window.playBeep) window.playBeep(450, 0.1); 
             isLaunching = false; isReturning = true;
         }
     });
@@ -54,17 +56,12 @@ function spawn(scene) {
     coin.pulse = scene.tweens.add({ targets: coin, scale: type === 'pilot_coin' ? 0.12 : 0.14, duration: 1000, yoyo: true, repeat: -1 });
 }
 
-// ВОССТАНОВЛЕННЫЕ ЦИФРЫ ПРИ УДАРЕ
 function showValue(scene, val, isFrog) {
     let color = isFrog ? '#ffcc00' : '#00ff00';
     let txt = scene.add.text(plane.x, plane.y - 50, `+${val}`, { 
-        font: 'bold 30px Arial', fill: color, stroke: '#000', strokeThickness: 4 
+        font: 'bold 32px Arial', fill: color, stroke: '#000', strokeThickness: 5 
     }).setOrigin(0.5).setDepth(100);
-    
-    scene.tweens.add({
-        targets: txt, y: txt.y - 80, alpha: 0, duration: 1000,
-        onComplete: () => txt.destroy()
-    });
+    scene.tweens.add({ targets: txt, y: txt.y - 100, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
 }
 
 function update() {
@@ -72,24 +69,21 @@ function update() {
     let startX = plane.x - 5; let startY = plane.y + 15; 
 
     if (!isLaunching && !isReturning) {
-        angle += swingSpeed; 
-        if (angle > 0.7 || angle < -0.7) swingSpeed *= -1;
+        angle += swingSpeed; if (angle > 0.7 || angle < -0.7) swingSpeed *= -1;
         distance = 25;
     } else if (isLaunching) {
-        distance += 15; // Скорость вниз (быстрая)
+        distance += 15; 
         if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        distance -= 7; // МЕДЛЕННЫЙ ПОДЪЕМ (как ты просил)
+        distance -= 6; // МЕДЛЕННЫЙ ПОДЪЕМ ТУТ
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
-                let type = (caughtItem.texture.key === 'pilot_coin') ? 'plt' : 'usdt';
-                let amount = (type === 'plt') ? 10 : 0.0005;
-                
-                showValue(this, amount, (type === 'plt')); // ПОКАЗ ЦИФР
-                playBeep(850, 0.1); // ЗВУК ПРИ УДАРЕ ОБ САМОЛЕТ
-                saveCollect(amount, type); 
-                
+                let isPlt = (caughtItem.texture.key === 'pilot_coin');
+                let amount = isPlt ? 10 : 0.0005;
+                showValue(this, amount, isPlt); 
+                if (window.playBeep) window.playBeep(850, 0.1); 
+                saveCollect(amount, isPlt ? 'plt' : 'usdt'); 
                 caughtItem.destroy(); caughtItem = null; spawn(this);
             }
         }
@@ -97,16 +91,11 @@ function update() {
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
-    
     let endX = startX + Math.sin(angle) * (distance - 30);
     let endY = startY + Math.cos(angle) * (distance - 30);
     rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
-    
-    if (caughtItem) { 
-        caughtItem.x = hook.x; 
-        caughtItem.y = hook.y + 15; 
-        caughtItem.rotation = hook.rotation; 
-    }
+    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; caughtItem.rotation = hook.rotation; }
 }
+
+
  
-          
