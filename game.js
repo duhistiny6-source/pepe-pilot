@@ -18,6 +18,7 @@ function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
     targets = this.physics.add.group();
     for(let i = 0; i < 6; i++) spawn(this);
+    
     rope = this.add.graphics().setDepth(5);
     hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(60, 60); 
     this.physics.add.existing(hook);
@@ -25,14 +26,18 @@ function create() {
 
     this.input.on('pointerdown', () => {
         if (!isLaunching && !isReturning && window.energy > 0) {
-            isLaunching = true; window.energy--; updateUI();
+            isLaunching = true; 
+            window.energy--; 
+            updateUI(); // Вызов из api.js
         }
     });
 
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
-            caughtItem = item; caughtItem.body.enable = false;
-            isLaunching = false; isReturning = true;
+            caughtItem = item; 
+            caughtItem.body.enable = false;
+            isLaunching = false; 
+            isReturning = true;
         }
     });
 }
@@ -46,26 +51,36 @@ function spawn(scene) {
 
 function update() {
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
+    const startX = plane.x - 5;
+    const startY = plane.y + 15;
+
     if (!isLaunching && !isReturning) {
-        angle += swingSpeed; if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
+        angle += swingSpeed; 
+        if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
     } else if (isLaunching) {
-        distance += 16; if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
+        distance += 16; 
+        if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        distance -= 10; 
+        distance -= 12; 
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
-                const type = (caughtItem.texture.key === 'pilot_coin') ? 'plt' : 'usdt';
-                const amount = (type === 'plt') ? 10 : 0.0005;
+                const isPlt = (caughtItem.texture.key === 'pilot_coin');
+                const type = isPlt ? 'plt' : 'usdt';
+                const amount = isPlt ? 10 : 0.0005;
                 
-                saveCollect(amount, type); // Вызов нашей функции из api.js
+                // Вызов функции сохранения из api.js
+                saveCollect(amount, type);
                 
-                caughtItem.destroy(); caughtItem = null; spawn(this);
+                caughtItem.destroy(); 
+                caughtItem = null; 
+                spawn(this);
             }
         }
     }
-    hook.x = (plane.x - 5) + Math.sin(angle) * distance;
-    hook.y = (plane.y + 15) + Math.cos(angle) * distance;
-    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(plane.x - 5, plane.y + 15, hook.x, hook.y);
+    
+    hook.x = startX + Math.sin(angle) * distance;
+    hook.y = startY + Math.cos(angle) * distance;
+    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, hook.x, hook.y);
     if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; }
 }
