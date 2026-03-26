@@ -25,12 +25,11 @@ const User = mongoose.model('User', userSchema);
 // --- ЛОГИКА БОТА ---
 bot.start(async (ctx) => {
     const tgId = ctx.from.id.toString();
-    const startPayload = ctx.payload; // параметр из ссылки ?start=refXXX
+    const startPayload = ctx.payload; 
 
     let user = await User.findOne({ tgId });
     if (!user) {
         let refId = (startPayload && startPayload.startsWith('ref')) ? startPayload.replace('ref', '') : null;
-        // Нельзя пригласить самого себя
         if (refId === tgId) refId = null;
 
         user = await User.create({ tgId, referredBy: refId });
@@ -46,7 +45,6 @@ bot.start(async (ctx) => {
 });
 
 // --- API ДЛЯ ИГРЫ ---
-// 1. Получить данные игрока при входе
 app.get('/api/user/:tgId', async (req, res) => {
     try {
         let user = await User.findOne({ tgId: req.params.tgId });
@@ -55,7 +53,6 @@ app.get('/api/user/:tgId', async (req, res) => {
     } catch (e) { res.status(500).json(e); }
 });
 
-// 2. Сохранить улов + 10% рефереру
 app.post('/api/collect', async (req, res) => {
     const { tgId, amount } = req.body;
     try {
@@ -73,10 +70,17 @@ app.post('/api/collect', async (req, res) => {
     } catch (e) { res.status(500).json(e); }
 });
 
-// --- ЗАПУСК ---
-const PORT = process.env.PORT || 8080;
+// --- ЗАПУСК (ИСПРАВЛЕНО ДЛЯ RENDER) ---
+const PORT = process.env.PORT || 8080; 
+
 mongoose.connect(MONGO_URI).then(() => {
     console.log("MongoDB connected!");
     bot.launch();
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    
+    // ВАЖНО: Добавлен адрес "0.0.0.0", чтобы Render пропустил трафик
+    app.listen(PORT, "0.0.0.0", () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
+}).catch(err => {
+    console.error("MongoDB connection error:", err);
 });
