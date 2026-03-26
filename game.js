@@ -18,9 +18,9 @@ function preload() {
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
     
-    // УЛЬТРА-ТИХАЯ МУЗЫКА (0.01)
+    // МУЗЫКА: Ультра-тихий режим (0.005)
     try { 
-        bgMusic = this.sound.add('theme', { volume: 0.01, loop: true }); 
+        bgMusic = this.sound.add('theme', { volume: 0.005, loop: true }); 
     } catch (e) {}
     
     this.input.once('pointerdown', () => { if (bgMusic && !bgMusic.isPlaying) bgMusic.play(); });
@@ -44,7 +44,10 @@ function create() {
             caughtItem = item; 
             caughtItem.body.enable = false;
             if (caughtItem.pulse) caughtItem.pulse.stop();
-            if (window.playBeep) window.playBeep(450, 0.1); 
+            
+            // СИГНАЛ ПРИ ЛОВЛЕ
+            if (typeof window.playBeep === 'function') window.playBeep(450, 0.1); 
+            
             isLaunching = false; isReturning = true;
         }
     });
@@ -78,14 +81,18 @@ function update() {
         distance += 15; 
         if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        distance -= 6; // Плавный подъем
+        distance -= 6; 
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
                 let isPlt = (caughtItem.texture.key === 'pilot_coin');
                 let amount = isPlt ? 10 : 0.0005;
+                
                 showValue(this, amount, isPlt); 
-                if (window.playBeep) window.playBeep(850, 0.1); 
+                
+                // СИГНАЛ ПРИ УДАРЕ
+                if (typeof window.playBeep === 'function') window.playBeep(850, 0.1); 
+                
                 saveCollect(amount, isPlt ? 'plt' : 'usdt'); 
                 caughtItem.destroy(); caughtItem = null; spawn(this);
             }
@@ -99,4 +106,3 @@ function update() {
     rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
     if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; caughtItem.rotation = hook.rotation; }
 }
-    
