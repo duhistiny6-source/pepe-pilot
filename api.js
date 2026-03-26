@@ -7,50 +7,43 @@ window.frogMoney = 0;
 window.usdtMoney = 0;
 window.energy = 100;
 
-// ЗАГРУЗКА ИЗ БАЗЫ
+// Загрузка из базы данных
 async function loadUserData() {
     try {
         const response = await fetch(`${RENDER_URL}/api/user/${userId}`);
         const data = await response.json();
-        // Присваиваем значения из БД в глобальные переменные
         window.frogMoney = Number(data.balancePLT) || 0;
         window.usdtMoney = Number(data.balanceUSDT) || 0; 
         updateUI();
     } catch (e) { 
-        console.error("Ошибка загрузки данных из БД:", e); 
+        console.error("Ошибка базы данных:", e); 
         updateUI();
     }
 }
 
-// СОХРАНЕНИЕ В БАЗУ
+// Сохранение в базу данных
 async function saveCollect(amount, type) {
-    // 1. Сначала прибавляем визуально
     if (type === 'plt') window.frogMoney += amount;
     else window.usdtMoney += amount;
     updateUI();
 
-    // 2. Отправляем на сервер (Render -> MongoDB)
     try {
         await fetch(`${RENDER_URL}/api/collect`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ tgId: userId, amount: amount, type: type })
         });
-        console.log("Данные успешно сохранены в MongoDB");
-    } catch (e) { 
-        console.error("Ошибка сохранения на сервере:", e); 
-    }
+    } catch (e) { console.error("Не удалось сохранить в БД:", e); }
 }
 
 function updateUI() {
-    const usdtText = document.getElementById('money');
-    const frogText = document.getElementById('frog-money');
-    if (usdtText) usdtText.innerText = window.usdtMoney.toFixed(4);
-    if (frogText) frogText.innerText = Math.floor(window.frogMoney);
+    const u = document.getElementById('money');
+    const f = document.getElementById('frog-money');
+    if (u) u.innerText = window.usdtMoney.toFixed(4);
+    if (f) f.innerText = Math.floor(window.frogMoney);
     if (document.getElementById('energy')) document.getElementById('energy').innerText = window.energy;
 }
 
-// ЗВУКОВОЙ ДВИЖОК
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playBeep(freq, dur) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -58,7 +51,7 @@ function playBeep(freq, dur) {
     const gain = audioCtx.createGain();
     osc.connect(gain); gain.connect(audioCtx.destination);
     osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.01, audioCtx.currentTime); 
+    gain.gain.setValueAtTime(0.005, audioCtx.currentTime); // Тихий сигнал
     osc.start(); osc.stop(audioCtx.currentTime + dur);
 }
 
@@ -68,20 +61,18 @@ function toggleModal(id) {
 }
 
 function changeLanguage(lang) {
-    // Упрощенная логика смены языка для кнопок
     const isEn = (lang === 'en');
-    const navs = {
+    const labels = {
         'nav-shop': isEn ? 'SHOP' : 'МАГАЗИН',
         'nav-tasks': isEn ? 'TASKS' : 'ЗАДАНИЯ',
         'nav-friends': isEn ? 'FRIENDS' : 'ДРУЗЬЯ',
         'nav-wallet': isEn ? 'WALLET' : 'КОШЕЛЕК'
     };
-    for (let id in navs) {
+    for (let id in labels) {
         let el = document.getElementById(id);
-        if(el) el.innerText = navs[id];
+        if(el) el.innerText = labels[id];
     }
     toggleModal('settings-modal');
 }
 
-// Запускаем загрузку сразу
 loadUserData();
