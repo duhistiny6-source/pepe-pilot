@@ -6,12 +6,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ВСТАВЬ СВОЮ ССЫЛКУ ИЗ MONGODB ATLAS НИЖЕ
-const MONGO_URI = "mongodb+srv://твой_логин:твой_пароль@cluster.mongodb.net/myDatabase?retryWrites=true&w=majority";
+// ТВОЯ ССЫЛКА С ВСТАВЛЕННЫМ ПАРОЛЕМ:
+const MONGO_URI = "mongodb+srv://duhistiny6_db_user:0fsJo3M5NzKksZvV@cluster0.wegdg5f.mongodb.net/?appName=Cluster0";
 
 mongoose.connect(MONGO_URI)
-    .then(() => console.log("MongoDB подключена"))
-    .catch(err => console.error("Ошибка базы:", err));
+    .then(() => console.log("MongoDB подключена успешно!"))
+    .catch(err => console.error("Ошибка подключения к MongoDB:", err));
 
 const userSchema = new mongoose.Schema({
     tgId: { type: String, unique: true },
@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
-// Получение данных игрока
+// Получение данных игрока (загружает USDT и PLT)
 app.get('/api/user/:id', async (req, res) => {
     try {
         let user = await User.findOne({ tgId: req.params.id });
@@ -31,11 +31,13 @@ app.get('/api/user/:id', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Сохранение монет (то самое исправление)
+// Сохранение монет (теперь разделяет USDT и PLT)
 app.post('/api/collect', async (req, res) => {
     const { tgId, amount, type } = req.body;
     try {
+        // Если тип 'usdt', обновляем balanceUSDT, если нет — balancePLT
         let updateField = (type === 'usdt') ? { balanceUSDT: amount } : { balancePLT: amount };
+        
         const user = await User.findOneAndUpdate(
             { tgId: tgId },
             { $inc: updateField },
