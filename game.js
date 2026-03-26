@@ -1,6 +1,6 @@
 const USDT_VALUE = 0.0005;
 const FROG_VALUE = 10;
-let plane, hook, rope, targets, isLaunching = false, isReturning = false, caughtItem = null;
+let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, distance = 25, energy = 100;
 
 const config = {
@@ -15,16 +15,23 @@ function preload() {
     this.load.image('usdt', 'usdt.png');
     this.load.image('pilot_coin', 'logo..png');
     this.load.image('plane', 'pepe.png');
+    this.load.audio('theme', 'music.mp3');
 }
 
 function create() {
-    this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
+    this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
+    try { 
+        bgMusic = this.sound.add('theme', { volume: 0.1, loop: true }); 
+        this.input.once('pointerdown', () => { if(!bgMusic.isPlaying) bgMusic.play(); });
+    } catch(e){}
+
     targets = this.physics.add.group();
-    for(let i = 0; i < 6; i++) spawn(this);
+    for(let i=0; i<6; i++) spawn(this);
+
     rope = this.add.graphics().setDepth(5);
-    hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(60, 60); 
+    hook = this.add.sprite(0,0,'hook').setDepth(50).setDisplaySize(60,60);
     this.physics.add.existing(hook);
-    plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
+    plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.input.on('pointerdown', (p) => {
         if (document.querySelector('.modal[style*="flex"]')) return;
@@ -36,6 +43,7 @@ function create() {
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
             caughtItem = item; caughtItem.body.enable = false;
+            if (caughtItem.pulse) caughtItem.pulse.stop();
             isLaunching = false; isReturning = true;
         }
     });
@@ -46,17 +54,23 @@ function spawn(scene) {
     let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
     let key = (Phaser.Math.Between(1, 100) <= 60) ? 'pilot_coin' : 'usdt';
     let coin = targets.create(x, y, key).setDepth(40).setScale(key === 'pilot_coin' ? 0.1 : 0.12);
+    // ВОЗВРАЩАЕМ ПУЛЬСАЦИЮ
+    coin.pulse = scene.tweens.add({
+        targets: coin, scale: key === 'pilot_coin' ? 0.11 : 0.14,
+        duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
+    });
 }
 
 function update() {
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
-    let sX = plane.x - 5, sY = plane.y + 15; 
+    let sX = plane.x - 5, sY = plane.y + 15;
+
     if (!isLaunching && !isReturning) {
         angle += swingSpeed; if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
     } else if (isLaunching) {
         distance += 16; if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        distance -= 6; 
+        distance -= 6;
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
@@ -69,8 +83,9 @@ function update() {
         }
     }
     hook.x = sX + Math.sin(angle) * distance; hook.y = sY + Math.cos(angle) * distance; hook.rotation = -angle;
-    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(sX, sY, hook.x, hook.y);
-    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; }
+    // КРАСИВЫЙ ТРОС
+    rope.clear().lineStyle(2, 0xffffff, 0.5).lineBetween(sX, sY, hook.x, hook.y);
+    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; caughtItem.rotation = hook.rotation; }
 }
 
 function updateUI() {
