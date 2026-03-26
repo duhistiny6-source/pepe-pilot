@@ -12,7 +12,7 @@ window.frogMoney = 0;
 window.usdtMoney = 0;
 window.energy = 100;
 
-// --- 1. ЗАГРУЗКА И СОХРАНЕНИЕ ---
+// --- ЗАГРУЗКА И СОХРАНЕНИЕ ---
 async function loadUserData() {
     try {
         const response = await fetch(`${RENDER_URL}/api/user/${userId}`);
@@ -48,67 +48,63 @@ function updateUI() {
     if (document.getElementById('energy')) document.getElementById('energy').innerText = window.energy;
 }
 
-// --- 2. ФУНКЦИИ КНОПОК (Друзья, Кошелек, Настройки) ---
+// --- ФУНКЦИИ МЕНЮ ---
 
-// Открытие/Закрытие модальных окон
-function toggleModal(id) {
+// Универсальное открытие/закрытие модалок
+window.toggleModal = function(id) {
     const m = document.getElementById(id);
     if (m) {
         m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
-    } else {
-        console.error("Модальное окно не найдено: " + id);
     }
-}
+};
 
-// Кнопка Друзья
-function openFriends() {
-    loadUserData(); // Обновляем данные перед открытием
+// Друзья
+window.openFriends = function() {
+    loadUserData();
     toggleModal('friends-modal');
-}
+};
 
-// Кнопка Кошелек
-async function connectWallet() {
+// Кошелек
+window.connectWallet = async function() {
     try {
         await tonConnectUI.connectWallet();
     } catch (e) {
-        console.error("Ошибка кошелька:", e);
+        console.error("TON Connect Error:", e);
     }
-}
-
-// Перевод языка
-const translations = {
-    ru: { recovery: "Rec", ad: "📺 РЕКЛАМА", settings: "НАСТРОЙКИ", shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК", close: "Закрыть" },
-    en: { recovery: "Rec", ad: "📺 AD", settings: "SETTINGS", shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET", close: "Close" }
 };
 
-function changeLanguage(lang) {
+// --- ПЕРЕВОД ЯЗЫКА ---
+const translations = {
+    ru: { shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК", settings: "НАСТРОЙКИ", close: "Закрыть" },
+    en: { shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET", settings: "SETTINGS", close: "Close" }
+};
+
+window.changeLanguage = function(lang) {
     const t = translations[lang];
     if (!t) return;
 
-    // Массив ID и соответствующих текстов
-    const mapping = {
-        'txt-recovery': t.recovery,
-        'ad-button': t.ad,
-        'txt-settings-title': t.settings,
+    // Обновляем текст в навигации
+    const ids = {
         'nav-shop': t.shop,
         'nav-tasks': t.tasks,
         'nav-friends': t.friends,
         'nav-wallet': t.wallet,
+        'txt-settings-title': t.settings,
         'txt-close': t.close
     };
 
-    for (let id in mapping) {
+    for (let id in ids) {
         const el = document.getElementById(id);
-        if (el) el.innerText = mapping[id];
+        if (el) el.innerText = ids[id];
     }
-
-    // Закрываем окно настроек после выбора языка
+    
+    // Закрываем настройки после выбора
     toggleModal('settings-modal');
-}
+};
 
-// --- 3. ЗВУКИ ---
+// Звуки
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playBeep(freq, dur) {
+window.playBeep = function(freq, dur) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -116,7 +112,8 @@ function playBeep(freq, dur) {
     osc.frequency.value = freq;
     gain.gain.setValueAtTime(0.005, audioCtx.currentTime);
     osc.start(); osc.stop(audioCtx.currentTime + dur);
-}
+};
 
-// Запуск при старте
 loadUserData();
+
+ 
