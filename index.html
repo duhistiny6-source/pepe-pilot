@@ -3,24 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pepe Pilot</title>
+    <title>Pepe Pilot: Crypto Edition</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
-        body { margin:0; padding:0; overflow:hidden; background:#000; font-family: sans-serif; }
-        /* Верхняя панель */
-        #top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 40px; background: rgba(0, 0, 0, 0.6); z-index: 1000; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; box-sizing: border-box; }
+        body { margin:0; padding:0; overflow:hidden; background:#000; touch-action: none; font-family: sans-serif; }
+        #top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 40px; background: rgba(0, 0, 0, 0.5); z-index: 1000; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; box-sizing: border-box; }
         #energy-container { color: #0f0; font-weight: bold; font-size: 14px; }
-        #balance-container { display: flex; gap: 15px; color: #fff; font-size: 12px; }
-        .coin-icon { width: 14px; height: 14px; vertical-align: middle; }
-        /* Нижняя панель */
-        #nav-bar { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 90%; height: 60px; background: rgba(0, 0, 0, 0.9); border: 1px solid #333; border-radius: 15px; display: flex; justify-content: space-around; align-items: center; z-index: 2000; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; font-size: 8px; cursor: pointer; text-transform: uppercase; }
-        .nav-item span { font-size: 20px; margin-bottom: 2px; }
-        canvas { display: block; }
+        #balance-container { display: flex; gap: 15px; color: #fff; font-size: 12px; align-items: center; }
+        .coin-icon { width: 16px; height: 16px; }
+        #settings-btn { position: fixed; top: 7px; right: 10px; font-size: 20px; cursor: pointer; z-index: 1001; }
+        #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 90%; height: 60px; background: rgba(0, 0, 0, 0.9); border: 1px solid #333; border-radius: 15px; display: flex; justify-content: space-around; align-items: center; z-index: 2000; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; font-size: 9px; cursor: pointer; text-transform: uppercase; }
+        .nav-item span { font-size: 20px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 3000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
+        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 20px; border-radius: 20px; text-align: center; width: 80%; }
+        .lang-btn { background: #333; color: #0f0; border: 1px solid #0f0; padding: 10px; margin: 5px 0; width: 100%; border-radius: 10px; font-weight: bold; }
+        #ref-link-display { background: #000; padding: 10px; font-size: 10px; color: #0f0; margin: 10px 0; word-break: break-all; border: 1px dashed #444; }
     </style>
 </head>
 <body>
+
+<div id="settings-btn" onclick="toggleModal('settings-modal')">⚙️</div>
 
 <div id="top-bar">
     <div id="energy-container">⚡ <span id="energy">100</span></div>
@@ -30,15 +35,40 @@
     </div>
 </div>
 
+<div id="settings-modal" class="modal">
+    <div class="modal-content">
+        <h3>НАСТРОЙКИ</h3>
+        <button class="lang-btn" onclick="alert('RU выбран')">РУССКИЙ</button>
+        <button class="lang-btn" onclick="alert('EN selected')">ENGLISH</button>
+        <div style="margin-top:15px; color:#888;" onclick="toggleModal('settings-modal')">Закрыть</div>
+    </div>
+</div>
+
+<div id="tasks-modal" class="modal">
+    <div class="modal-content">
+        <h3>ЗАДАНИЯ</h3>
+        <p>Скоро здесь появятся новые задания!</p>
+        <div style="margin-top:15px; color:#888;" onclick="toggleModal('tasks-modal')">Закрыть</div>
+    </div>
+</div>
+
+<div id="friends-modal" class="modal">
+    <div class="modal-content">
+        <h3 id="txt-friends-title">ДРУЗЬЯ</h3>
+        <div id="ref-link-display">Загрузка...</div>
+        <button class="lang-btn" onclick="copyLink()">КОПИРОВАТЬ ССЫЛКУ</button>
+        <div style="margin-top:15px; color:#888;" onclick="toggleModal('friends-modal')">Закрыть</div>
+    </div>
+</div>
+
 <div id="nav-bar">
-    <div class="nav-item"><span>🛒</span><div>МАГАЗИН</div></div>
-    <div class="nav-item"><span>📜</span><div>ЗАДАНИЯ</div></div>
-    <div class="nav-item"><span>👥</span><div>ДРУЗЬЯ</div></div>
-    <div class="nav-item"><span>👛</span><div>КОШЕЛЕК</div></div>
+    <div class="nav-item" onclick="alert('Магазин в разработке')"><span>🛒</span><div>МАГАЗИН</div></div>
+    <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div>ЗАДАНИЯ</div></div>
+    <div class="nav-item" onclick="openFriends()"><span>👥</span><div>ДРУЗЬЯ</div></div>
+    <div class="nav-item" onclick="connectWallet()"><span>👛</span><div>КОШЕЛЕК</div></div>
 </div>
 
 <script src="api.js"></script>
 <script src="game.js"></script>
-
 </body>
 </html>
