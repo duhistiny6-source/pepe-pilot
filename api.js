@@ -3,7 +3,7 @@ const tg = window.Telegram.WebApp;
 tg.expand();
 const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : "guest";
 
-// Инициализация кошелька
+// Инициализация TON Connect (Кошелек)
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     manifestUrl: 'https://duhistiny6-source.github.io/pepe-pilot/tonconnect-manifest.json'
 });
@@ -12,7 +12,7 @@ window.frogMoney = 0;
 window.usdtMoney = 0;
 window.energy = 100;
 
-// Звуковой движок (исправлен)
+// --- ТИХИЙ ЗВУКОВОЙ ДВИЖОК ---
 let audioCtx;
 window.playBeep = function(freq, dur) {
     try {
@@ -23,14 +23,15 @@ window.playBeep = function(freq, dur) {
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        // Ультра-тихо (0.004)
+        gain.gain.setValueAtTime(0.004, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
         osc.start();
         osc.stop(audioCtx.currentTime + dur);
-    } catch (e) { console.log("Звук не поддерживается"); }
+    } catch (e) { console.log("Звук недоступен"); }
 };
 
-// Функции кнопок
+// --- ФУНКЦИИ КНОПОК ---
 window.toggleModal = function(id) {
     const m = document.getElementById(id);
     if (m) m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
@@ -38,8 +39,8 @@ window.toggleModal = function(id) {
 
 window.connectWallet = async function() {
     try {
-        await tonConnectUI.openModal(); // Открывает окно выбора кошелька
-    } catch (e) { alert("Ошибка кошелька: " + e); }
+        await tonConnectUI.openModal(); 
+    } catch (e) { console.error("Wallet error:", e); }
 };
 
 window.openFriends = function() {
@@ -64,6 +65,7 @@ window.changeLanguage = function(lang) {
     window.toggleModal('settings-modal');
 };
 
+// --- СВЯЗЬ С СЕРВЕРОМ ---
 async function loadUserData() {
     try {
         const res = await fetch(`${RENDER_URL}/api/user/${userId}`);
@@ -74,7 +76,7 @@ async function loadUserData() {
     } catch (e) { updateUI(); }
 }
 
-async function saveCollect(amount, type) {
+window.saveCollect = async function(amount, type) {
     if (type === 'plt') window.frogMoney += amount;
     else window.usdtMoney += amount;
     updateUI();
@@ -84,13 +86,17 @@ async function saveCollect(amount, type) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ tgId: userId, amount, type })
         });
-    } catch (e) {}
-}
+    } catch (e) { console.error("Save error"); }
+};
 
-function updateUI() {
-    document.getElementById('money').innerText = window.usdtMoney.toFixed(4);
-    document.getElementById('frog-money').innerText = Math.floor(window.frogMoney);
-    document.getElementById('energy').innerText = window.energy;
-}
+window.updateUI = function() {
+    const u = document.getElementById('money');
+    const f = document.getElementById('frog-money');
+    const e = document.getElementById('energy');
+    if (u) u.innerText = window.usdtMoney.toFixed(4);
+    if (f) f.innerText = Math.floor(window.frogMoney);
+    if (e) e.innerText = window.energy;
+};
 
 loadUserData();
+     
