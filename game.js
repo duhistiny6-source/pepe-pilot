@@ -16,39 +16,35 @@ function preload() {
 }
 
 function create() {
-    this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
+    this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
     
-    // МУЗЫКА: Ультра-тихий режим (0.005)
+    // Музыка: ЕЩЕ ТИШЕ (0.003)
     try { 
-        bgMusic = this.sound.add('theme', { volume: 0.005, loop: true }); 
+        bgMusic = this.sound.add('theme', { volume: 0.003, loop: true }); 
     } catch (e) {}
     
     this.input.once('pointerdown', () => { if (bgMusic && !bgMusic.isPlaying) bgMusic.play(); });
 
     targets = this.physics.add.group();
-    for(let i = 0; i < 6; i++) spawn(this);
+    for(let i=0; i<6; i++) spawn(this);
     
     rope = this.add.graphics().setDepth(5);
     hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(60, 60); 
     this.physics.add.existing(hook);
-    plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
-
-    this.input.on('pointerdown', () => {
-        if (!isLaunching && !isReturning && window.energy > 0) {
-            isLaunching = true; window.energy--; updateUI();
-        }
-    });
+    plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
             caughtItem = item; 
             caughtItem.body.enable = false;
-            if (caughtItem.pulse) caughtItem.pulse.stop();
-            
-            // СИГНАЛ ПРИ ЛОВЛЕ
-            if (typeof window.playBeep === 'function') window.playBeep(450, 0.1); 
-            
+            if (window.playBeep) window.playBeep(400, 0.1); // СИГНАЛ ЛОВЛИ
             isLaunching = false; isReturning = true;
+        }
+    });
+
+    this.input.on('pointerdown', () => {
+        if (!isLaunching && !isReturning && window.energy > 0) {
+            isLaunching = true; window.energy--; updateUI();
         }
     });
 }
@@ -59,15 +55,12 @@ function spawn(scene) {
     let type = (Phaser.Math.Between(1, 100) <= 60) ? 'pilot_coin' : 'usdt';
     let coin = targets.create(x, y, type).setDepth(40);
     coin.setScale(type === 'pilot_coin' ? 0.10 : 0.12);
-    coin.pulse = scene.tweens.add({ targets: coin, scale: type === 'pilot_coin' ? 0.12 : 0.14, duration: 1000, yoyo: true, repeat: -1 });
 }
 
 function showValue(scene, val, isFrog) {
     let color = isFrog ? '#ffcc00' : '#00ff00';
-    let txt = scene.add.text(plane.x, plane.y - 50, `+${val}`, { 
-        font: 'bold 32px Arial', fill: color, stroke: '#000', strokeThickness: 5 
-    }).setOrigin(0.5).setDepth(100);
-    scene.tweens.add({ targets: txt, y: txt.y - 100, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
+    let txt = scene.add.text(plane.x, plane.y - 50, `+${val}`, { font: 'bold 30px Arial', fill: color }).setOrigin(0.5).setDepth(100);
+    scene.tweens.add({ targets: txt, y: txt.y - 80, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
 }
 
 function update() {
@@ -81,18 +74,14 @@ function update() {
         distance += 15; 
         if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        distance -= 6; 
+        distance -= 6; // Медленный подъем
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
                 let isPlt = (caughtItem.texture.key === 'pilot_coin');
                 let amount = isPlt ? 10 : 0.0005;
-                
                 showValue(this, amount, isPlt); 
-                
-                // СИГНАЛ ПРИ УДАРЕ
-                if (typeof window.playBeep === 'function') window.playBeep(850, 0.1); 
-                
+                if (window.playBeep) window.playBeep(800, 0.1); // СИГНАЛ УДАРА
                 saveCollect(amount, isPlt ? 'plt' : 'usdt'); 
                 caughtItem.destroy(); caughtItem = null; spawn(this);
             }
@@ -101,8 +90,10 @@ function update() {
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
-    let endX = startX + Math.sin(angle) * (distance - 30);
-    let endY = startY + Math.cos(angle) * (distance - 30);
-    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
+    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, hook.x, hook.y);
     if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; caughtItem.rotation = hook.rotation; }
 }
+
+
+
+ 
