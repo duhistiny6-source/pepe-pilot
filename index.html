@@ -14,19 +14,24 @@
         #balance-container { width: 100%; display: flex; align-items: center; justify-content: center; gap: 15px; color: #fff; font-size: 11px; }
         .balance-item { display: flex; align-items: center; gap: 4px; }
         .coin-icon { width: 14px; height: 14px; }
-        #settings-btn { position: fixed; top: 7px; right: 10px; font-size: 18px; cursor: pointer; z-index: 1001; opacity: 0.8; color: #fff; }
-        #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 85%; height: 50px; background: rgba(0, 0, 0, 0.9); border: 1px solid #333; border-radius: 12px; display: flex; justify-content: space-around; align-items: center; z-index: 2000; }
+        #recovery-block { display: none; pointer-events: auto; position: fixed; top: 40px; left: 12px; z-index: 1001; flex-direction: column; gap: 4px; align-items: flex-start; }
+        #timer-display { color: #ff3333; font-size: 10px; text-shadow: 1px 1px 1px #000; display: none; }
+        #ad-button { background: #ffcc00; color: #000; border: none; padding: 2px 8px; font-size: 10px; font-weight: bold; border-radius: 4px; cursor: pointer; display: none; }
+        #settings-btn { position: fixed; top: 7px; right: 10px; font-size: 18px; cursor: pointer; z-index: 1001; opacity: 0.8; color: white; }
+        #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 85%; height: 50px; background: rgba(0, 0, 0, 0.9); border: 1px solid #333; border-radius: 12px; display: flex; justify-content: space-around; align-items: center; z-index: 200; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; font-weight: bold; flex: 1; opacity: 0.9; cursor: pointer; }
         .nav-item span { font-size: 18px; }
         .nav-text { font-size: 8px; margin-top: 1px; color: #bbb; text-transform: uppercase; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 3000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
         .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 280px; max-width: 90%; }
         .task-item { background: #222; border: 1px solid #444; border-radius: 10px; padding: 10px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+        .task-info { text-align: left; }
+        .task-title { font-size: 13px; font-weight: bold; color: #fff; }
+        .task-reward { font-size: 11px; color: #0f0; }
         .task-btn { background: #0f0; color: #000; border: none; padding: 6px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
         .lang-btn { background: #333; color: #0f0; border: 1px solid #0f0; padding: 12px 20px; margin: 10px 0; cursor: pointer; border-radius: 10px; font-weight: bold; width: 100%; }
+        #ad-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
         #ref-link-display { background: #000; padding: 8px; border-radius: 5px; font-size: 10px; color: #0f0; margin: 10px 0; word-break: break-all; border: 1px dashed #444; }
-        #recovery-block { display: none; position: fixed; top: 40px; left: 12px; z-index: 1001; flex-direction: column; gap: 4px; }
-        #timer-display { color: #ff3333; font-size: 10px; text-shadow: 1px 1px 1px #000; }
     </style>
 </head>
 <body>
@@ -37,29 +42,42 @@
     <div id="energy-container">⚡ <span id="energy">100</span></div>
     <div id="balance-container">
         <div class="balance-item"><span>USDT:</span> <span id="money" style="color:#0f0">0.0000</span></div>
-        <div class="balance-item"><img src="logo..png" class="coin-icon"> <span>PLT:</span> <span id="frog-money" style="color:#ffcc00">0</span></div>
+        <div class="balance-item">
+            <img src="logo..png" class="coin-icon"> <span>PLT:</span> <span id="frog-money" style="color:#ffcc00">0</span>
+        </div>
     </div>
 </div>
 
 <div id="recovery-block">
-    <div id="timer-display">REC: <span id="time-left">02:00:00</span></div>
+    <button id="ad-button" onclick="startAd()">📺 РЕКЛАМА</button>
+    <div id="timer-display"><span id="txt-recovery">Rec</span>: <span id="time-left">02:00:00</span></div>
 </div>
 
 <div id="settings-modal" class="modal">
     <div class="modal-content">
-        <h3>НАСТРОЙКИ</h3>
-        <button class="lang-btn" onclick="alert('RU')">РУССКИЙ</button>
-        <button class="lang-btn" onclick="alert('EN')">ENGLISH</button>
-        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('settings-modal')">Закрыть</div>
+        <h3 id="txt-settings-title">НАСТРОЙКИ</h3>
+        <button class="lang-btn" onclick="changeLanguage('ru')">РУССКИЙ</button>
+        <button class="lang-btn" onclick="changeLanguage('en')">ENGLISH</button>
+        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('settings-modal')" id="txt-close">Закрыть</div>
     </div>
 </div>
 
 <div id="tasks-modal" class="modal">
     <div class="modal-content">
-        <h3>ЗАДАНИЯ</h3>
+        <h3 id="txt-tasks-title">ЗАДАНИЯ</h3>
         <div class="task-item">
-            <div style="text-align:left;"><div style="font-size:13px;">Подписаться на канал</div><div style="color:#0f0; font-size:11px;">+100 ⚡</div></div>
-            <button class="task-btn" onclick="window.open('https://t.me/your_channel')">GO</button>
+            <div class="task-info">
+                <div class="task-title">Посмотреть рекламу</div>
+                <div class="task-reward">+100 ⚡ Энергии</div>
+            </div>
+            <button class="task-btn" onclick="doAdTask()">📺 СМОТРЕТЬ</button>
+        </div>
+        <div class="task-item">
+            <div class="task-info">
+                <div class="task-title">Подписаться на канал</div>
+                <div class="task-reward">+100 ⚡ Энергии</div>
+            </div>
+            <button class="task-btn" onclick="doTask('https://t.me/your_channel', 100)">GO</button>
         </div>
         <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('tasks-modal')">Закрыть</div>
     </div>
@@ -68,21 +86,28 @@
 <div id="friends-modal" class="modal">
     <div class="modal-content">
         <h3 id="txt-friends-title">ДРУЗЬЯ (0)</h3>
-        <p style="font-size: 11px; color: #ccc;">Получай 10% от сбора друзей!</p>
-        <div id="ref-link-display">Загрузка...</div>
-        <button class="lang-btn" onclick="copyLink()" style="background:#0f0; color:#000;">КОПИРОВАТЬ</button>
+        <p style="font-size: 11px; color: #ccc;">Приглашай друзей и получай 10% от их сбора!</p>
+        <div id="ref-link-display">Загрузка ссылки...</div>
+        <button class="lang-btn" onclick="shareInvite()" style="background:#0088cc; border:none; color:#fff;">📢 ПРИГЛАСИТЬ</button>
+        <button class="lang-btn" onclick="copyLink()">📋 КОПИРОВАТЬ</button>
         <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('friends-modal')">Закрыть</div>
     </div>
 </div>
 
+<div id="ad-overlay">
+    <h2 id="txt-ad-watching">СМОТРИМ РОЛИК...</h2>
+    <p id="ad-timer">Осталось: 5 сек.</p>
+</div>
+
 <div id="nav-bar">
-    <div class="nav-item" onclick="alert('Магазин скоро!')"><span>🛒</span><div class="nav-text">МАГАЗИН</div></div>
-    <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text">ЗАДАНИЯ</div></div>
-    <div class="nav-item" onclick="openFriends()"><span>👥</span><div class="nav-text">ДРУЗЬЯ</div></div>
-    <div class="nav-item" onclick="connectWallet()"><span>👛</span><div class="nav-text">КОШЕЛЕК</div></div>
+    <div class="nav-item"><span>🛒</span><div class="nav-text" id="nav-shop">МАГАЗИН</div></div>
+    <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text" id="nav-tasks">ЗАДАНИЯ</div></div>
+    <div class="nav-item" onclick="openFriends()"><span>👥</span><div class="nav-text" id="nav-friends">ДРУЗЬЯ</div></div>
+    <div class="nav-item" onclick="connectWallet()"><span>👛</span><div class="nav-text" id="nav-wallet">КОШЕЛЕК</div></div>
 </div>
 
 <script src="api.js"></script>
 <script src="game.js"></script>
+
 </body>
 </html>
