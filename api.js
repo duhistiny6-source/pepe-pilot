@@ -13,48 +13,70 @@ window.usdtMoney = 0;
 window.energy = 100;
 window.recoveryTime = 0;
 
+// Функция обновления текста на экране
+function updateUI() {
+    // Проверяем наличие элементов, чтобы не было ошибок в консоли
+    const usdtText = document.getElementById('money');
+    const frogText = document.getElementById('frog-money');
+    const energyText = document.getElementById('energy');
+
+    if (usdtText) usdtText.innerText = (window.usdtMoney || 0).toFixed(4);
+    if (frogText) frogText.innerText = Math.floor(window.frogMoney || 0);
+    if (energyText) energyText.innerText = window.energy;
+}
+
 async function loadUserData() {
     try {
         const response = await fetch(`${RENDER_URL}/api/user/${userId}`);
+        if (!response.ok) throw new Error('Сеть не ок');
         const data = await response.json();
+        
         window.frogMoney = data.balancePLT || 0;
         window.usdtMoney = data.balanceUSDT || 0; 
         updateUI();
-    } catch (e) { console.error("Ошибка загрузки:", e); }
+    } catch (e) { 
+        console.error("Ошибка загрузки данных:", e);
+        updateUI(); // Показываем нули, если сервер не ответил
+    }
 }
 
 async function saveCollect(amount, type) {
+    // Сначала обновляем локально для мгновенного эффекта
+    if (type === 'plt') window.frogMoney += amount;
+    else window.usdtMoney += amount;
+    updateUI();
+
     try {
-        const response = await fetch(`${RENDER_URL}/api/collect`, {
+        await fetch(`${RENDER_URL}/api/collect`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ tgId: userId, amount: amount, type: type })
         });
-        const data = await response.json();
-        window.frogMoney = data.balancePLT;
-        window.usdtMoney = data.balanceUSDT;
-        updateUI();
     } catch (e) { console.error("Ошибка сохранения:", e); }
 }
 
-// --- ИСПРАВЛЕННЫЙ ПЕРЕВОД ---
+// --- ПЕРЕВОД ---
 const translations = {
-    ru: { recovery: "Rec", ad_btn: "📺 РЕКЛАМА", settings: "НАСТРОЙКИ", close: "Закрыть", watching: "СМОТРИМ...", left: "Осталось", shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК" },
-    en: { recovery: "Rec", ad_btn: "📺 AD", settings: "SETTINGS", close: "Close", watching: "WATCHING...", left: "Left", shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET" }
+    ru: { recovery: "Rec", ad_btn: "📺 РЕКЛАМА", settings: "НАСТРОЙКИ", close: "Закрыть", shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК" },
+    en: { recovery: "Rec", ad_btn: "📺 AD", settings: "SETTINGS", close: "Close", shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET" }
 };
 
 function changeLanguage(lang) {
     const t = translations[lang];
     if(!t) return;
-    document.getElementById('txt-recovery').innerText = t.recovery;
-    document.getElementById('ad-button').innerText = t.ad_btn;
-    document.getElementById('txt-settings-title').innerText = t.settings;
-    document.getElementById('txt-close').innerText = t.close;
-    document.getElementById('nav-shop').innerText = t.shop;
-    document.getElementById('nav-tasks').innerText = t.tasks;
-    document.getElementById('nav-friends').innerText = t.friends;
-    document.getElementById('nav-wallet').innerText = t.wallet;
-    toggleModal('settings-modal'); // Закрываем после выбора
+    // Обновляем текст кнопок
+    try {
+        document.getElementById('txt-recovery').innerText = t.recovery;
+        document.getElementById('ad-button').innerText = t.ad_btn;
+        document.getElementById('txt-settings-title').innerText = t.settings;
+        document.getElementById('txt-close').innerText = t.close;
+        document.getElementById('nav-shop').innerText = t.shop;
+        document.getElementById('nav-tasks').innerText = t.tasks;
+        document.getElementById('nav-friends').innerText = t.friends;
+        document.getElementById('nav-wallet').innerText = t.wallet;
+    } catch(e) { console.log("Некоторые элементы перевода не найдены"); }
+    
+    toggleModal('settings-modal'); 
 }
 
 function toggleModal(id) {
@@ -64,15 +86,6 @@ function toggleModal(id) {
 
 function openFriends() { toggleModal('friends-modal'); loadUserData(); }
 
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playBeep(freq, dur) {
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.005, audioCtx.currentTime); 
-    osc.start(); osc.stop(audioCtx.currentTime + dur);
-}
-
+// Запуск при старте
 loadUserData();
+
