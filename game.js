@@ -4,7 +4,9 @@ const config = {
 };
 const game = new Phaser.Game(config);
 let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.025, distance = 25;
+let angle = 0;
+let swingSpeed = 0.018; // МЕДЛЕННЕЕ КАЧАНИЕ (было 0.025)
+let distance = 25;
 
 function preload() {
     this.load.image('sky', 'pg.jpeg');
@@ -18,7 +20,7 @@ function preload() {
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
     
-    // Музыка: ЕЩЕ ТИШЕ (0.003)
+    // Музыка: Ультра-тихо (0.003)
     try { 
         bgMusic = this.sound.add('theme', { volume: 0.003, loop: true }); 
     } catch (e) {}
@@ -44,7 +46,9 @@ function create() {
 
     this.input.on('pointerdown', () => {
         if (!isLaunching && !isReturning && window.energy > 0) {
-            isLaunching = true; window.energy--; updateUI();
+            isLaunching = true; 
+            window.energy--; 
+            if (typeof updateUI === 'function') updateUI();
         }
     });
 }
@@ -68,13 +72,15 @@ function update() {
     let startX = plane.x - 5; let startY = plane.y + 15; 
 
     if (!isLaunching && !isReturning) {
-        angle += swingSpeed; if (angle > 0.7 || angle < -0.7) swingSpeed *= -1;
+        angle += swingSpeed; 
+        // МЕНЬШЕ РАЗМАХ В СТОРОНЫ (0.5 вместо 0.7)
+        if (angle > 0.5 || angle < -0.5) swingSpeed *= -1;
         distance = 25;
     } else if (isLaunching) {
         distance += 15; 
         if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        distance -= 6; // Медленный подъем
+        distance -= 6; // Плавный подъем
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
@@ -82,18 +88,21 @@ function update() {
                 let amount = isPlt ? 10 : 0.0005;
                 showValue(this, amount, isPlt); 
                 if (window.playBeep) window.playBeep(800, 0.1); // СИГНАЛ УДАРА
-                saveCollect(amount, isPlt ? 'plt' : 'usdt'); 
+                if (typeof saveCollect === 'function') saveCollect(amount, isPlt ? 'plt' : 'usdt'); 
                 caughtItem.destroy(); caughtItem = null; spawn(this);
             }
         }
     }
+    
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
+    
     rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, hook.x, hook.y);
-    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; caughtItem.rotation = hook.rotation; }
+    
+    if (caughtItem) { 
+        caughtItem.x = hook.x; 
+        caughtItem.y = hook.y + 15; 
+        caughtItem.rotation = hook.rotation; 
+    }
 }
-
-
-
- 
