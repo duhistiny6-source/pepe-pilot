@@ -2,45 +2,66 @@ const RENDER_URL = "https://pepe-pilot.onrender.com";
 const tg = window.Telegram.WebApp;
 const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : "guest";
 
-// Загрузка данных
+window.frogMoney = 0;
+window.usdtMoney = 0;
+
+const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+    manifestUrl: 'https://duhistiny6-source.github.io/pepe-pilot/tonconnect-manifest.json',
+    buttonRootId: null
+});
+
 async function loadUserData() {
     try {
         const response = await fetch(`${RENDER_URL}/api/user/${userId}`);
         const data = await response.json();
-        
-        // Глобальные переменные для игры
         window.frogMoney = data.balancePLT || 0;
         window.usdtMoney = data.balanceUSDT || 0;
-        
-        document.getElementById('frog-money').innerText = Math.floor(window.frogMoney);
-        document.getElementById('money').innerText = window.usdtMoney.toFixed(4);
+        updateUI();
         if(document.getElementById('txt-friends-title')) {
             document.getElementById('txt-friends-title').innerText = `ДРУЗЬЯ (${data.friendsCount || 0})`;
         }
     } catch (e) { console.error("Ошибка загрузки данных:", e); }
 }
 
-// ИСПРАВЛЕННОЕ СОХРАНЕНИЕ
 async function saveProgress(pltAmount, usdtAmount) {
-    console.log(`Отправка на сервер: PLT ${pltAmount}, USDT ${usdtAmount}`);
     try {
         await fetch(`${RENDER_URL}/api/collect`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 tgId: userId, 
-                amount: pltAmount,      // Передаем PLT
-                amountUSDT: usdtAmount  // ТЕПЕРЬ ПЕРЕДАЕМ USDT!
+                amount: pltAmount, 
+                amountUSDT: usdtAmount 
             })
         });
     } catch (e) { console.error("Ошибка сохранения:", e); }
 }
 
-// Функции для модалок
 function toggleModal(id) {
     const m = document.getElementById(id);
-    if(m) m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+    if (m) m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
 }
+
+function openFriends() {
+    const link = `https://t.me/PepePilot_bot?start=ref${userId}`;
+    document.getElementById('ref-link-display').innerText = link;
+    toggleModal('friends-modal');
+}
+
+function copyLink() {
+    const link = document.getElementById('ref-link-display').innerText;
+    navigator.clipboard.writeText(link).then(() => alert("Ссылка скопирована!"));
+}
+
+async function connectWallet() {
+    try { await tonConnectUI.connectWallet(); alert("Кошелек подключен!"); } catch (e) { console.error(e); }
+}
+
+// Делаем функции доступными для кнопок в HTML
+window.toggleModal = toggleModal;
+window.openFriends = openFriends;
+window.copyLink = copyLink;
+window.connectWallet = connectWallet;
 
 tg.ready();
 tg.expand();
