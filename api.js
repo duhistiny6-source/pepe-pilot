@@ -3,6 +3,7 @@ const tg = window.Telegram.WebApp;
 tg.expand();
 const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : "guest";
 
+// Инициализация TON Connect
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     manifestUrl: 'https://duhistiny6-source.github.io/pepe-pilot/tonconnect-manifest.json',
     buttonRootId: null
@@ -12,7 +13,7 @@ window.frogMoney = 0;
 window.usdtMoney = 0;
 window.energy = 100;
 
-// --- ЗАГРУЗКА И СОХРАНЕНИЕ ---
+// --- ЗАГРУЗКА ДАННЫХ ---
 async function loadUserData() {
     try {
         const response = await fetch(`${RENDER_URL}/api/user/${userId}`);
@@ -21,11 +22,12 @@ async function loadUserData() {
         window.usdtMoney = Number(data.balanceUSDT) || 0; 
         updateUI();
     } catch (e) { 
-        console.error("Ошибка загрузки:", e); 
+        console.error("Ошибка загрузки данных:", e); 
         updateUI();
     }
 }
 
+// --- СОХРАНЕНИЕ ДАННЫХ ---
 async function saveCollect(amount, type) {
     if (type === 'plt') window.frogMoney += amount;
     else window.usdtMoney += amount;
@@ -37,72 +39,53 @@ async function saveCollect(amount, type) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ tgId: userId, amount: amount, type: type })
         });
-    } catch (e) { console.error("Ошибка сохранения:", e); }
+    } catch (e) { console.error("Ошибка сохранения в БД:", e); }
 }
 
 function updateUI() {
     const u = document.getElementById('money');
     const f = document.getElementById('frog-money');
-    if (u) u.innerText = (window.usdtMoney || 0).toFixed(4);
-    if (f) f.innerText = Math.floor(window.frogMoney || 0);
-    if (document.getElementById('energy')) document.getElementById('energy').innerText = window.energy;
+    const e = document.getElementById('energy');
+    if (u) u.innerText = window.usdtMoney.toFixed(4);
+    if (f) f.innerText = Math.floor(window.frogMoney);
+    if (e) e.innerText = window.energy;
 }
 
-// --- ФУНКЦИИ МЕНЮ ---
-
-// Универсальное открытие/закрытие модалок
+// --- ФУНКЦИИ ДЛЯ КНОПОК (ПРИВЯЗКА К WINDOW) ---
 window.toggleModal = function(id) {
     const m = document.getElementById(id);
-    if (m) {
-        m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
-    }
+    if (m) m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
 };
 
-// Друзья
 window.openFriends = function() {
     loadUserData();
-    toggleModal('friends-modal');
+    window.toggleModal('friends-modal');
 };
 
-// Кошелек
 window.connectWallet = async function() {
     try {
         await tonConnectUI.connectWallet();
-    } catch (e) {
-        console.error("TON Connect Error:", e);
-    }
+    } catch (e) { console.error("Ошибка кошелька:", e); }
 };
 
-// --- ПЕРЕВОД ЯЗЫКА ---
 const translations = {
-    ru: { shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК", settings: "НАСТРОЙКИ", close: "Закрыть" },
-    en: { shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET", settings: "SETTINGS", close: "Close" }
+    ru: { settings: "НАСТРОЙКИ", shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК", close: "Закрыть" },
+    en: { settings: "SETTINGS", shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET", close: "Close" }
 };
 
 window.changeLanguage = function(lang) {
     const t = translations[lang];
     if (!t) return;
-
-    // Обновляем текст в навигации
-    const ids = {
-        'nav-shop': t.shop,
-        'nav-tasks': t.tasks,
-        'nav-friends': t.friends,
-        'nav-wallet': t.wallet,
-        'txt-settings-title': t.settings,
-        'txt-close': t.close
-    };
-
-    for (let id in ids) {
-        const el = document.getElementById(id);
-        if (el) el.innerText = ids[id];
-    }
-    
-    // Закрываем настройки после выбора
-    toggleModal('settings-modal');
+    document.getElementById('txt-settings-title').innerText = t.settings;
+    document.getElementById('nav-shop').innerText = t.shop;
+    document.getElementById('nav-tasks').innerText = t.tasks;
+    document.getElementById('nav-friends').innerText = t.friends;
+    document.getElementById('nav-wallet').innerText = t.wallet;
+    document.getElementById('txt-close').innerText = t.close;
+    window.toggleModal('settings-modal');
 };
 
-// Звуки
+// --- ЗВУКИ ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 window.playBeep = function(freq, dur) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -115,5 +98,3 @@ window.playBeep = function(freq, dur) {
 };
 
 loadUserData();
-
- 
