@@ -3,7 +3,7 @@ const config = {
     physics: { default: 'arcade' }, scene: { preload, create, update }
 };
 const game = new Phaser.Game(config);
-let plane, hook, rope, targets, isLaunching = false, isReturning = false, caughtItem = null;
+let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.03, distance = 25;
 
 function preload() {
@@ -12,10 +12,16 @@ function preload() {
     this.load.image('usdt', 'usdt.png');
     this.load.image('pilot_coin', 'logo..png');
     this.load.image('plane', 'pepe.png');
+    this.load.audio('theme', 'music.mp3');
 }
 
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
+    
+    // Музыка
+    try { bgMusic = this.sound.add('theme', { volume: 0.2, loop: true }); } catch (e) {}
+    this.input.once('pointerdown', () => { if (bgMusic && !bgMusic.isPlaying) bgMusic.play(); });
+
     targets = this.physics.add.group();
     for(let i = 0; i < 6; i++) spawn(this);
     
@@ -26,9 +32,7 @@ function create() {
 
     this.input.on('pointerdown', () => {
         if (!isLaunching && !isReturning && window.energy > 0) {
-            isLaunching = true; 
-            window.energy--; 
-            updateUI(); // Вызов из api.js
+            isLaunching = true; window.energy--; updateUI();
         }
     });
 
@@ -36,8 +40,9 @@ function create() {
         if (isLaunching && !caughtItem) {
             caughtItem = item; 
             caughtItem.body.enable = false;
-            isLaunching = false; 
-            isReturning = true;
+            if (caughtItem.pulse) caughtItem.pulse.stop(); // Остановка пульсации при захвате
+            playBeep(400, 0.1); 
+            isLaunching = false; isReturning = true;
         }
     });
 }
@@ -46,7 +51,29 @@ function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
     let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
     let type = (Phaser.Math.Between(1, 100) <= 60) ? 'pilot_coin' : 'usdt';
-    targets.create(x, y, type).setScale(type === 'pilot_coin' ? 0.10 : 0.12).setDepth(40);
+    let coin = targets.create(x, y, type).setDepth(40);
+    coin.setScale(type === 'pilot_coin' ? 0.10 : 0.12);
+    
+    // Восстановлена пульсация
+    coin.pulse = scene.tweens.add({
+        targets: coin,
+        scale: type === 'pilot_coin' ? 0.12 : 0.14,
+        duration: 1000,
+        yoyo: true,
+        repeat: -1
+    });
+}
+
+function showValue(scene, val, isFrog) {
+    let color = isFrog ? '#ffcc00' : '#00ff00';
+    let txt = scene.add.text(plane.x, plane.y - 50, `+${val}`, { 
+        font: 'bold 32px Arial', fill: color, stroke: '#000', strokeThickness: 4 
+    }).setOrigin(0.5).setDepth(100);
+    
+    scene.tweens.add({
+        targets: txt, y: txt.y - 100, alpha: 0, duration: 1000,
+        onComplete: () => txt.destroy()
+    });
 }
 
 function update() {
@@ -69,18 +96,18 @@ function update() {
                 const type = isPlt ? 'plt' : 'usdt';
                 const amount = isPlt ? 10 : 0.0005;
                 
-                // Вызов функции сохранения из api.js
+                showValue(this, amount, isPlt); // Всплывающие цифры
+                playBeep(800, 0.1); 
                 saveCollect(amount, type);
                 
-                caughtItem.destroy(); 
-                caughtItem = null; 
-                spawn(this);
+                caughtItem.destroy(); caughtItem = null; spawn(this);
             }
         }
     }
     
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
-    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, hook.x, hook.y);
+    hook.rotation = -angle; // Клешня теперь крутится за веревкой
+    rope.clear().lineStyle(3, 0xffffff, 0.8).lineBetween(startX, startY, hook.x, hook.y);
     if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; }
 }
