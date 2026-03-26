@@ -17,9 +17,12 @@ function preload() {
 
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
+    
+    // УЛЬТРА-ТИХАЯ МУЗЫКА (0.01)
     try { 
-        bgMusic = this.sound.add('theme', { volume: 0.05, loop: true }); 
+        bgMusic = this.sound.add('theme', { volume: 0.01, loop: true }); 
     } catch (e) {}
+    
     this.input.once('pointerdown', () => { if (bgMusic && !bgMusic.isPlaying) bgMusic.play(); });
 
     targets = this.physics.add.group();
@@ -75,7 +78,7 @@ function update() {
         distance += 15; 
         if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        distance -= 6; // МЕДЛЕННЫЙ ПОДЪЕМ ТУТ
+        distance -= 6; // Плавный подъем
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
@@ -96,6 +99,4 @@ function update() {
     rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(startX, startY, endX, endY);
     if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; caughtItem.rotation = hook.rotation; }
 }
-
-
- 
+    
