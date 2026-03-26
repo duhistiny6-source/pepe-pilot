@@ -1,57 +1,47 @@
-
-const API_URL = "https://pepe-pilot.onrender.com/api";
+const RENDER_URL = "https://pepe-pilot.onrender.com"; 
 const tg = window.Telegram.WebApp;
-const userId = tg.initDataUnsafe?.user?.id.toString();
+const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : "guest";
 
-// Функция для получения баланса при входе
+// Загрузка данных
 async function loadUserData() {
-    if (!userId) return;
     try {
-        const response = await fetch(`${API_URL}/user/${userId}`);
+        const response = await fetch(`${RENDER_URL}/api/user/${userId}`);
         const data = await response.json();
         
-        // Обновляем текст на экране (убедись, что в index.html есть эти ID)
-        if(document.getElementById('plt-balance')) {
-            document.getElementById('plt-balance').innerText = Math.floor(data.balancePLT || 0);
+        // Глобальные переменные для игры
+        window.frogMoney = data.balancePLT || 0;
+        window.usdtMoney = data.balanceUSDT || 0;
+        
+        document.getElementById('frog-money').innerText = Math.floor(window.frogMoney);
+        document.getElementById('money').innerText = window.usdtMoney.toFixed(4);
+        if(document.getElementById('txt-friends-title')) {
+            document.getElementById('txt-friends-title').innerText = `ДРУЗЬЯ (${data.friendsCount || 0})`;
         }
-        if(document.getElementById('usdt-balance')) {
-            document.getElementById('usdt-balance').innerText = data.balanceUSDT?.toFixed(4) || "0.0000";
-        }
-        return data;
-    } catch (e) {
-        console.error("Ошибка загрузки:", e);
-    }
+    } catch (e) { console.error("Ошибка загрузки данных:", e); }
 }
 
-// ФУНКЦИЯ СОХРАНЕНИЯ (Тут мы чиним USDT)
+// ИСПРАВЛЕННОЕ СОХРАНЕНИЕ
 async function saveProgress(pltAmount, usdtAmount) {
-    if (!userId) {
-        console.error("ID пользователя не найден!");
-        return;
-    }
-
+    console.log(`Отправка на сервер: PLT ${pltAmount}, USDT ${usdtAmount}`);
     try {
-        const response = await fetch(`${API_URL}/collect`, {
+        await fetch(`${RENDER_URL}/api/collect`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                tgId: userId,
-                amount: Number(pltAmount) || 0,
-                amountUSDT: Number(usdtAmount) || 0 // ТЕПЕРЬ ОТПРАВЛЯЕТСЯ!
+            body: JSON.stringify({ 
+                tgId: userId, 
+                amount: pltAmount,      // Передаем PLT
+                amountUSDT: usdtAmount  // ТЕПЕРЬ ПЕРЕДАЕМ USDT!
             })
         });
-        
-        const result = await response.json();
-        if (result.success) {
-            console.log("Успешно сохранено!");
-            loadUserData(); // Сразу обновляем баланс на экране
-        }
-    } catch (e) {
-        console.error("Ошибка сохранения USDT:", e);
-    }
+    } catch (e) { console.error("Ошибка сохранения:", e); }
 }
 
-// Инициализация
+// Функции для модалок
+function toggleModal(id) {
+    const m = document.getElementById(id);
+    if(m) m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+}
+
 tg.ready();
 tg.expand();
 loadUserData();
