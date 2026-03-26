@@ -4,7 +4,7 @@ const config = {
 };
 const game = new Phaser.Game(config);
 let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.03, distance = 25;
+let angle = 0, swingSpeed = 0.025, distance = 25; // Снижена скорость раскачки
 
 function preload() {
     this.load.image('sky', 'pg.jpeg');
@@ -18,12 +18,11 @@ function preload() {
 function create() {
     this.add.image(config.width / 2, config.height / 2, 'sky').setDisplaySize(config.width, config.height);
     
-    // МУЗЫКА
+    // МУЗЫКА СДЕЛАНА ТИШЕ (0.05)
     try { 
-        bgMusic = this.sound.add('theme', { volume: 0.2, loop: true }); 
+        bgMusic = this.sound.add('theme', { volume: 0.05, loop: true }); 
     } catch (e) {}
     
-    // Включаем музыку после первого клика (правило браузеров)
     this.input.once('pointerdown', () => { if (bgMusic && !bgMusic.isPlaying) bgMusic.play(); });
 
     targets = this.physics.add.group();
@@ -44,7 +43,7 @@ function create() {
         if (isLaunching && !caughtItem) {
             caughtItem = item; caughtItem.body.enable = false;
             if (caughtItem.pulse) caughtItem.pulse.stop();
-            playBeep(400, 0.1); // СИГНАЛ ПРИ ЗАХВАТЕ
+            playBeep(400, 0.1); 
             isLaunching = false; isReturning = true;
         }
     });
@@ -59,33 +58,25 @@ function spawn(scene) {
     coin.pulse = scene.tweens.add({ targets: coin, scale: type === 'pilot_coin' ? 0.12 : 0.14, duration: 1000, yoyo: true, repeat: -1 });
 }
 
-function showValue(scene, val, isFrog) {
-    let color = isFrog ? '#ffcc00' : '#0f0';
-    let txt = scene.add.text(plane.x, plane.y - 40, `+${val}`, { font: 'bold 28px Arial', fill: color, stroke: '#000', strokeThickness: 5 }).setOrigin(0.5).setDepth(100);
-    scene.tweens.add({ targets: txt, y: txt.y - 100, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
-}
-
 function update() {
     plane.y = 120 + Math.sin(this.time.now / 600) * 8;
     let startX = plane.x - 5; let startY = plane.y + 15; 
 
     if (!isLaunching && !isReturning) {
-        angle += swingSpeed; if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
+        angle += swingSpeed; 
+        if (angle > 0.7 || angle < -0.7) swingSpeed *= -1; // Ограничен размах (был 0.8)
         distance = 25;
     } else if (isLaunching) {
-        distance += 16; if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
+        distance += 14; // Скорость вылета вниз
+        if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        distance -= 10; // НОРМАЛЬНАЯ СКОРОСТЬ ВОЗВРАТА
+        distance -= 8; // СКОРОСТЬ ВОЗВРАТА СДЕЛАНА МЕДЛЕННЕЕ (было 10-14)
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
                 let type = (caughtItem.texture.key === 'pilot_coin') ? 'plt' : 'usdt';
                 let amount = (type === 'plt') ? 10 : 0.0005;
-                
-                showValue(this, amount, (type === 'plt')); // ЦИФРЫ ПРИ УДАРЕ
-                playBeep(800, 0.1); // СИГНАЛ ПРИ УДАРЕ
                 saveCollect(amount, type); 
-                
                 caughtItem.destroy(); caughtItem = null; spawn(this);
             }
         }
