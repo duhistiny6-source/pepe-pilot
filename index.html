@@ -9,29 +9,77 @@
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
         body { margin:0; padding:0; overflow:hidden; background:#000; touch-action: none; font-family: 'Segoe UI', Arial, sans-serif; }
-        #top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 35px; background: rgba(0, 0, 0, 0.4); z-index: 1000; backdrop-filter: blur(2px); display: flex; align-items: center; }
-        #energy-container { position: absolute; left: 12px; color: #0f0; font-size: 13px; font-weight: bold; text-shadow: 1px 1px 1px #000; }
-        #balance-container { width: 100%; display: flex; align-items: center; justify-content: center; gap: 15px; color: #fff; font-size: 11px; }
+        
+        #top-bar { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 35px; 
+            background: rgba(0, 0, 0, 0.4); 
+            z-index: 1000; 
+            backdrop-filter: blur(2px);
+            display: flex;
+            align-items: center;
+        }
+
+        #energy-container {
+            position: absolute;
+            left: 12px;
+            color: #0f0;
+            font-size: 13px;
+            font-weight: bold;
+            text-shadow: 1px 1px 1px #000;
+        }
+
+        #balance-container { 
+            width: 100%;
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 15px; 
+            color: #fff; 
+            font-size: 11px;
+        }
+
         .balance-item { display: flex; align-items: center; gap: 4px; }
         .coin-icon { width: 14px; height: 14px; }
-        #recovery-block { display: none; pointer-events: auto; position: fixed; top: 40px; left: 12px; z-index: 1001; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+        
+        #recovery-block {
+            display: none; 
+            pointer-events: auto;
+            position: fixed; 
+            top: 40px; 
+            left: 12px;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: flex-start;
+        }
+
         #timer-display { color: #ff3333; font-size: 10px; text-shadow: 1px 1px 1px #000; display: none; }
         #ad-button { background: #ffcc00; color: #000; border: none; padding: 2px 8px; font-size: 10px; font-weight: bold; border-radius: 4px; cursor: pointer; display: none; }
+        
         #settings-btn { position: fixed; top: 7px; right: 10px; font-size: 18px; cursor: pointer; z-index: 1001; opacity: 0.8; }
+        
         #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 85%; height: 50px; background: rgba(0, 0, 0, 0.9); border: 1px solid #333; border-radius: 12px; display: flex; justify-content: space-around; align-items: center; z-index: 200; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; font-weight: bold; flex: 1; opacity: 0.9; cursor: pointer; }
         .nav-item span { font-size: 18px; }
         .nav-text { font-size: 8px; margin-top: 1px; color: #bbb; text-transform: uppercase; }
+
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
         .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 280px; max-width: 90%; }
+        
         .task-item { background: #222; border: 1px solid #444; border-radius: 10px; padding: 10px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
         .task-info { text-align: left; }
         .task-title { font-size: 13px; font-weight: bold; color: #fff; }
         .task-reward { font-size: 11px; color: #0f0; }
         .task-btn { background: #0f0; color: #000; border: none; padding: 6px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        
         .lang-btn { background: #333; color: #0f0; border: 1px solid #0f0; padding: 12px 20px; margin: 10px 0; cursor: pointer; border-radius: 10px; font-weight: bold; width: 100%; }
         #ad-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
-        #ref-link-area { background: #000; padding: 10px; border-radius: 8px; font-size: 10px; color: #0f0; margin: 10px 0; word-break: break-all; border: 1px dashed #444; }
+        #ref-link-display { background: #000; padding: 8px; border-radius: 5px; font-size: 10px; color: #0f0; margin: 10px 0; word-break: break-all; border: 1px dashed #444; }
     </style>
 </head>
 <body>
@@ -79,10 +127,10 @@
 <div id="friends-modal" class="modal">
     <div class="modal-content">
         <h3 id="txt-friends-title">ДРУЗЬЯ</h3>
-        <p style="font-size: 12px; color: #ccc;">Твой реф-доход (10%): <span id="ref-income" style="color:#0f0">0</span></p>
-        <div id="ref-link-area">Загрузка...</div>
+        <p style="font-size: 11px; color: #ccc;">Твой реф-доход (10%): <span id="ref-bonus-val" style="color:#0f0">0</span></p>
+        <div id="ref-link-display">Загрузка ссылки...</div>
         <button class="lang-btn" onclick="shareInvite()" style="background:#0088cc; border:none; color:#fff;">📢 ПРИГЛАСИТЬ</button>
-        <button class="lang-btn" onclick="copyLink()">📋 КОПИРОВАТЬ</button>
+        <button class="lang-btn" onclick="copyLink()">📋 КОПИРОВАТЬ ССЫЛКУ</button>
         <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('friends-modal')">Закрыть</div>
     </div>
 </div>
@@ -108,33 +156,32 @@ const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     buttonRootId: null
 });
 
-// Глобальные переменные
-let money = 0, frogMoney = 0, energy = 100, recoveryTime = 0, refIncome = 0;
+// Глобальные данные
+let money = 0, frogMoney = 0, energy = 100, recoveryTime = 0, refBonusTotal = 0;
 const USDT_VALUE = 0.0005, FROG_VALUE = 10, RECOVERY_DURATION = 7200;
 
-// Реферальная логика
 function openFriends() {
     generateRefLink();
-    document.getElementById('ref-income').innerText = refIncome.toFixed(4);
+    document.getElementById('ref-bonus-val').innerText = refBonusTotal.toFixed(4);
     toggleModal('friends-modal');
 }
 
 function generateRefLink() {
-    const botUser = "ВАШ_ЮЗЕРНЕЙМ_БОТА"; // <--- ЗАМЕНИ ЭТО
+    const botUser = "PepePilot_bot"; 
     const uid = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "guest";
     const link = `https://t.me/${botUser}?start=ref${uid}`;
-    document.getElementById('ref-link-area').innerText = link;
+    document.getElementById('ref-link-display').innerText = link;
     return link;
 }
 
 function shareInvite() {
     const link = generateRefLink();
-    const text = "Лети со мной в Pepe Pilot! Собирай крипту и получай бонусы! 🚀";
+    const text = "Лети со мной в Pepe Pilot! Собирай крипту и получай 10% бонусов! 🚀";
     tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`);
 }
 
 function copyLink() {
-    const link = document.getElementById('ref-link-area').innerText;
+    const link = document.getElementById('ref-link-display').innerText;
     navigator.clipboard.writeText(link).then(() => alert("Ссылка скопирована!"));
 }
 
@@ -145,11 +192,6 @@ async function connectWallet() {
 function toggleModal(id) {
     const m = document.getElementById(id);
     m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
-}
-
-function doTask(url, reward) {
-    window.open(url, '_blank');
-    setTimeout(() => { energy = Math.min(100, energy + reward); updateUI(); alert("Готово!"); }, 2000);
 }
 
 function doAdTask() { toggleModal('tasks-modal'); startAd(); }
@@ -227,77 +269,4 @@ function create() {
 
 function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
-    let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
-    let type = (Phaser.Math.Between(1, 100) <= 60) ? 'pilot_coin' : 'usdt';
-    let coin = targets.create(x, y, type).setDepth(40);
-    coin.setScale(type === 'pilot_coin' ? 0.10 : 0.12);
-    coin.pulse = scene.tweens.add({ targets: coin, scale: type==='pilot_coin'?0.11:0.14, duration: 1000, yoyo: true, repeat: -1 });
-}
-
-function update() {
-    plane.y = 120 + Math.sin(this.time.now / 600) * 8;
-    let sX = plane.x - 5, sY = plane.y + 15;
-    if (!isLaunching && !isReturning) {
-        angle += swingSpeed; if (angle > 0.8 || angle < -0.8) swingSpeed *= -1;
-        distance = 25;
-    } else if (isLaunching) {
-        distance += 16; if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
-    } else if (isReturning) {
-        distance -= 6;
-        if (distance <= 25) {
-            isReturning = false;
-            if (caughtItem) {
-                let val = (caughtItem.texture.key === 'pilot_coin') ? FROG_VALUE : USDT_VALUE;
-                if (caughtItem.texture.key === 'pilot_coin') frogMoney += val; else money += val;
-                
-                // Начисляем 10% бонус (виртуально)
-                refIncome += val * 0.10;
-                
-                showValue(this.scene.scene, val, caughtItem.texture.key === 'pilot_coin');
-                playBeep(900, 0.12); caughtItem.destroy(); caughtItem = null; spawn(this.scene.scene); updateUI();
-            }
-        }
-    }
-    hook.x = sX + Math.sin(angle) * distance; hook.y = sY + Math.cos(angle) * distance; hook.rotation = -angle;
-    rope.clear().lineStyle(2, 0xffffff, 0.7).lineBetween(sX, sY, hook.x, hook.y);
-    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; }
-}
-
-function showValue(scene, val, isFrog) {
-    let txt = scene.add.text(plane.x, plane.y - 40, `+${val}`, { font: 'bold 24px Arial', fill: isFrog?'#ffcc00':'#0f0' }).setOrigin(0.5);
-    scene.tweens.add({ targets: txt, y: txt.y - 80, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
-}
-
-function updateUI() {
-    document.getElementById('money').innerText = money.toFixed(4);
-    document.getElementById('frog-money').innerText = frogMoney;
-    document.getElementById('energy').innerText = energy;
-    const out = energy <= 0;
-    document.getElementById('recovery-block').style.display = out ? 'flex' : 'none';
-    document.getElementById('timer-display').style.display = out ? 'block' : 'none';
-    document.getElementById('ad-button').style.display = out ? 'block' : 'none';
-}
-
-function tick() {
-    if (recoveryTime > 0) {
-        recoveryTime--;
-        let h = Math.floor(recoveryTime/3600).toString().padStart(2,'0');
-        let m = Math.floor((recoveryTime%3600)/60).toString().padStart(2,'0');
-        let s = (recoveryTime%60).toString().padStart(2,'0');
-        document.getElementById('time-left').innerText = `${h}:${m}:${s}`;
-        if (recoveryTime === 0) { energy = 100; updateUI(); }
-    }
-}
-
-function startAd() {
-    document.getElementById('ad-overlay').style.display = 'flex';
-    let c = 5;
-    let i = setInterval(() => {
-        c--; document.getElementById('ad-timer').innerText = `Осталось: ${c} сек.`;
-        if (c <= 0) { clearInterval(i); document.getElementById('ad-overlay').style.display = 'none'; energy = 100; recoveryTime = 0; updateUI(); }
-    }, 1000);
-}
-function startRecovery() { recoveryTime = RECOVERY_DURATION; }
-</script>
-</body>
-</html>
+    let y = Phaser.Math.Between(config.height * 0
