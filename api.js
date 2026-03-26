@@ -22,21 +22,21 @@ async function loadUserData() {
         const response = await fetch(`${RENDER_URL}/api/user/${userId}`);
         const data = await response.json();
         
-        // Исправлено: загружаем оба баланса
+        // Загружаем актуальные балансы из базы данных MongoDB
         window.frogMoney = data.balancePLT || 0;
         window.usdtMoney = data.balanceUSDT || 0; 
         
         document.getElementById('txt-friends-title').innerText = `ДРУЗЬЯ (${data.friendsCount || 0})`;
         
-        // Обновляем UI после загрузки данных
+        // Принудительно обновляем экран
         if(typeof updateUI === "function") updateUI();
     } catch (e) { console.error("Ошибка загрузки данных:", e); }
 }
 
-// Исправлено: теперь функция принимает тип монеты (plt или usdt)
+// Сохранение монет с подтверждением от сервера
 async function saveCollect(amount, type) {
     try {
-        await fetch(`${RENDER_URL}/api/collect`, {
+        const response = await fetch(`${RENDER_URL}/api/collect`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -45,6 +45,15 @@ async function saveCollect(amount, type) {
                 type: type 
             })
         });
+        
+        const data = await response.json();
+        
+        // СИНХРОНИЗАЦИЯ: берем точные значения, которые сохранил сервер
+        window.frogMoney = data.balancePLT;
+        window.usdtMoney = data.balanceUSDT;
+        
+        // Сразу обновляем цифры на экране
+        if(typeof updateUI === "function") updateUI();
     } catch (e) { console.error("Ошибка сохранения монет:", e); }
 }
 
@@ -124,3 +133,4 @@ function playBeep(freq, dur) {
     gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
     osc.start(); osc.stop(audioCtx.currentTime + dur);
 }
+  
