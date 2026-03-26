@@ -1,4 +1,4 @@
- // --- КОНФИГУРАЦИЯ СЕРВЕРА ---
+// --- КОНФИГУРАЦИЯ СЕРВЕРА ---
 const RENDER_URL = "https://pepe-pilot.onrender.com"; 
 
 const tg = window.Telegram.WebApp;
@@ -10,7 +10,7 @@ const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     buttonRootId: null
 });
 
-// Глобальные переменные (для доступа из game.js)
+// Глобальные переменные
 window.frogMoney = 0;
 window.usdtMoney = 0;
 window.energy = 100;
@@ -21,18 +21,29 @@ async function loadUserData() {
     try {
         const response = await fetch(`${RENDER_URL}/api/user/${userId}`);
         const data = await response.json();
+        
+        // Исправлено: загружаем оба баланса
         window.frogMoney = data.balancePLT || 0;
+        window.usdtMoney = data.balanceUSDT || 0; 
+        
         document.getElementById('txt-friends-title').innerText = `ДРУЗЬЯ (${data.friendsCount || 0})`;
+        
+        // Обновляем UI после загрузки данных
         if(typeof updateUI === "function") updateUI();
     } catch (e) { console.error("Ошибка загрузки данных:", e); }
 }
 
-async function saveCollect(amount) {
+// Исправлено: теперь функция принимает тип монеты (plt или usdt)
+async function saveCollect(amount, type) {
     try {
         await fetch(`${RENDER_URL}/api/collect`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tgId: userId, amount: amount })
+            body: JSON.stringify({ 
+                tgId: userId, 
+                amount: amount, 
+                type: type 
+            })
         });
     } catch (e) { console.error("Ошибка сохранения монет:", e); }
 }
@@ -102,7 +113,6 @@ function changeLanguage(lang) {
     toggleModal('settings-modal');
 }
 
-// Звуковой контекст
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playBeep(freq, dur) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
