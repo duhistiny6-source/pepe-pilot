@@ -31,7 +31,7 @@ function create() {
     this.physics.add.existing(hook);
     plane = this.add.image(config.width / 2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
-    this.input.on('pointerdown', (p) => {
+    this.input.on('pointerdown', () => {
         if (!isLaunching && !isReturning && window.energy > 0) {
             isLaunching = true; window.energy--; updateUI();
         }
@@ -85,7 +85,7 @@ function update() {
         }
     }
     
-    // ОРИГИНАЛЬНЫЙ РАСЧЕТ КЛЕШНИ И ТРОСА (Ничего не торчит)
+    // --- ИСПРАВЛЕННЫЕ КООРДИНАТЫ ТРОСА ---
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
@@ -102,8 +102,9 @@ function update() {
 }
 
 function updateUI() {
-    // ВАЖНО: .toFixed(4) позволяет видеть прибавку 0.0005 на балансе
+    // ВАЖНО: .toFixed(4) показывает баланс USDT правильно
     document.getElementById('money').innerText = window.usdtMoney.toFixed(4);
     document.getElementById('frog-money').innerText = Math.floor(window.frogMoney);
     document.getElementById('energy').innerText = window.energy;
 }
+
