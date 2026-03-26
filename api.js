@@ -16,25 +16,21 @@ async function loadUserData() {
         const data = await response.json();
         window.frogMoney = data.balancePLT || 0;
         window.usdtMoney = data.balanceUSDT || 0;
-        updateUI();
+        if(typeof updateUI === 'function') updateUI();
         if(document.getElementById('txt-friends-title')) {
             document.getElementById('txt-friends-title').innerText = `ДРУЗЬЯ (${data.friendsCount || 0})`;
         }
-    } catch (e) { console.error("Ошибка загрузки данных:", e); }
+    } catch (e) { console.error("Load error:", e); }
 }
 
-async function saveProgress(pltAmount, usdtAmount) {
+async function saveProgress(plt, usdt) {
     try {
         await fetch(`${RENDER_URL}/api/collect`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                tgId: userId, 
-                amount: pltAmount, 
-                amountUSDT: usdtAmount 
-            })
+            body: JSON.stringify({ tgId: userId, amount: plt, amountUSDT: usdt })
         });
-    } catch (e) { console.error("Ошибка сохранения:", e); }
+    } catch (e) { console.error("Save error:", e); }
 }
 
 function toggleModal(id) {
@@ -50,14 +46,13 @@ function openFriends() {
 
 function copyLink() {
     const link = document.getElementById('ref-link-display').innerText;
-    navigator.clipboard.writeText(link).then(() => alert("Ссылка скопирована!"));
+    navigator.clipboard.writeText(link).then(() => alert("Скопировано!"));
 }
 
 async function connectWallet() {
-    try { await tonConnectUI.connectWallet(); alert("Кошелек подключен!"); } catch (e) { console.error(e); }
+    try { await tonConnectUI.connectWallet(); } catch (e) { console.error(e); }
 }
 
-// Делаем функции доступными для кнопок в HTML
 window.toggleModal = toggleModal;
 window.openFriends = openFriends;
 window.copyLink = copyLink;
