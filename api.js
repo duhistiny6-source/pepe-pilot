@@ -1,84 +1,96 @@
 const RENDER_URL = "https://pepe-pilot.onrender.com"; 
 const tg = window.Telegram.WebApp;
 tg.expand();
-
-// Получаем ID пользователя и проверяем его наличие
 const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : "guest";
-console.log("Текущий пользователь ID:", userId);
+
+// Инициализация кошелька
+const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+    manifestUrl: 'https://duhistiny6-source.github.io/pepe-pilot/tonconnect-manifest.json'
+});
 
 window.frogMoney = 0;
 window.usdtMoney = 0;
 window.energy = 100;
 
-// 1. ЗАГРУЗКА ИЗ БАЗЫ ПРИ СТАРТЕ
-async function loadUserData() {
+// Звуковой движок (исправлен)
+let audioCtx;
+window.playBeep = function(freq, dur) {
     try {
-        console.log("Запрос данных с сервера...");
-        const response = await fetch(`${RENDER_URL}/api/user/${userId}`);
-        
-        if (!response.ok) {
-            throw new Error(`Ошибка сервера: ${response.status}`);
-        }
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        osc.start();
+        osc.stop(audioCtx.currentTime + dur);
+    } catch (e) { console.log("Звук не поддерживается"); }
+};
 
-        const data = await response.json();
-        console.log("Данные получены из БД:", data);
-
-        // Обновляем глобальные переменные только если данные пришли
-        window.frogMoney = Number(data.balancePLT) || 0;
-        window.usdtMoney = Number(data.balanceUSDT) || 0; 
-        updateUI();
-    } catch (e) { 
-        console.error("Критическая ошибка загрузки из БД:", e); 
-        // Если база не отвечает, интерфейс всё равно покажет 0, но мы об этом узнаем из логов
-        updateUI();
-    }
-}
-
-// 2. СОХРАНЕНИЕ В БАЗУ ПРИ КАЖДОМ СБОРЕ
-async function saveCollect(amount, type) {
-    // Сначала меняем цифры в самой игре для скорости
-    if (type === 'plt') window.frogMoney += amount;
-    else window.usdtMoney += amount;
-    updateUI();
-
-    // Отправляем запрос на сохранение
-    try {
-        const response = await fetch(`${RENDER_URL}/api/collect`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                tgId: userId, 
-                amount: amount, 
-                type: type 
-            })
-        });
-
-        if (!response.ok) {
-            console.error("Сервер отказался сохранять монеты");
-        } else {
-            const result = await response.json();
-            console.log("Успешно сохранено в MongoDB. Новый баланс в БД:", result);
-        }
-    } catch (e) { 
-        console.error("Сетевая ошибка при сохранении:", e); 
-    }
-}
-
-function updateUI() {
-    const u = document.getElementById('money');
-    const f = document.getElementById('frog-money');
-    if (u) u.innerText = window.usdtMoney.toFixed(4);
-    if (f) f.innerText = Math.floor(window.frogMoney);
-    if (document.getElementById('energy')) document.getElementById('energy').innerText = window.energy;
-}
-
-// Остальные функции кнопок (оставляем как были)
-window.toggleModal = (id) => {
+// Функции кнопок
+window.toggleModal = function(id) {
     const m = document.getElementById(id);
     if (m) m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
 };
 
-window.openFriends = () => { loadUserData(); window.toggleModal('friends-modal'); };
+window.connectWallet = async function() {
+    try {
+        await tonConnectUI.openModal(); // Открывает окно выбора кошелька
+    } catch (e) { alert("Ошибка кошелька: " + e); }
+};
 
-// Сразу запускаем загрузку
+window.openFriends = function() {
+    loadUserData();
+    window.toggleModal('friends-modal');
+};
+
+const translations = {
+    ru: { settings: "НАСТРОЙКИ", shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК", close: "Закрыть" },
+    en: { settings: "SETTINGS", shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET", close: "Close" }
+};
+
+window.changeLanguage = function(lang) {
+    const t = translations[lang];
+    if (!t) return;
+    document.getElementById('txt-settings-title').innerText = t.settings;
+    document.getElementById('nav-shop').innerText = t.shop;
+    document.getElementById('nav-tasks').innerText = t.tasks;
+    document.getElementById('nav-friends').innerText = t.friends;
+    document.getElementById('nav-wallet').innerText = t.wallet;
+    document.getElementById('txt-close').innerText = t.close;
+    window.toggleModal('settings-modal');
+};
+
+async function loadUserData() {
+    try {
+        const res = await fetch(`${RENDER_URL}/api/user/${userId}`);
+        const data = await res.json();
+        window.frogMoney = Number(data.balancePLT) || 0;
+        window.usdtMoney = Number(data.balanceUSDT) || 0;
+        updateUI();
+    } catch (e) { updateUI(); }
+}
+
+async function saveCollect(amount, type) {
+    if (type === 'plt') window.frogMoney += amount;
+    else window.usdtMoney += amount;
+    updateUI();
+    try {
+        await fetch(`${RENDER_URL}/api/collect`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tgId: userId, amount, type })
+        });
+    } catch (e) {}
+}
+
+function updateUI() {
+    document.getElementById('money').innerText = window.usdtMoney.toFixed(4);
+    document.getElementById('frog-money').innerText = Math.floor(window.frogMoney);
+    document.getElementById('energy').innerText = window.energy;
+}
+
 loadUserData();
