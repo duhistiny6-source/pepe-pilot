@@ -1,4 +1,4 @@
-    const config = {
+const config = {
     type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight,
     physics: { default: 'arcade' }, scene: { preload, create, update }
 };
