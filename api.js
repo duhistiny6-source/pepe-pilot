@@ -1,4 +1,3 @@
- // --- КОНФИГУРАЦИЯ СЕРВЕРА ---
 const RENDER_URL = "https://pepe-pilot.onrender.com"; 
 const tg = window.Telegram.WebApp;
 tg.expand();
@@ -14,18 +13,16 @@ window.usdtMoney = 0;
 window.energy = 100;
 window.recoveryTime = 0;
 
-// Загрузка данных из базы при старте
 async function loadUserData() {
     try {
         const response = await fetch(`${RENDER_URL}/api/user/${userId}`);
         const data = await response.json();
         window.frogMoney = data.balancePLT || 0;
         window.usdtMoney = data.balanceUSDT || 0; 
-        if(typeof updateUI === "function") updateUI();
+        updateUI();
     } catch (e) { console.error("Ошибка загрузки:", e); }
 }
 
-// Сохранение монет (вызывается из game.js)
 async function saveCollect(amount, type) {
     try {
         const response = await fetch(`${RENDER_URL}/api/collect`, {
@@ -34,22 +31,38 @@ async function saveCollect(amount, type) {
             body: JSON.stringify({ tgId: userId, amount: amount, type: type })
         });
         const data = await response.json();
-        // Синхронизируем баланс с ответом сервера
         window.frogMoney = data.balancePLT;
         window.usdtMoney = data.balanceUSDT;
-        if(typeof updateUI === "function") updateUI();
+        updateUI();
     } catch (e) { console.error("Ошибка сохранения:", e); }
 }
 
-// Функции интерфейса (восстановлены)
+// --- ИСПРАВЛЕННЫЙ ПЕРЕВОД ---
+const translations = {
+    ru: { recovery: "Rec", ad_btn: "📺 РЕКЛАМА", settings: "НАСТРОЙКИ", close: "Закрыть", watching: "СМОТРИМ...", left: "Осталось", shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК" },
+    en: { recovery: "Rec", ad_btn: "📺 AD", settings: "SETTINGS", close: "Close", watching: "WATCHING...", left: "Left", shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET" }
+};
+
+function changeLanguage(lang) {
+    const t = translations[lang];
+    if(!t) return;
+    document.getElementById('txt-recovery').innerText = t.recovery;
+    document.getElementById('ad-button').innerText = t.ad_btn;
+    document.getElementById('txt-settings-title').innerText = t.settings;
+    document.getElementById('txt-close').innerText = t.close;
+    document.getElementById('nav-shop').innerText = t.shop;
+    document.getElementById('nav-tasks').innerText = t.tasks;
+    document.getElementById('nav-friends').innerText = t.friends;
+    document.getElementById('nav-wallet').innerText = t.wallet;
+    toggleModal('settings-modal'); // Закрываем после выбора
+}
+
 function toggleModal(id) {
     const m = document.getElementById(id);
     if(m) m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
 }
+
 function openFriends() { toggleModal('friends-modal'); loadUserData(); }
-async function connectWallet() {
-    try { await tonConnectUI.connectWallet(); alert("Кошелек подключен!"); } catch (e) { console.error(e); }
-}
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playBeep(freq, dur) {
