@@ -61,6 +61,21 @@
 <div id="shop-modal" class="modal">
     <div class="modal-content">
         <h3 id="txt-shop-title">АНГАР</h3>
+        <div class="task-item">
+            <img src="plane_copper.png" style="width: 50px; height: 35px; object-fit: contain; margin-right: 10px;">
+            <div class="task-info" style="flex: 1;"><div class="task-title" style="color:#cd7f32" id="plane-name-copper">МЕДНЫЙ</div><div class="task-reward"><span class="txt-price">Цена</span>: 10 USDT</div><div style="font-size: 9px; color: #0f0;">+20 PTL / +0.0001 USDT</div></div>
+            <button class="task-btn buy-btn" onclick="buyPlane('copper', 10)">КУПИТЬ</button>
+        </div>
+        <div class="task-item">
+            <img src="plane_bronze.png" style="width: 50px; height: 35px; object-fit: contain; margin-right: 10px;">
+            <div class="task-info" style="flex: 1;"><div class="task-title" style="color:#b08d57" id="plane-name-bronze">БРОНЗОВЫЙ</div><div class="task-reward"><span class="txt-price">Цена</span>: 25 USDT</div><div style="font-size: 9px; color: #0f0;">+50 PTL / +0.0005 USDT</div></div>
+            <button class="task-btn buy-btn" onclick="buyPlane('bronze', 25)">КУПИТЬ</button>
+        </div>
+        <div class="task-item">
+            <img src="plane_gold.png" style="width: 50px; height: 35px; object-fit: contain; margin-right: 10px;">
+            <div class="task-info" style="flex: 1;"><div class="task-title" style="color:#ffd700" id="plane-name-gold">ЗОЛОТОЙ</div><div class="task-reward"><span class="txt-price">Цена</span>: 50 USDT</div><div style="font-size: 9px; color: #0f0;">+100 PTL / +0.001 USDT</div></div>
+            <button class="task-btn buy-btn" onclick="buyPlane('gold', 50)">КУПИТЬ</button>
+        </div>
         <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('shop-modal')" class="txt-close">Закрыть</div>
     </div>
 </div>
@@ -79,6 +94,7 @@
 <div id="friends-modal" class="modal">
     <div class="modal-content">
         <h3 id="txt-friends-title">ДРУЗЬЯ</h3>
+        <p id="txt-friends-desc" style="font-size: 11px; color: #ccc;">Приглашай друзей и получай 10% от их сбора!</p>
         <div id="ref-link-display">Загрузка...</div>
         <button class="lang-btn" id="btn-invite">📢 ПРИГЛАСИТЬ</button>
         <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('friends-modal')" class="txt-close">Закрыть</div>
