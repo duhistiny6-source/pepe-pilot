@@ -14,7 +14,6 @@ window.currentPlane = 'default';
 let audioCtx;
 let nextRestoreTime = null;
 
-// ЗВУКОВОЙ ДВИЖОК
 window.playBeep = function(freq, dur) {
     try {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -23,7 +22,7 @@ window.playBeep = function(freq, dur) {
         const gain = audioCtx.createGain();
         osc.connect(gain); gain.connect(audioCtx.destination);
         osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.02, audioCtx.currentTime); // МЯГКИЙ ГРОМКОСТЬ 2%
+        gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
         osc.start(); osc.stop(audioCtx.currentTime + dur);
     } catch (e) {}
@@ -38,7 +37,6 @@ window.connectWallet = async function() {
     try { await tonConnectUI.openModal(); } catch (e) {}
 };
 
-// СИСТЕМА ЭНЕРГИИ
 window.checkEnergy = function() {
     if (window.energy <= 0) {
         if (!nextRestoreTime) {
@@ -53,6 +51,7 @@ window.checkEnergy = function() {
 
 function updateTimerDisplay() {
     const display = document.getElementById('timer-display');
+    if (!display) return;
     const interval = setInterval(() => {
         let diff = nextRestoreTime - Date.now();
         if (diff <= 0 || window.energy > 0) {
@@ -79,7 +78,6 @@ window.watchAd = function() {
     });
 };
 
-// СБОР МОНЕТОК
 window.saveCollect = async function(amount, type) {
     let finalAmount = 0;
     if (type === 'plt') {
@@ -88,52 +86,29 @@ window.saveCollect = async function(amount, type) {
         window.frogMoney += finalAmount;
     } else {
         const usdtRewards = { default: 0.00001, copper: 0.0001, bronze: 0.0005, gold: 0.001 };
-        finalAmount = usdtRewards[window.currentPlane] || 0.00001; // НОВЫЙ НОМИНАЛ
+        finalAmount = usdtRewards[window.currentPlane] || 0.00001;
         window.usdtMoney += finalAmount;
     }
     window.updateUI();
-    try { fetch(`${RENDER_URL}/api/collect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tgId: userId, amount: finalAmount, type: type }) }); } catch (e) {}
-};
-
-const translations = {
-    ru: {
-        settings: "НАСТРОЙКИ", shop: "АНГАР", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК", close: "Закрыть",
-        price: "Цена", buy: "КУПИТЬ", sub: "Подписаться", invite: "📢 ПРИГЛАСИТЬ", fdesc: "Приглашай друзей и получай 10%!",
-        cplane: "МЕДНЫЙ", bplane: "БРОНЗОВЫЙ", gplane: "ЗОЛОТОЙ", en_title: "НЕТ ЭНЕРГИИ", en_desc: "Восстановление через:", en_btn: "📺 СМОТРЕТЬ РЕКЛАМУ (+100 ⚡)"
-    },
-    en: {
-        settings: "SETTINGS", shop: "HANGAR", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET", close: "Close",
-        price: "Price", buy: "BUY", sub: "Subscribe", invite: "📢 INVITE", fdesc: "Invite friends and get 10%!",
-        cplane: "COPPER", bplane: "BRONZE", gplane: "GOLD", en_title: "NO ENERGY", en_desc: "Restoration in:", en_btn: "📺 WATCH AD (+100 ⚡)"
-    }
-};
-
-window.changeLanguage = function(lang) {
-    const t = translations[lang];
-    document.getElementById('txt-settings-title').innerText = t.settings;
-    document.getElementById('txt-shop-title').innerText = t.shop;
-    document.getElementById('txt-tasks-title').innerText = t.tasks;
-    document.getElementById('txt-friends-title').innerText = t.friends;
-    document.getElementById('nav-shop').innerText = t.shop;
-    document.getElementById('nav-tasks').innerText = t.tasks;
-    document.getElementById('nav-friends').innerText = t.friends;
-    document.getElementById('nav-wallet').innerText = t.wallet;
-    document.getElementById('txt-energy-title').innerText = t.en_title;
-    document.getElementById('txt-energy-desc').innerText = t.en_desc;
-    document.getElementById('btn-ad').innerText = t.en_btn;
-    document.getElementById('plane-name-copper').innerText = t.cplane;
-    document.getElementById('plane-name-bronze').innerText = t.bplane;
-    document.getElementById('plane-name-gold').innerText = t.gplane;
-    document.querySelectorAll('.txt-close').forEach(el => el.innerText = t.close);
-    document.querySelectorAll('.txt-price').forEach(el => el.innerText = t.price);
-    document.querySelectorAll('.buy-btn').forEach(el => el.innerText = t.buy);
-    window.toggleModal('settings-modal');
+    try {
+        fetch(`${RENDER_URL}/api/collect`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tgId: userId, amount: finalAmount, type: type })
+        });
+    } catch (e) {}
 };
 
 window.updateUI = function() {
-    document.getElementById('money').innerText = window.usdtMoney.toFixed(5);
-    document.getElementById('frog-money').innerText = Math.floor(window.frogMoney);
-    document.getElementById('energy').innerText = window.energy;
-    document.getElementById('ref-link-display').innerText = `t.me/YOUR_BOT?start=${userId}`;
+    const m = document.getElementById('money');
+    const fm = document.getElementById('frog-money');
+    const en = document.getElementById('energy');
+    const ref = document.getElementById('ref-link-display');
+    if (m) m.innerText = window.usdtMoney.toFixed(5);
+    if (fm) fm.innerText = Math.floor(window.frogMoney);
+    if (en) en.innerText = window.energy;
+    if (ref) ref.innerText = `t.me/YOUR_BOT?start=${userId}`;
 };
-window.updateUI();
+
+// Инициализация при загрузке
+window.onload = () => { window.updateUI(); };
