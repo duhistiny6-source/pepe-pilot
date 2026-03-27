@@ -20,11 +20,7 @@ function preload() {
 
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
-    
-    // Музыка с повтором
-    try {
-        bgMusic = this.sound.add('theme', { volume: 0.1, loop: true });
-    } catch(e) {}
+    try { bgMusic = this.sound.add('theme', { volume: 0.1, loop: true }); } catch(e) {}
 
     targets = this.physics.add.group();
     for(let i=0; i<6; i++) spawn(this);
@@ -38,23 +34,21 @@ function create() {
         if (isLaunching && !caughtItem) {
             caughtItem = item; caughtItem.body.enable = false;
             isLaunching = false; isReturning = true;
-            if (window.playBeep) window.playBeep(400, 0.1);
         }
     });
 
-    this.input.on('pointerdown', () => {
-        // Запуск музыки при первом клике
+    this.input.on('pointerdown', (p) => {
+        if (p.y < 50 || p.y > config.height - 70) return; // Не срабатывать на меню
         if(bgMusic && !bgMusic.isPlaying) bgMusic.play();
-        
         if (!isLaunching && !isReturning && window.energy > 0) {
             isLaunching = true; window.energy--; window.updateUI();
         }
     });
 }
 
-window.changePlaneSkin = function(type) {
-    if (!plane) return;
-    let key = (type === 'copper') ? 'plane_copper' : (type === 'bronze') ? 'plane_bronze' : (type === 'gold') ? 'plane_gold' : 'plane';
+window.changePlaneSkin = function(t) {
+    if(!plane) return;
+    let key = (t==='copper')?'plane_copper':(t==='bronze')?'plane_bronze':(t==='gold')?'plane_gold':'plane';
     plane.setTexture(key);
 };
 
@@ -62,13 +56,16 @@ function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
     let y = Phaser.Math.Between(config.height * 0.45, config.height - 120);
     let type = (Phaser.Math.Between(1, 100) <= 75) ? 'pilot_coin' : 'usdt';
-    targets.create(x, y, type).setScale(type === 'pilot_coin' ? 0.1 : 0.12).setDepth(40);
-}
-
-function showValue(scene, isPlt) {
-    let val = isPlt ? (window.currentPlane === 'gold' ? "50" : "10") : "0.00005";
-    let txt = scene.add.text(plane.x, plane.y - 50, `+${val}`, { font: 'bold 26px Arial', fill: isPlt ? '#ffcc00' : '#00ff00' }).setOrigin(0.5).setDepth(100);
-    scene.tweens.add({ targets: txt, y: txt.y - 60, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
+    let item = targets.create(x, y, type).setScale(type === 'pilot_coin' ? 0.1 : 0.12).setDepth(40);
+    
+    // ВЕРНУЛ ПУЛЬСАЦИЮ
+    scene.tweens.add({
+        targets: item,
+        scale: item.scale * 1.15,
+        duration: 800,
+        yoyo: true,
+        repeat: -1
+    });
 }
 
 function update() {
@@ -85,9 +82,7 @@ function update() {
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
-                let isPlt = (caughtItem.texture.key === 'pilot_coin');
-                showValue(this, isPlt);
-                window.saveCollect(0, isPlt ? 'plt' : 'usdt');
+                window.saveCollect(0, caughtItem.texture.key === 'pilot_coin' ? 'plt' : 'usdt');
                 caughtItem.destroy(); caughtItem = null; spawn(this);
             }
         }
