@@ -6,49 +6,59 @@
     <title>Pepe Pilot: Crypto Edition</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
     <style>
         body { margin:0; padding:0; overflow:hidden; background:#000; touch-action: none; font-family: 'Segoe UI', Arial, sans-serif; }
+        #top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 35px; background: rgba(0, 0, 0, 0.4); z-index: 1000; backdrop-filter: blur(2px); display: flex; align-items: center; }
         
-        /* ВЕРХНЯЯ ПАНЕЛЬ */
-        #top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 60px; background: rgba(0, 0, 0, 0.5); z-index: 1000; backdrop-filter: blur(4px); display: flex; align-items: center; }
+        /* ЭНЕРГИЯ ВЕРНУЛАСЬ НА МЕСТО */
+        #energy-container { position: absolute; left: 12px; display: flex; align-items: center; gap: 5px; color: #0f0; font-size: 13px; font-weight: bold; text-shadow: 1px 1px 1px #000; }
         
-        /* БЛОК ЭНЕРГИИ (ЛЕВЫЙ УГОЛ) */
-        #energy-block { position: absolute; left: 12px; top: 5px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-        #energy-text { color: #0f0; font-size: 14px; font-weight: bold; text-shadow: 1px 1px 2px #000; }
-        #energy-timer { color: #aaa; font-size: 10px; font-family: monospace; background: rgba(0,0,0,0.4); padding: 0 4px; border-radius: 3px; }
-        #restore-btn { 
-            background: linear-gradient(180deg, #ffcc00 0%, #e6b800 100%); 
-            color: #000; font-size: 9px; padding: 3px 8px; border-radius: 5px; 
-            cursor: pointer; font-weight: bold; border: 1px solid #fff; 
-            display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.5);
-            margin-top: 2px; visibility: hidden;
+        /* БЛОК С ТАЙМЕРОМ (ДОБАВИЛ СКРЫТО) */
+        #restore-block { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+        #energy-timer { color: #aaa; font-size: 9px; font-family: monospace; display: none; } /* Скрыт пока >0 */
+        
+        /* ТВОЙ БАЛАНС ВЕРНУЛСЯ НА ЦЕНТР */
+        #balance-container { width: 100%; display: flex; align-items: center; justify-content: center; gap: 15px; color: #fff; font-size: 11px; }
+        .balance-item { display: flex; align-items: center; gap: 4px; }
+        .coin-icon { width: 14px; height: 14px; }
+        
+        /* КНОПКА ВОССТАНОВЛЕНИЯ (СКРЫТА ПО УМОЛЧАНИЮ) */
+        #restore-btn-inline { 
+            display: none; 
+            background: #ffcc00; color: #000; 
+            font-size: 9px; padding: 2px 5px; 
+            border-radius: 4px; cursor: pointer; 
+            font-weight: bold; margin-left: 5px;
+            border: 1px solid #fff;
         }
 
-        /* БАЛАНС (ЦЕНТР) */
-        #balance-container { width: 100%; display: flex; align-items: center; justify-content: center; gap: 15px; color: #fff; font-size: 12px; padding-left: 50px; }
-        .balance-item { display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 8px; }
-        .coin-icon { width: 16px; height: 16px; }
-
-        /* НАВИГАЦИЯ (НИЗ) */
-        #nav-bar { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 90%; height: 55px; background: rgba(0, 0, 0, 0.9); border: 1px solid #333; border-radius: 15px; display: flex; justify-content: space-around; align-items: center; z-index: 200; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; flex: 1; cursor: pointer; text-decoration: none; }
-        .nav-text { font-size: 9px; margin-top: 2px; color: #bbb; text-transform: uppercase; font-weight: bold; }
-
-        /* МОДАЛКИ */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; color: #fff; justify-content: center; align-items: center; }
-        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 300px; max-width: 90%; }
-        .task-item { background: #222; border: 1px solid #444; border-radius: 12px; padding: 12px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
-        .task-btn { background: #0f0; color: #000; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        #settings-btn { position: fixed; top: 7px; right: 10px; font-size: 18px; cursor: pointer; z-index: 1001; opacity: 0.8; color: white; }
+        #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 85%; height: 50px; background: rgba(0, 0, 0, 0.9); border: 1px solid #333; border-radius: 12px; display: flex; justify-content: space-around; align-items: center; z-index: 200; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; font-weight: bold; flex: 1; opacity: 0.9; cursor: pointer; text-decoration: none; }
+        .nav-text { font-size: 8px; margin-top: 1px; color: #bbb; text-transform: uppercase; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; color: #fff; justify-content: center; align-items: center; }
+        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 280px; max-width: 90%; }
+        .task-item { background: #222; border: 1px solid #444; border-radius: 10px; padding: 10px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+        .task-btn { background: #0f0; color: #000; border: none; padding: 6px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
     </style>
 </head>
 <body>
 
+<div id="settings-btn" onclick="toggleModal('settings-modal')">⚙️</div>
+
 <div id="top-bar">
-    <div id="energy-block">
-        <div id="energy-text">⚡ <span id="energy">100</span></div>
-        <div id="energy-timer">02:00:00</div>
-        <div id="restore-btn" onclick="restoreEnergyByAd()">ВОССТАНОВИТЬ ⚡📺</div>
+    <div id="energy-container">
+        ⚡ 
+        <div id="restore-block">
+            <span id="energy">100</span>
+            <span id="energy-timer">02:00:00</span>
+        </div>
+        <span id="restore-btn-inline" onclick="restoreEnergyByAd()">ВОССТАНОВИТЬ 📺</span>
     </div>
+    
     <div id="balance-container">
         <div class="balance-item"><span>USDT:</span> <span id="money" style="color:#0f0">0.00000</span></div>
         <div class="balance-item">
@@ -59,32 +69,16 @@
 
 <div id="shop-modal" class="modal">
     <div class="modal-content">
-        <h2 style="color:#0f0; margin-bottom:20px;">АНГАР</h2>
+        <h3>АНГАР</h3>
         <div class="task-item">
             <img src="plane_copper.png" width="50">
-            <div style="text-align:left; flex:1; margin-left:15px;">
-                <div style="color:#cd7f32; font-weight:bold;">МЕДНЫЙ</div>
-                <div style="font-size:10px; color:#aaa;">Цена: 10 USDT<br>+20 PTL / +0.0001 USDT</div>
+            <div style="text-align:left; flex:1; margin-left:10px;">
+                <div style="color:#cd7f32">МЕДНЫЙ</div>
+                <div style="font-size:10px;">Цена: 10 USDT<br>+20 PTL / +0.0001 USDT</div>
             </div>
-            <button class="task-btn" onclick="buyPlane('copper', 10)">КУПИТЬ</button>
+            <button class="task-btn buy-btn" onclick="buyPlane('copper', 10)">КУПИТЬ</button>
         </div>
-        <div class="task-item">
-            <img src="plane_bronze.png" width="50">
-            <div style="text-align:left; flex:1; margin-left:15px;">
-                <div style="color:#b08d57; font-weight:bold;">БРОНЗОВЫЙ</div>
-                <div style="font-size:10px; color:#aaa;">Цена: 25 USDT<br>+50 PTL / +0.0005 USDT</div>
-            </div>
-            <button class="task-btn" onclick="buyPlane('bronze', 25)">КУПИТЬ</button>
-        </div>
-        <div class="task-item">
-            <img src="plane_gold.png" width="50">
-            <div style="text-align:left; flex:1; margin-left:15px;">
-                <div style="color:#ffd700; font-weight:bold;">ЗОЛОТОЙ</div>
-                <div style="font-size:10px; color:#aaa;">Цена: 50 USDT<br>+100 PTL / +0.001 USDT</div>
-            </div>
-            <button class="task-btn" onclick="buyPlane('gold', 50)">КУПИТЬ</button>
-        </div>
-        <div style="margin-top:20px; color:#777; cursor:pointer; font-weight:bold;" onclick="toggleModal('shop-modal')">ЗАКРЫТЬ</div>
+        <div style="margin-top:15px; color:#888;" onclick="toggleModal('shop-modal')">Закрыть</div>
     </div>
 </div>
 
@@ -97,10 +91,12 @@
 
 <script src="game.js"></script>
 <script>
+    // Твоя родная функция модалок
     function toggleModal(id) {
-        const m = document.getElementById(id);
-        m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+        const modal = document.getElementById(id);
+        modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
     }
 </script>
 </body>
 </html>
+          
