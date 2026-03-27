@@ -6,6 +6,29 @@ const game = new Phaser.Game(config);
 let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.015, distance = 25;
 
+// Глобальная функция обновления UI
+window.updateUI = function() {
+    const energyEl = document.getElementById('energy');
+    const restoreBtn = document.getElementById('restore-btn');
+    if (energyEl) energyEl.innerText = Math.floor(window.energy);
+    
+    // Показываем кнопку рекламы только если энергия на нуле
+    if (window.energy <= 0) {
+        restoreBtn.style.display = "block";
+    } else {
+        restoreBtn.style.display = "none";
+    }
+}
+
+// Функция восстановления за рекламу
+window.restoreEnergyByAd = function() {
+    // Тут будет вызов рекламы. Пока имитируем успех:
+    window.energy = 100;
+    window.updateUI();
+    // Отправляем на сервер обновленную энергию
+    saveEnergyToServer(100);
+}
+
 function preload() {
     this.load.image('sky', 'pg.jpeg');
     this.load.image('hook', 'kleshn.png');
@@ -21,7 +44,7 @@ function preload() {
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
     try {
-        bgMusic = this.sound.add('theme', { volume: 0.01, loop: true }); // МУЗЫКА 1%
+        bgMusic = this.sound.add('theme', { volume: 0.01, loop: true });
     } catch (e) {}
     this.input.once('pointerdown', () => { if (bgMusic && !bgMusic.isPlaying) bgMusic.play(); });
 
@@ -41,15 +64,26 @@ function create() {
         if (isLaunching && !caughtItem) {
             caughtItem = item; caughtItem.body.enable = false;
             if (caughtItem.pulse) caughtItem.pulse.stop();
-            if (window.playBeep) window.playBeep(450, 0.1); // СИГНАЛ ЗАХВАТА
+            if (window.playBeep) window.playBeep(450, 0.1);
             isLaunching = false; isReturning = true;
         }
     });
 
-    this.input.on('pointerdown', () => {
-        if (!isLaunching && !isReturning && window.energy > 0) {
-            isLaunching = true; window.energy--; if (window.updateUI) window.updateUI();
-            if (window.playBeep) window.playBeep(250, 0.06); // СИГНАЛ ЗАПУСКА
+    this.input.on('pointerdown', (pointer) => {
+        // Проверяем, что нажали не на кнопки интерфейса
+        if (pointer.y > 50 && pointer.y < config.height - 80) {
+            if (!isLaunching && !isReturning) {
+                if (window.energy >= 1) {
+                    isLaunching = true; 
+                    window.energy--; 
+                    window.updateUI();
+                    saveEnergyToServer(window.energy); // Сохраняем расход
+                    if (window.playBeep) window.playBeep(250, 0.06);
+                } else {
+                    // Тряска экрана или звук ошибки, если энергии нет
+                    this.cameras.main.shake(100, 0.01);
+                }
+            }
         }
     });
 }
@@ -80,7 +114,7 @@ function update() {
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
-                if (window.playBeep) window.playBeep(700, 0.12); // СИГНАЛ УДАРА ОБ САМОЛЕТ
+                if (window.playBeep) window.playBeep(700, 0.12);
                 showValue(this, caughtItem.texture.key === 'pilot_coin');
                 window.saveCollect(0, caughtItem.texture.key === 'pilot_coin' ? 'plt' : 'usdt');
                 caughtItem.destroy(); caughtItem = null; spawn(this);
@@ -90,4 +124,14 @@ function update() {
     hook.x = startX + Math.sin(angle) * distance; hook.y = startY + Math.cos(angle) * distance; hook.rotation = -angle;
     rope.clear().lineStyle(2, 0xffffff, 0.6).lineBetween(startX, startY, startX + Math.sin(angle) * (distance - 20), startY + Math.cos(angle) * (distance - 20));
     if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; }
+}
+
+// Функция для API (нужно добавить в api.js или оставить тут)
+function saveEnergyToServer(val) {
+    if(!window.userId) return;
+    fetch('/api/energy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tgId: window.userId, energy: val })
+    }).catch(e => console.error("Energy save error"));
 }
