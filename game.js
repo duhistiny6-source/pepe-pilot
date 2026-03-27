@@ -20,9 +20,7 @@ function preload() {
 
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
-    try {
-        bgMusic = this.sound.add('theme', { volume: 0.01, loop: true }); // МУЗЫКА 1%
-    } catch (e) {}
+    try { bgMusic = this.sound.add('theme', { volume: 0.01, loop: true }); } catch (e) {}
     this.input.once('pointerdown', () => { if (bgMusic && !bgMusic.isPlaying) bgMusic.play(); });
 
     targets = this.physics.add.group();
@@ -31,25 +29,24 @@ function create() {
     hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(65, 65);
     this.physics.add.existing(hook);
 
-    let tex = 'plane';
-    if(window.currentPlane === 'copper') tex = 'plane_copper';
-    if(window.currentPlane === 'bronze') tex = 'plane_bronze';
-    if(window.currentPlane === 'gold') tex = 'plane_gold';
+    let tex = (window.currentPlane === 'default') ? 'plane' : 'plane_' + window.currentPlane;
     plane = this.add.image(config.width/2, 120, tex).setDisplaySize(280, 180).setDepth(60);
 
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
             caughtItem = item; caughtItem.body.enable = false;
             if (caughtItem.pulse) caughtItem.pulse.stop();
-            if (window.playBeep) window.playBeep(450, 0.1); // СИГНАЛ ЗАХВАТА
+            if (window.playBeep) window.playBeep(450, 0.1);
             isLaunching = false; isReturning = true;
         }
     });
 
     this.input.on('pointerdown', () => {
-        if (!isLaunching && !isReturning && window.energy > 0) {
-            isLaunching = true; window.energy--; if (window.updateUI) window.updateUI();
-            if (window.playBeep) window.playBeep(250, 0.06); // СИГНАЛ ЗАПУСКА
+        if (!isLaunching && !isReturning) {
+            if (window.checkEnergy && window.checkEnergy()) {
+                isLaunching = true; window.energy--; if (window.updateUI) window.updateUI();
+                if (window.playBeep) window.playBeep(250, 0.06);
+            }
         }
     });
 }
@@ -63,7 +60,9 @@ function spawn(scene) {
 }
 
 function showValue(scene, isPlt) {
-    let val = isPlt ? (window.currentPlane === 'copper' ? "20" : window.currentPlane === 'bronze' ? "50" : window.currentPlane === 'gold' ? "100" : "10") : (window.currentPlane === 'copper' ? "0.0001" : window.currentPlane === 'bronze' ? "0.0005" : window.currentPlane === 'gold' ? "0.001" : "0.00005");
+    let val = isPlt ? 
+        (window.currentPlane === 'copper' ? "20" : window.currentPlane === 'bronze' ? "50" : window.currentPlane === 'gold' ? "100" : "10") :
+        (window.currentPlane === 'copper' ? "0.0001" : window.currentPlane === 'bronze' ? "0.0005" : window.currentPlane === 'gold' ? "0.001" : "0.00001");
     let txt = scene.add.text(plane.x, plane.y - 40, `+${val}`, { font: 'bold 28px Arial', fill: isPlt ? '#ffcc00' : '#00ff00' }).setOrigin(0.5).setDepth(100);
     scene.tweens.add({ targets: txt, y: txt.y - 70, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
 }
@@ -80,7 +79,7 @@ function update() {
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
-                if (window.playBeep) window.playBeep(700, 0.12); // СИГНАЛ УДАРА ОБ САМОЛЕТ
+                if (window.playBeep) window.playBeep(700, 0.12);
                 showValue(this, caughtItem.texture.key === 'pilot_coin');
                 window.saveCollect(0, caughtItem.texture.key === 'pilot_coin' ? 'plt' : 'usdt');
                 caughtItem.destroy(); caughtItem = null; spawn(this);
@@ -91,4 +90,3 @@ function update() {
     rope.clear().lineStyle(2, 0xffffff, 0.6).lineBetween(startX, startY, startX + Math.sin(angle) * (distance - 20), startY + Math.cos(angle) * (distance - 20));
     if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; }
 }
-          
