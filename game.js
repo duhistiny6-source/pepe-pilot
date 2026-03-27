@@ -1,77 +1,100 @@
-// В функции create()
+const config = {
+    type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight,
+    physics: { default: 'arcade' }, scene: { preload, create, update }
+};
+const game = new Phaser.Game(config);
+let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
+let angle = 0, swingSpeed = 0.015, distance = 25;
+
+function preload() {
+    this.load.image('sky', 'pg.jpeg');
+    this.load.image('hook', 'kleshn.png');
+    this.load.image('usdt', 'usdt.png');
+    this.load.image('pilot_coin', 'logo..png');
+    this.load.image('plane', 'pepe.png');
+    this.load.image('plane_copper', 'plane_copper.png');
+    this.load.image('plane_bronze', 'plane_bronze.png');
+    this.load.image('plane_gold', 'plane_gold.png');
+    this.load.audio('theme', 'music.mp3');
+}
+
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
     
-    // МУЗЫКА: Исправленный автоплей и цикл
-    try { 
-        bgMusic = this.sound.add('theme', { volume: 0.005, loop: true }); 
-        // Запуск при первом взаимодействии (требование браузеров)
-        this.input.once('pointerdown', () => { 
-            if (!bgMusic.isPlaying) bgMusic.play(); 
-        });
-    } catch (e) { console.error("Ошибка звука"); }
+    // Музыка с повтором
+    try {
+        bgMusic = this.sound.add('theme', { volume: 0.1, loop: true });
+    } catch(e) {}
 
     targets = this.physics.add.group();
     for(let i=0; i<6; i++) spawn(this);
     
     rope = this.add.graphics().setDepth(5);
-    // Начальное положение клешни строго под самолетом
-    hook = this.add.sprite(config.width/2, 140, 'hook').setDepth(50).setDisplaySize(65, 65); 
+    hook = this.add.sprite(config.width/2, 145, 'hook').setDepth(50).setDisplaySize(65, 65); 
     this.physics.add.existing(hook);
     plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
-            caughtItem = item; 
-            caughtItem.body.enable = false;
-            isLaunching = false; 
-            isReturning = true;
-            if (window.playBeep) window.playBeep(350, 0.1); 
+            caughtItem = item; caughtItem.body.enable = false;
+            isLaunching = false; isReturning = true;
+            if (window.playBeep) window.playBeep(400, 0.1);
+        }
+    });
+
+    this.input.on('pointerdown', () => {
+        // Запуск музыки при первом клике
+        if(bgMusic && !bgMusic.isPlaying) bgMusic.play();
+        
+        if (!isLaunching && !isReturning && window.energy > 0) {
+            isLaunching = true; window.energy--; window.updateUI();
         }
     });
 }
 
-// В функции update() - ИСПРАВЛЕННЫЙ ТРОС
+window.changePlaneSkin = function(type) {
+    if (!plane) return;
+    let key = (type === 'copper') ? 'plane_copper' : (type === 'bronze') ? 'plane_bronze' : (type === 'gold') ? 'plane_gold' : 'plane';
+    plane.setTexture(key);
+};
+
+function spawn(scene) {
+    let x = Phaser.Math.Between(50, config.width - 50);
+    let y = Phaser.Math.Between(config.height * 0.45, config.height - 120);
+    let type = (Phaser.Math.Between(1, 100) <= 75) ? 'pilot_coin' : 'usdt';
+    targets.create(x, y, type).setScale(type === 'pilot_coin' ? 0.1 : 0.12).setDepth(40);
+}
+
+function showValue(scene, isPlt) {
+    let val = isPlt ? (window.currentPlane === 'gold' ? "50" : "10") : "0.00005";
+    let txt = scene.add.text(plane.x, plane.y - 50, `+${val}`, { font: 'bold 26px Arial', fill: isPlt ? '#ffcc00' : '#00ff00' }).setOrigin(0.5).setDepth(100);
+    scene.tweens.add({ targets: txt, y: txt.y - 60, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
+}
+
 function update() {
     plane.y = 120 + Math.sin(this.time.now / 600) * 5;
-    // Точка выхода троса из самолета
-    let startX = plane.x - 5; 
-    let startY = plane.y + 25; 
+    let sX = plane.x - 5, sY = plane.y + 25;
 
     if (!isLaunching && !isReturning) {
-        angle += swingSpeed; 
-        if (angle > 0.4 || angle < -0.4) swingSpeed *= -1;
+        angle += swingSpeed; if (angle > 0.4 || angle < -0.4) swingSpeed *= -1;
         distance = 25;
     } else if (isLaunching) {
-        distance += 12; 
-        if (distance > config.height - 100) { isLaunching = false; isReturning = true; }
+        distance += 12; if (distance > config.height - 100) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
         distance -= 7;
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
                 let isPlt = (caughtItem.texture.key === 'pilot_coin');
-                if (window.showValue) window.showValue(this, plane.x, plane.y, isPlt); 
-                if (window.saveCollect) window.saveCollect(0, isPlt ? 'plt' : 'usdt'); 
-                if (window.playBeep) window.playBeep(600, 0.1);
+                showValue(this, isPlt);
+                window.saveCollect(0, isPlt ? 'plt' : 'usdt');
                 caughtItem.destroy(); caughtItem = null; spawn(this);
             }
         }
     }
-
-    // Математика позиции клешни
-    hook.x = startX + Math.sin(angle) * distance;
-    hook.y = startY + Math.cos(angle) * distance;
+    hook.x = sX + Math.sin(angle) * distance;
+    hook.y = sY + Math.cos(angle) * distance;
     hook.rotation = -angle;
-    
-    // Отрисовка троса: от самолета до центра клешни
-    rope.clear();
-    rope.lineStyle(2, 0xffffff, 0.5);
-    rope.lineBetween(startX, startY, hook.x, hook.y);
-    
-    if (caughtItem) { 
-        caughtItem.x = hook.x; 
-        caughtItem.y = hook.y + 15; 
-        caughtItem.rotation = hook.rotation; 
-    }
+    rope.clear().lineStyle(2, 0xffffff, 0.5).lineBetween(sX, sY, hook.x, hook.y);
+    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; caughtItem.rotation = hook.rotation; }
 }
