@@ -4,7 +4,7 @@ const config = {
 };
 const game = new Phaser.Game(config);
 let plane, hook, targets, isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.018, distance = 25;
+let angle = 0, swingSpeed = 0.015, distance = 25;
 
 // Глобальное состояние
 window.energy = 100;
@@ -13,39 +13,48 @@ window.usdtBalance = 0;
 window.currentPlane = 'default'; // copper, bronze, gold
 let nextRestoreTime = Date.now() + 2 * 60 * 60 * 1000;
 
+// ТВОЯ ЧЕТКАЯ UI ФУНКЦИЯ
 window.updateUI = function() {
+    // Обновляем энергию
     document.getElementById('energy').innerText = Math.floor(window.energy);
+    
+    // Обновляем баланс (USDT до 5 знака)
     document.getElementById('money').innerText = window.usdtBalance.toFixed(5);
     document.getElementById('frog-money').innerText = Math.floor(window.pltBalance);
     
-    // Кнопка восстановления видна только если энергия не полная
-    const btn = document.getElementById('restore-btn');
-    btn.style.visibility = (window.energy < 100) ? "visible" : "hidden";
+    // Показываем кнопку восстановления, если энергии МАЛО (менее 10)
+    const btn = document.getElementById('restore-btn-inline');
+    btn.style.display = (window.energy < 10) ? "inline-block" : "none";
 }
 
-// Таймер обратного отсчета (2 часа)
+// ТАЙМЕР НА 2 ЧАСА (Живет в фоне)
 setInterval(() => {
+    if (window.energy >= 100) return; // Энергия полная, таймер не нужен
+
     const now = Date.now();
     const diff = nextRestoreTime - now;
+    
     if (diff <= 0) {
         window.energy = 100;
-        nextRestoreTime = Date.now() + 2 * 60 * 60 * 1000;
+        nextRestoreTime = Date.now() + 2 * 60 * 60 * 1000; // Сброс таймера
         window.updateUI();
     }
+    
+    // Обновляем отображение таймера
     const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
     const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
     const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
     document.getElementById('energy-timer').innerText = `${h}:${m}:${s}`;
 }, 1000);
 
+// ФУНКЦИЯ ДЛЯ РЕКЛАМЫ (Смотрим -> Получаем 100)
 window.restoreEnergyByAd = function() {
-    // Здесь будет вызов твоей рекламы
+    // В будущем тут будет вызов рекламы (Adsgram и т.д.)
+    // Пока имитируем просмотр
     window.energy = 100;
     nextRestoreTime = Date.now() + 2 * 60 * 60 * 1000;
     window.updateUI();
-    if (window.userId) {
-        // Опционально: отправить на сервер факт восстановления
-    }
+    console.log("Энергия восстановлена через рекламу");
 }
 
 function preload() {
@@ -74,12 +83,12 @@ function create() {
     });
 
     this.input.on('pointerdown', (pointer) => {
-        // Не запускаем если нажали на меню или кнопки
+        // Четкая проверка: не нажимаем на меню или кнопки
         if (pointer.y < 80 || pointer.y > config.height - 80) return;
         
         if (!isLaunching && !isReturning && window.energy > 0) {
             isLaunching = true;
-            window.energy -= 1;
+            window.energy -= 1; // Расход энергии
             window.updateUI();
         }
     });
@@ -88,8 +97,8 @@ function create() {
 function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
     let y = Phaser.Math.Between(350, config.height - 180);
-    let type = (Math.random() > 0.85) ? 'usdt' : 'plt';
-    let coin = targets.create(x, y, type).setScale(0.13).setDepth(1);
+    let type = (Math.random() > 0.8) ? 'usdt' : 'plt';
+    let coin = targets.create(x, y, type).setScale(0.12).setDepth(1);
 }
 
 function update() {
@@ -104,23 +113,20 @@ function update() {
         if (distance <= 30) {
             isReturning = false;
             if (caughtItem) {
+                // ЮВЕЛИРНОЕ НАЧИСЛЕНИЕ МОНЕТ
                 let isPlt = (caughtItem.texture.key === 'plt');
                 
-                // Начисление в зависимости от самолета
-                let addAmount = 0;
+                // Расчет в зависимости от самолета (взято из твоих модалок)
                 if (isPlt) {
-                    addAmount = (window.currentPlane === 'gold' ? 100 : window.currentPlane === 'bronze' ? 50 : window.currentPlane === 'copper' ? 20 : 10);
-                    window.pltBalance += addAmount;
+                    let amount = (window.currentPlane === 'gold' ? 100 : window.currentPlane === 'bronze' ? 50 : 10);
+                    window.pltBalance += amount;
                 } else {
-                    addAmount = (window.currentPlane === 'gold' ? 0.001 : window.currentPlane === 'bronze' ? 0.0005 : window.currentPlane === 'copper' ? 0.0001 : 0.00005);
-                    window.usdtBalance += addAmount;
+                    let amount = (window.currentPlane === 'gold' ? 0.001 : window.currentPlane === 'bronze' ? 0.0005 : 0.0001);
+                    window.usdtBalance += amount;
                 }
                 
-                window.updateUI();
+                window.updateUI(); // Мгновенно обновляем интерфейс
                 
-                // Отправка на сервер (если функция определена в api.js)
-                if (window.saveCollect) window.saveCollect(addAmount, isPlt ? 'plt' : 'usdt');
-
                 caughtItem.destroy(); caughtItem = null; spawn(this);
             }
         }
@@ -129,3 +135,4 @@ function update() {
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
 }
+        
