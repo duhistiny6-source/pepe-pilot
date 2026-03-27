@@ -22,10 +22,10 @@ function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
     
     try {
-        bgMusic = this.sound.add('theme', { volume: 0.2, loop: true });
+        // МУЗЫКА 3% (0.03) — очень тихо
+        bgMusic = this.sound.add('theme', { volume: 0.03, loop: true });
     } catch (e) {}
     
-    // Музыка запустится при первом клике
     this.input.once('pointerdown', () => { if (bgMusic && !bgMusic.isPlaying) bgMusic.play(); });
 
     targets = this.physics.add.group();
@@ -41,11 +41,15 @@ function create() {
     if(window.currentPlane === 'gold') tex = 'plane_gold';
     plane = this.add.image(config.width/2, 120, tex).setDisplaySize(280, 180).setDepth(60);
 
+    // СИГНАЛ ПРИ КАСАНИИ МОНЕТКИ (УДАР КЛЕШНИ)
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
             caughtItem = item; caughtItem.body.enable = false;
             if (caughtItem.pulse) caughtItem.pulse.stop();
-            if (window.playBeep) window.playBeep(400, 0.1);
+            
+            // Звук захвата (частота 400Гц)
+            if (window.playBeep) window.playBeep(400, 0.1); 
+            
             isLaunching = false; isReturning = true;
         }
     });
@@ -53,7 +57,9 @@ function create() {
     this.input.on('pointerdown', () => {
         if (!isLaunching && !isReturning && window.energy > 0) {
             isLaunching = true; window.energy--; if (window.updateUI) window.updateUI();
-            if (window.playBeep) window.playBeep(200, 0.05);
+            
+            // СИГНАЛ ПРИ ЗАПУСКЕ КЛЕШНИ
+            if (window.playBeep) window.playBeep(200, 0.05); 
         }
     });
 }
@@ -64,22 +70,11 @@ function spawn(scene) {
     let type = (Phaser.Math.Between(1, 100) <= 70) ? 'pilot_coin' : 'usdt';
     let coin = targets.create(x, y, type).setScale(type === 'pilot_coin' ? 0.10 : 0.12).setDepth(40);
     
-    // ПУЛЬСАЦИЯ
     coin.pulse = scene.tweens.add({
-        targets: coin,
-        scale: (type === 'pilot_coin' ? 0.12 : 0.14),
-        duration: 800,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut'
+        targets: coin, scale: (type === 'pilot_coin' ? 0.12 : 0.14),
+        duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
     });
 }
-
-window.changePlaneSkin = function(type) {
-    if (!plane) return;
-    let tex = (type === 'default') ? 'plane' : 'plane_' + type;
-    plane.setTexture(tex);
-};
 
 function showValue(scene, isPlt) {
     let val = isPlt ? 
@@ -103,7 +98,10 @@ function update() {
             isReturning = false;
             if (caughtItem) {
                 showValue(this, caughtItem.texture.key === 'pilot_coin');
-                if (window.playBeep) window.playBeep(600, 0.15);
+                
+                // СИГНАЛ ПРИ УДАРЕ ОБ САМОЛЕТ (УСПЕШНЫЙ СБОР)
+                if (window.playBeep) window.playBeep(600, 0.15); 
+                
                 window.saveCollect(0, caughtItem.texture.key === 'pilot_coin' ? 'plt' : 'usdt');
                 caughtItem.destroy(); caughtItem = null; spawn(this);
             }
