@@ -3,7 +3,7 @@ const config = {
     physics: { default: 'arcade' }, scene: { preload, create, update }
 };
 const game = new Phaser.Game(config);
-let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
+let plane, hook, rope, targets, isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.015, distance = 25;
 
 function preload() {
@@ -15,7 +15,6 @@ function preload() {
     this.load.image('plane_copper', 'plane_copper.png');
     this.load.image('plane_bronze', 'plane_bronze.png');
     this.load.image('plane_gold', 'plane_gold.png');
-    this.load.audio('theme', 'music.mp3');
 }
 
 function create() {
@@ -35,6 +34,7 @@ function create() {
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
             caughtItem = item; caughtItem.body.enable = false;
+            if (window.playBeep) window.playBeep(400, 0.1); // Звук захвата
             isLaunching = false; isReturning = true;
         }
     });
@@ -42,6 +42,7 @@ function create() {
     this.input.on('pointerdown', () => {
         if (!isLaunching && !isReturning && window.energy > 0) {
             isLaunching = true; window.energy--; if (window.updateUI) window.updateUI();
+            if (window.playBeep) window.playBeep(200, 0.05); // Звук запуска
         }
     });
 }
@@ -89,6 +90,7 @@ function update() {
             isReturning = false;
             if (caughtItem) {
                 showValue(this, caughtItem.texture.key === 'pilot_coin');
+                if (window.playBeep) window.playBeep(600, 0.15); // Звук успеха
                 window.saveCollect(0, caughtItem.texture.key === 'pilot_coin' ? 'plt' : 'usdt');
                 caughtItem.destroy(); caughtItem = null; spawn(this);
             }
