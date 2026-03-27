@@ -11,14 +11,19 @@ function preload() {
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
     this.load.image('pilot_coin', 'logo..png');
-    this.load.image('plane', 'pepe.png');
+    this.load.image('plane', 'pepe.png'); // Стандартный
+    
+    // ЗАГРУЗКА НОВЫХ САМОЛЕТОВ
+    this.load.image('plane_copper', 'plane_copper.png');
+    this.load.image('plane_bronze', 'plane_bronze.png');
+    this.load.image('plane_gold', 'plane_gold.png');
+    
     this.load.audio('theme', 'music.mp3');
 }
 
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
     
-    // Тихая музыка (0.002)
     try { 
         bgMusic = this.sound.add('theme', { volume: 0.002, loop: true }); 
     } catch (e) {}
@@ -30,7 +35,14 @@ function create() {
     rope = this.add.graphics().setDepth(5);
     hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(65, 65); 
     this.physics.add.existing(hook);
-    plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
+    
+    // Создаем самолет (используем текущий из api.js если он уже загружен)
+    let startTexture = 'plane';
+    if(window.currentPlane === 'copper') startTexture = 'plane_copper';
+    if(window.currentPlane === 'bronze') startTexture = 'plane_bronze';
+    if(window.currentPlane === 'gold') startTexture = 'plane_gold';
+    
+    plane = this.add.image(config.width/2, 120, startTexture).setDisplaySize(280, 180).setDepth(60);
 
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
@@ -49,6 +61,17 @@ function create() {
     });
 }
 
+// Функция для смены скина из api.js
+window.changePlaneSkin = function(type) {
+    if (!plane) return;
+    let tex = 'plane';
+    if (type === 'copper') tex = 'plane_copper';
+    if (type === 'bronze') tex = 'plane_bronze';
+    if (type === 'gold') tex = 'plane_gold';
+    plane.setTexture(tex);
+    plane.setDisplaySize(280, 180);
+};
+
 function spawn(scene) {
     let x = Phaser.Math.Between(60, config.width - 60);
     let y = Phaser.Math.Between(config.height * 0.5, config.height - 130);
@@ -57,14 +80,28 @@ function spawn(scene) {
     let baseScale = type === 'pilot_coin' ? 0.10 : 0.12;
     coin.setScale(baseScale);
 
-    // ПУЛЬСАЦИЯ МОНЕТ
     coin.pulseTween = scene.tweens.add({
         targets: coin, scale: baseScale * 1.2, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
     });
 }
 
-function showValue(scene, val, isFrog) {
-    let color = isFrog ? '#ffcc00' : '#00ff00';
+function showValue(scene, isPlt) {
+    let val = "";
+    let color = isPlt ? '#ffcc00' : '#00ff00';
+    
+    // Определяем текст в зависимости от самолета
+    if (isPlt) {
+        if (window.currentPlane === 'copper') val = "10";
+        else if (window.currentPlane === 'bronze') val = "25";
+        else if (window.currentPlane === 'gold') val = "50";
+        else val = "10";
+    } else {
+        if (window.currentPlane === 'copper') val = "0.00005";
+        else if (window.currentPlane === 'bronze') val = "0.0005";
+        else if (window.currentPlane === 'gold') val = "0.005";
+        else val = "0.00005";
+    }
+
     let txt = scene.add.text(plane.x, plane.y - 40, `+${val}`, { font: 'bold 28px Arial', fill: color }).setOrigin(0.5).setDepth(100);
     scene.tweens.add({ targets: txt, y: txt.y - 70, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
 }
@@ -75,21 +112,27 @@ function update() {
 
     if (!isLaunching && !isReturning) {
         angle += swingSpeed; 
-        if (angle > 0.4 || angle < -0.4) swingSpeed *= -1; // Узкий размах
+        if (angle > 0.4 || angle < -0.4) swingSpeed *= -1; 
         distance = 25;
     } else if (isLaunching) {
         distance += 14; 
         if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        distance -= 6; // Плавный подъем
+        distance -= 6; 
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
                 let isPlt = (caughtItem.texture.key === 'pilot_coin');
-                let amount = isPlt ? 10 : 0.0005;
-                showValue(this, amount, isPlt); 
+                
+                // ВАЖНО: вызываем showValue БЕЗ передачи заранее посчитанной суммы, 
+                // так как она теперь считается внутри функции на основе самолета
+                showValue(this, isPlt); 
+                
                 if (window.playBeep) window.playBeep(700, 0.1); 
-                if (window.saveCollect) window.saveCollect(amount, isPlt ? 'plt' : 'usdt'); 
+                
+                // Сохраняем (в api.js сумма посчитается автоматически)
+                if (window.saveCollect) window.saveCollect(0, isPlt ? 'plt' : 'usdt'); 
+                
                 caughtItem.destroy(); caughtItem = null; spawn(this);
             }
         }
@@ -98,7 +141,6 @@ function update() {
     hook.y = startY + Math.cos(angle) * distance;
     hook.rotation = -angle;
     
-    // ТРОС ТЕПЕРЬ НЕ ТОРЧИТ ИЗ КЛЕШНИ
     let ropeEndX = startX + Math.sin(angle) * (distance - 20);
     let ropeEndY = startY + Math.cos(angle) * (distance - 20);
     rope.clear().lineStyle(2, 0xffffff, 0.6).lineBetween(startX, startY, ropeEndX, ropeEndY);
@@ -107,4 +149,3 @@ function update() {
         caughtItem.x = hook.x; caughtItem.y = hook.y + 15; caughtItem.rotation = hook.rotation; 
     }
 }
-              
