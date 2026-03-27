@@ -6,11 +6,13 @@ const config = {
     scene: { preload, create, update }
 };
 const game = new Phaser.Game(config);
-let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.015, distance = 25;
+let plane, hook, rope, targets, isLaunching = false, isReturning = false, caughtItem = null;
+let angle = 0, distance = 25;
 
 function preload() {
-    // Проверь, что названия файлов совпадают с теми, что лежат на GitHub!
+    // Выводим в консоль, если файл не грузится
+    this.load.on('loaderror', (file) => { console.log('Ошибка загрузки: ' + file.key); });
+
     this.load.image('sky', 'pg.jpeg');
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
@@ -25,94 +27,71 @@ function preload() {
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
     
-    try {
-        bgMusic = this.sound.add('theme', { volume: 0.01, loop: true });
-    } catch (e) { console.log("Sound error"); }
-    
-    this.input.once('pointerdown', () => { 
-        if (bgMusic && !bgMusic.isPlaying) bgMusic.play(); 
-    });
-
     targets = this.physics.add.group();
     for(let i=0; i<6; i++) spawn(this);
     
-    rope = this.add.graphics().setDepth(5);
-    hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(65, 65);
+    rope = this.add.graphics();
+    hook = this.add.sprite(0, 0, 'hook').setDisplaySize(60, 60).setDepth(50);
     this.physics.add.existing(hook);
 
+    // Безопасная инициализация самолета
     let tex = 'plane';
-    if(window.currentPlane === 'copper') tex = 'plane_copper';
-    else if(window.currentPlane === 'bronze') tex = 'plane_bronze';
-    else if(window.currentPlane === 'gold') tex = 'plane_gold';
-    
+    if(window.currentPlane !== 'default') tex = 'plane_' + window.currentPlane;
     plane = this.add.image(config.width/2, 120, tex).setDisplaySize(280, 180).setDepth(60);
 
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
-            caughtItem = item; 
+            caughtItem = item;
             caughtItem.body.enable = false;
-            if (caughtItem.pulse) caughtItem.pulse.stop();
             if (window.playBeep) window.playBeep(450, 0.1);
             isLaunching = false; isReturning = true;
         }
     });
 
     this.input.on('pointerdown', () => {
-        if (!isLaunching && !isReturning) {
-            if (window.checkEnergy && window.checkEnergy()) {
-                isLaunching = true; 
-                window.energy--; 
-                if (window.updateUI) window.updateUI();
-                if (window.playBeep) window.playBeep(250, 0.06);
-            }
+        if (!isLaunching && !isReturning && window.checkEnergy()) {
+            isLaunching = true;
+            window.energy--;
+            window.updateUI();
+            if (window.playBeep) window.playBeep(250, 0.05);
         }
     });
 }
 
 function spawn(scene) {
-    let x = Phaser.Math.Between(60, config.width - 60);
-    let y = Phaser.Math.Between(config.height * 0.5, config.height - 130);
+    let x = Phaser.Math.Between(50, config.width - 50);
+    let y = Phaser.Math.Between(config.height * 0.5, config.height - 100);
     let type = (Phaser.Math.Between(1, 100) <= 70) ? 'pilot_coin' : 'usdt';
-    let coin = targets.create(x, y, type).setScale(type === 'pilot_coin' ? 0.10 : 0.12).setDepth(40);
-    coin.pulse = scene.tweens.add({
-        targets: coin,
-        scale: (type === 'pilot_coin' ? 0.12 : 0.14),
-        duration: 1000,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut'
-    });
-}
-
-function showValue(scene, isPlt) {
-    let val = isPlt ? 
-        (window.currentPlane === 'copper' ? "20" : window.currentPlane === 'bronze' ? "50" : window.currentPlane === 'gold' ? "100" : "10") :
-        (window.currentPlane === 'copper' ? "0.0001" : window.currentPlane === 'bronze' ? "0.0005" : window.currentPlane === 'gold' ? "0.001" : "0.00001");
-    
-    let txt = scene.add.text(plane.x, plane.y - 40, `+${val}`, { font: 'bold 28px Arial', fill: isPlt ? '#ffcc00' : '#00ff00' }).setOrigin(0.5).setDepth(100);
-    scene.tweens.add({ targets: txt, y: txt.y - 70, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
+    targets.create(x, y, type).setScale(0.12).setDepth(40);
 }
 
 function update() {
-    plane.y = 120 + Math.sin(this.time.now / 600) * 8;
-    let startX = plane.x - 5, startY = plane.y + 20;
+    plane.y = 120 + Math.sin(this.time.now / 600) * 5;
+    let startX = plane.x, startY = plane.y + 20;
+
     if (!isLaunching && !isReturning) {
-        angle += swingSpeed; if (angle > 0.4 || angle < -0.4) swingSpeed *= -1; distance = 25;
+        angle += 0.015;
+        if (Math.abs(angle) > 0.4) angle *= -1; // Упрощенное качание
+        distance = 25;
     } else if (isLaunching) {
-        distance += 14; if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
+        distance += 12;
+        if (distance > config.height - 100) { isLaunching = false; isReturning = true; }
     } else if (isReturning) {
-        distance -= 6;
+        distance -= 8;
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
-                if (window.playBeep) window.playBeep(700, 0.12);
-                showValue(this, caughtItem.texture.key === 'pilot_coin');
+                if (window.playBeep) window.playBeep(700, 0.1);
                 window.saveCollect(0, caughtItem.texture.key === 'pilot_coin' ? 'plt' : 'usdt');
                 caughtItem.destroy(); caughtItem = null; spawn(this);
             }
         }
     }
-    hook.x = startX + Math.sin(angle) * distance; hook.y = startY + Math.cos(angle) * distance; hook.rotation = -angle;
-    rope.clear().lineStyle(2, 0xffffff, 0.6).lineBetween(startX, startY, startX + Math.sin(angle) * (distance - 20), startY + Math.cos(angle) * (distance - 20));
-    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; }
+    hook.x = startX + Math.sin(angle) * distance;
+    hook.y = startY + Math.cos(angle) * distance;
+    rope.clear().lineStyle(2, 0xffffff, 0.5).lineBetween(startX, startY, hook.x, hook.y);
+    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 10; }
 }
+       
+    
+ 
