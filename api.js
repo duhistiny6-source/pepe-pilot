@@ -12,29 +12,42 @@ window.usdtMoney = 0;
 window.energy = 100;
 window.currentPlane = 'default';
 
+// --- ЗВУКОВОЙ ДВИЖОК ---
+let audioCtx;
+window.playBeep = function(freq, dur) {
+    try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.005, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+        osc.start(); osc.stop(audioCtx.currentTime + dur);
+    } catch (e) {}
+};
+
+// --- ФУНКЦИИ ИНТЕРФЕЙСА ---
 window.toggleModal = function(id) {
     const m = document.getElementById(id);
     if (m) m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
 };
 
+window.connectWallet = async function() {
+    try { await tonConnectUI.openModal(); } catch (e) {}
+};
+
 window.buyPlane = async function(type, price) {
-    if (window.usdtMoney < price) {
-        tg.showAlert("Недостаточно USDT!");
-        return;
-    }
+    if (window.usdtMoney < price) { tg.showAlert("Недостаточно USDT!"); return; }
     tg.showConfirm(`Купить самолет за ${price} USDT?`, async (ok) => {
         if (ok) {
-            window.usdtMoney -= price;
-            window.currentPlane = type;
-            window.updateUI();
-            if (window.changePlaneSkin) window.changePlaneSkin(type);
-            window.toggleModal('shop-modal');
-            tg.showAlert("Успешно куплено!");
-            
+            window.usdtMoney -= price; window.currentPlane = type;
+            window.updateUI(); if (window.changePlaneSkin) window.changePlaneSkin(type);
+            window.toggleModal('shop-modal'); tg.showAlert("Успешно куплено!");
             try {
                 await fetch(`${RENDER_URL}/api/buy-plane`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ tgId: userId, planeType: type, price: price })
                 });
             } catch (e) {}
@@ -42,9 +55,25 @@ window.buyPlane = async function(type, price) {
     });
 };
 
+const translations = {
+    ru: { settings: "НАСТРОЙКИ", shop: "АНГАР", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК", close: "Закрыть" },
+    en: { settings: "SETTINGS", shop: "HANGAR", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET", close: "Close" }
+};
+
+window.changeLanguage = function(lang) {
+    const t = translations[lang];
+    if (!t) return;
+    document.getElementById('txt-settings-title').innerText = t.settings;
+    document.getElementById('nav-shop').innerText = t.shop;
+    document.getElementById('nav-tasks').innerText = t.tasks;
+    document.getElementById('nav-friends').innerText = t.friends;
+    document.getElementById('nav-wallet').innerText = t.wallet;
+    document.getElementById('txt-close').innerText = t.close;
+    window.toggleModal('settings-modal');
+};
+
 window.saveCollect = async function(amount, type) {
     let finalAmount = 0;
-    // ЛОГИКА НАЧИСЛЕНИЯ
     if (type === 'plt') {
         if (window.currentPlane === 'copper') finalAmount = 20;
         else if (window.currentPlane === 'bronze') finalAmount = 50;
@@ -61,8 +90,7 @@ window.saveCollect = async function(amount, type) {
     window.updateUI();
     try {
         await fetch(`${RENDER_URL}/api/collect`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ tgId: userId, amount: finalAmount, type: type })
         });
     } catch (e) {}
