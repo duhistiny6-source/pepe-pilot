@@ -3,7 +3,7 @@ const tg = window.Telegram.WebApp;
 tg.expand();
 const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : "guest";
 
-// Инициализация TON Connect (Кошелек)
+// Инициализация TON Connect
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     manifestUrl: 'https://duhistiny6-source.github.io/pepe-pilot/tonconnect-manifest.json'
 });
@@ -11,6 +11,7 @@ const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
 window.frogMoney = 0;
 window.usdtMoney = 0;
 window.energy = 100;
+window.currentPlane = 'default'; // Текущий самолет
 
 // --- ТИХИЙ ЗВУКОВОЙ ДВИЖОК ---
 let audioCtx;
@@ -23,7 +24,6 @@ window.playBeep = function(freq, dur) {
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         osc.frequency.value = freq;
-        // Ультра-тихо (0.004)
         gain.gain.setValueAtTime(0.004, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
         osc.start();
@@ -48,9 +48,39 @@ window.openFriends = function() {
     window.toggleModal('friends-modal');
 };
 
+// --- ЛОГИКА ПОКУПКИ САМОЛЕТА ---
+window.buyPlane = async function(type, price) {
+    if (window.usdtMoney < price) {
+        tg.showAlert("Недостаточно USDT для покупки!");
+        return;
+    }
+
+    tg.showConfirm(`Купить этот самолет за ${price} USDT?`, async (ok) => {
+        if (ok) {
+            // Мгновенная покупка (пока без сервера для теста)
+            window.usdtMoney -= price;
+            window.currentPlane = type;
+            window.updateUI();
+            
+            if (window.changePlaneSkin) window.changePlaneSkin(type);
+            window.toggleModal('shop-modal');
+            tg.showAlert("Поздравляем с покупкой!");
+            
+            // Отправка на сервер (когда добавишь API)
+            try {
+                await fetch(`${RENDER_URL}/api/buy-plane`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tgId: userId, planeType: type, price: price })
+                });
+            } catch (e) {}
+        }
+    });
+};
+
 const translations = {
-    ru: { settings: "НАСТРОЙКИ", shop: "МАГАЗИН", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК", close: "Закрыть" },
-    en: { settings: "SETTINGS", shop: "SHOP", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET", close: "Close" }
+    ru: { settings: "НАСТРОЙКИ", shop: "АНГАР", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК", close: "Закрыть" },
+    en: { settings: "SETTINGS", shop: "HANGAR", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET", close: "Close" }
 };
 
 window.changeLanguage = function(lang) {
@@ -72,19 +102,37 @@ async function loadUserData() {
         const data = await res.json();
         window.frogMoney = Number(data.balancePLT) || 0;
         window.usdtMoney = Number(data.balanceUSDT) || 0;
+        window.currentPlane = data.currentPlane || 'default';
+        if (window.changePlaneSkin) window.changePlaneSkin(window.currentPlane);
         updateUI();
     } catch (e) { updateUI(); }
 }
 
+// УМНЫЙ СБОР С УЧЕТОМ ТИПА САМОЛЕТА
 window.saveCollect = async function(amount, type) {
-    if (type === 'plt') window.frogMoney += amount;
-    else window.usdtMoney += amount;
+    let finalAmount = amount;
+
+    // Пересчитываем награду в зависимости от самолета
+    if (type === 'plt') {
+        if (window.currentPlane === 'copper') finalAmount = 10;
+        else if (window.currentPlane === 'bronze') finalAmount = 25;
+        else if (window.currentPlane === 'gold') finalAmount = 50;
+        else finalAmount = 10; // Стандартный
+        window.frogMoney += finalAmount;
+    } else {
+        if (window.currentPlane === 'copper') finalAmount = 0.00005;
+        else if (window.currentPlane === 'bronze') finalAmount = 0.0005;
+        else if (window.currentPlane === 'gold') finalAmount = 0.005;
+        else finalAmount = 0.00005; // Стандартный
+        window.usdtMoney += finalAmount;
+    }
+
     updateUI();
     try {
         await fetch(`${RENDER_URL}/api/collect`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tgId: userId, amount, type })
+            body: JSON.stringify({ tgId: userId, amount: finalAmount, type: type })
         });
     } catch (e) { console.error("Save error"); }
 };
@@ -93,10 +141,9 @@ window.updateUI = function() {
     const u = document.getElementById('money');
     const f = document.getElementById('frog-money');
     const e = document.getElementById('energy');
-    if (u) u.innerText = window.usdtMoney.toFixed(4);
+    if (u) u.innerText = window.usdtMoney.toFixed(5);
     if (f) f.innerText = Math.floor(window.frogMoney);
     if (e) e.innerText = window.energy;
 };
 
 loadUserData();
-     
