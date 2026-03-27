@@ -6,14 +6,22 @@ const game = new Phaser.Game(config);
 let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.015, distance = 25;
 
+// Конфигурация характеристик для каждого типа самолета
+const PLANE_STATS = {
+    'default': { ptl: 10, usdt: 0.00005, label: 'Обычный' },
+    'copper':  { ptl: 20, usdt: 0.0001,  label: 'Медный' },
+    'bronze':  { ptl: 50, usdt: 0.0005,  label: 'Бронзовый' },
+    'gold':    { ptl: 100, usdt: 0.001,   label: 'Золотой' }
+};
+
 function preload() {
     this.load.image('sky', 'pg.jpeg');
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
     this.load.image('pilot_coin', 'logo..png');
-    this.load.image('plane', 'pepe.png'); // Стандартный
+    this.load.image('plane', 'pepe.png'); 
     
-    // ЗАГРУЗКА НОВЫХ САМОЛЕТОВ
+    // Загрузка скинов
     this.load.image('plane_copper', 'plane_copper.png');
     this.load.image('plane_bronze', 'plane_bronze.png');
     this.load.image('plane_gold', 'plane_gold.png');
@@ -36,11 +44,11 @@ function create() {
     hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(65, 65); 
     this.physics.add.existing(hook);
     
-    // Создаем самолет (используем текущий из api.js если он уже загружен)
+    // Определение стартового скина
     let startTexture = 'plane';
     if(window.currentPlane === 'copper') startTexture = 'plane_copper';
-    if(window.currentPlane === 'bronze') startTexture = 'plane_bronze';
-    if(window.currentPlane === 'gold') startTexture = 'plane_gold';
+    else if(window.currentPlane === 'bronze') startTexture = 'plane_bronze';
+    else if(window.currentPlane === 'gold') startTexture = 'plane_gold';
     
     plane = this.add.image(config.width/2, 120, startTexture).setDisplaySize(280, 180).setDepth(60);
 
@@ -61,7 +69,41 @@ function create() {
     });
 }
 
-// Функция для смены скина из api.js
+// Функция обновления интерфейса АНГАРА (вызывай её, когда открываешь окно магазина)
+window.updateHangarUI = function() {
+    // Эта логика ищет элементы в твоем HTML по тексту (так как у нас нет id кнопок)
+    const rows = document.querySelectorAll('.shop-item, [style*="border-bottom"]'); 
+    
+    const data = [
+        { id: 'copper', img: 'plane_copper.png', stats: PLANE_STATS.copper },
+        { id: 'bronze', img: 'plane_bronze.png', stats: PLANE_STATS.bronze },
+        { id: 'gold',   img: 'plane_gold.png',   stats: PLANE_STATS.gold }
+    ];
+
+    rows.forEach((row, index) => {
+        if (data[index]) {
+            const item = data[index];
+            // Добавляем картинку перед текстом, если её еще нет
+            if (!row.querySelector('.plane-preview')) {
+                const img = document.createElement('img');
+                img.src = item.img;
+                img.className = 'plane-preview';
+                img.style = "width: 50px; height: 35px; margin-right: 10px; vertical-align: middle;";
+                row.prepend(img);
+            }
+            // Добавляем описание бонусов в блок текста
+            const textBlock = row.querySelector('div'); // Первый див внутри строки
+            if (textBlock && !row.querySelector('.stats-info')) {
+                const statsDiv = document.createElement('div');
+                statsDiv.className = 'stats-info';
+                statsDiv.style = "font-size: 10px; color: #aaa; margin-top: 4px;";
+                statsDiv.innerHTML = `Дает: ${item.stats.ptl} PLT и ${item.stats.usdt} USDT`;
+                textBlock.appendChild(statsDiv);
+            }
+        }
+    });
+};
+
 window.changePlaneSkin = function(type) {
     if (!plane) return;
     let tex = 'plane';
@@ -70,6 +112,7 @@ window.changePlaneSkin = function(type) {
     if (type === 'gold') tex = 'plane_gold';
     plane.setTexture(tex);
     plane.setDisplaySize(280, 180);
+    window.currentPlane = type; // Обновляем глобальную переменную
 };
 
 function spawn(scene) {
@@ -86,21 +129,11 @@ function spawn(scene) {
 }
 
 function showValue(scene, isPlt) {
-    let val = "";
-    let color = isPlt ? '#ffcc00' : '#00ff00';
+    let currentType = window.currentPlane || 'default';
+    let stats = PLANE_STATS[currentType] || PLANE_STATS.default;
     
-    // Определяем текст в зависимости от самолета
-    if (isPlt) {
-        if (window.currentPlane === 'copper') val = "10";
-        else if (window.currentPlane === 'bronze') val = "25";
-        else if (window.currentPlane === 'gold') val = "50";
-        else val = "10";
-    } else {
-        if (window.currentPlane === 'copper') val = "0.00005";
-        else if (window.currentPlane === 'bronze') val = "0.0005";
-        else if (window.currentPlane === 'gold') val = "0.005";
-        else val = "0.00005";
-    }
+    let val = isPlt ? stats.ptl : stats.usdt;
+    let color = isPlt ? '#ffcc00' : '#00ff00';
 
     let txt = scene.add.text(plane.x, plane.y - 40, `+${val}`, { font: 'bold 28px Arial', fill: color }).setOrigin(0.5).setDepth(100);
     scene.tweens.add({ targets: txt, y: txt.y - 70, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
@@ -123,14 +156,10 @@ function update() {
             isReturning = false;
             if (caughtItem) {
                 let isPlt = (caughtItem.texture.key === 'pilot_coin');
-                
-                // ВАЖНО: вызываем showValue БЕЗ передачи заранее посчитанной суммы, 
-                // так как она теперь считается внутри функции на основе самолета
                 showValue(this, isPlt); 
-                
                 if (window.playBeep) window.playBeep(700, 0.1); 
                 
-                // Сохраняем (в api.js сумма посчитается автоматически)
+                // Передаем правильный тип в saveCollect
                 if (window.saveCollect) window.saveCollect(0, isPlt ? 'plt' : 'usdt'); 
                 
                 caughtItem.destroy(); caughtItem = null; spawn(this);
