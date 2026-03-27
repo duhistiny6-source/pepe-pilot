@@ -13,6 +13,8 @@ window.energy = 100;
 window.currentPlane = 'default';
 
 let audioCtx;
+
+// ЗВУКОВОЙ ДВИЖОК
 window.playBeep = function(freq, dur) {
     try {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -21,7 +23,7 @@ window.playBeep = function(freq, dur) {
         const gain = audioCtx.createGain();
         osc.connect(gain); gain.connect(audioCtx.destination);
         osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.005, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime); // Сделал бип громче
         gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
         osc.start(); osc.stop(audioCtx.currentTime + dur);
     } catch (e) {}
