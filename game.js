@@ -1,12 +1,16 @@
 const config = {
-    type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight,
-    physics: { default: 'arcade' }, scene: { preload, create, update }
+    type: Phaser.AUTO,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    physics: { default: 'arcade' },
+    scene: { preload, create, update }
 };
 const game = new Phaser.Game(config);
 let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.015, distance = 25;
 
 function preload() {
+    // Проверь, что названия файлов совпадают с теми, что лежат на GitHub!
     this.load.image('sky', 'pg.jpeg');
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
@@ -20,21 +24,33 @@ function preload() {
 
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
-    try { bgMusic = this.sound.add('theme', { volume: 0.01, loop: true }); } catch (e) {}
-    this.input.once('pointerdown', () => { if (bgMusic && !bgMusic.isPlaying) bgMusic.play(); });
+    
+    try {
+        bgMusic = this.sound.add('theme', { volume: 0.01, loop: true });
+    } catch (e) { console.log("Sound error"); }
+    
+    this.input.once('pointerdown', () => { 
+        if (bgMusic && !bgMusic.isPlaying) bgMusic.play(); 
+    });
 
     targets = this.physics.add.group();
     for(let i=0; i<6; i++) spawn(this);
+    
     rope = this.add.graphics().setDepth(5);
     hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(65, 65);
     this.physics.add.existing(hook);
 
-    let tex = (window.currentPlane === 'default') ? 'plane' : 'plane_' + window.currentPlane;
+    let tex = 'plane';
+    if(window.currentPlane === 'copper') tex = 'plane_copper';
+    else if(window.currentPlane === 'bronze') tex = 'plane_bronze';
+    else if(window.currentPlane === 'gold') tex = 'plane_gold';
+    
     plane = this.add.image(config.width/2, 120, tex).setDisplaySize(280, 180).setDepth(60);
 
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
-            caughtItem = item; caughtItem.body.enable = false;
+            caughtItem = item; 
+            caughtItem.body.enable = false;
             if (caughtItem.pulse) caughtItem.pulse.stop();
             if (window.playBeep) window.playBeep(450, 0.1);
             isLaunching = false; isReturning = true;
@@ -44,7 +60,9 @@ function create() {
     this.input.on('pointerdown', () => {
         if (!isLaunching && !isReturning) {
             if (window.checkEnergy && window.checkEnergy()) {
-                isLaunching = true; window.energy--; if (window.updateUI) window.updateUI();
+                isLaunching = true; 
+                window.energy--; 
+                if (window.updateUI) window.updateUI();
                 if (window.playBeep) window.playBeep(250, 0.06);
             }
         }
@@ -56,13 +74,21 @@ function spawn(scene) {
     let y = Phaser.Math.Between(config.height * 0.5, config.height - 130);
     let type = (Phaser.Math.Between(1, 100) <= 70) ? 'pilot_coin' : 'usdt';
     let coin = targets.create(x, y, type).setScale(type === 'pilot_coin' ? 0.10 : 0.12).setDepth(40);
-    coin.pulse = scene.tweens.add({ targets: coin, scale: (type === 'pilot_coin' ? 0.12 : 0.14), duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    coin.pulse = scene.tweens.add({
+        targets: coin,
+        scale: (type === 'pilot_coin' ? 0.12 : 0.14),
+        duration: 1000,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+    });
 }
 
 function showValue(scene, isPlt) {
     let val = isPlt ? 
         (window.currentPlane === 'copper' ? "20" : window.currentPlane === 'bronze' ? "50" : window.currentPlane === 'gold' ? "100" : "10") :
         (window.currentPlane === 'copper' ? "0.0001" : window.currentPlane === 'bronze' ? "0.0005" : window.currentPlane === 'gold' ? "0.001" : "0.00001");
+    
     let txt = scene.add.text(plane.x, plane.y - 40, `+${val}`, { font: 'bold 28px Arial', fill: isPlt ? '#ffcc00' : '#00ff00' }).setOrigin(0.5).setDepth(100);
     scene.tweens.add({ targets: txt, y: txt.y - 70, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
 }
