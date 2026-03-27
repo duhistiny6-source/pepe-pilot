@@ -11,7 +11,15 @@ const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
 window.frogMoney = 0;
 window.usdtMoney = 0;
 window.energy = 100;
-window.currentPlane = 'default'; // Текущий самолет
+window.currentPlane = 'default'; 
+
+// Конфиг бонусов (синхронно с game.js)
+const PLANE_CONFIG = {
+    'default': { ptl: 10, usdt: 0.00005, img: 'pepe.png' },
+    'copper':  { ptl: 20, usdt: 0.0001,  img: 'plane_copper.png' },
+    'bronze':  { ptl: 50, usdt: 0.0005,  img: 'plane_bronze.png' },
+    'gold':    { ptl: 100, usdt: 0.001,   img: 'plane_gold.png' }
+};
 
 // --- ТИХИЙ ЗВУКОВОЙ ДВИЖОК ---
 let audioCtx;
@@ -34,7 +42,57 @@ window.playBeep = function(freq, dur) {
 // --- ФУНКЦИИ КНОПОК ---
 window.toggleModal = function(id) {
     const m = document.getElementById(id);
-    if (m) m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+    if (m) {
+        m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+        // Если открываем ангар (shop-modal), обновляем его содержимое
+        if (id === 'shop-modal' && m.style.display === 'flex') {
+            window.updateHangarUI();
+        }
+    }
+};
+
+// НОВАЯ ФУНКЦИЯ: Отрисовка самолетиков и инфо в Ангаре
+window.updateHangarUI = function() {
+    const shopItems = document.querySelectorAll('#shop-modal .shop-item, #shop-modal [style*="border-bottom"]');
+    const planeData = [
+        { id: 'copper', price: 10 },
+        { id: 'bronze', price: 25 },
+        { id: 'gold',   price: 50 }
+    ];
+
+    shopItems.forEach((row, index) => {
+        const data = planeData[index];
+        if (!data) return;
+
+        const config = PLANE_CONFIG[data.id];
+
+        // 1. Добавляем картинку самолета, если её нет
+        if (!row.querySelector('.plane-preview-img')) {
+            const img = document.createElement('img');
+            img.src = config.img;
+            img.className = 'plane-preview-img';
+            img.style = "width: 60px; height: 40px; margin-right: 15px; object-fit: contain;";
+            row.style.display = "flex";
+            row.style.alignItems = "center";
+            row.prepend(img);
+        }
+
+        // 2. Обновляем текст с бонусами
+        const textContainer = row.querySelector('div:nth-child(2)'); // Блок с названием и ценой
+        if (textContainer && !row.querySelector('.stats-text')) {
+            const stats = document.createElement('div');
+            stats.className = 'stats-text';
+            stats.style = "font-size: 11px; color: #00ff00; margin-top: 2px;";
+            stats.innerText = `+${config.ptl} PTL / +${config.usdt} USDT за монету`;
+            textContainer.appendChild(stats);
+        }
+
+        // 3. Вешаем событие на кнопку КУПИТЬ (если оно еще не висит)
+        const buyBtn = row.querySelector('button');
+        if (buyBtn) {
+            buyBtn.onclick = () => window.buyPlane(data.id, data.price);
+        }
+    });
 };
 
 window.connectWallet = async function() {
@@ -57,7 +115,6 @@ window.buyPlane = async function(type, price) {
 
     tg.showConfirm(`Купить этот самолет за ${price} USDT?`, async (ok) => {
         if (ok) {
-            // Мгновенная покупка (пока без сервера для теста)
             window.usdtMoney -= price;
             window.currentPlane = type;
             window.updateUI();
@@ -66,7 +123,6 @@ window.buyPlane = async function(type, price) {
             window.toggleModal('shop-modal');
             tg.showAlert("Поздравляем с покупкой!");
             
-            // Отправка на сервер (когда добавишь API)
             try {
                 await fetch(`${RENDER_URL}/api/buy-plane`, {
                     method: 'POST',
@@ -108,22 +164,16 @@ async function loadUserData() {
     } catch (e) { updateUI(); }
 }
 
-// УМНЫЙ СБОР С УЧЕТОМ ТИПА САМОЛЕТА
+// УМНЫЙ СБОР С УЧЕТОМ ТВОИХ НОВЫХ ЦИФР
 window.saveCollect = async function(amount, type) {
-    let finalAmount = amount;
+    let finalAmount = 0;
+    const config = PLANE_CONFIG[window.currentPlane] || PLANE_CONFIG.default;
 
-    // Пересчитываем награду в зависимости от самолета
     if (type === 'plt') {
-        if (window.currentPlane === 'copper') finalAmount = 10;
-        else if (window.currentPlane === 'bronze') finalAmount = 25;
-        else if (window.currentPlane === 'gold') finalAmount = 50;
-        else finalAmount = 10; // Стандартный
+        finalAmount = config.ptl;
         window.frogMoney += finalAmount;
     } else {
-        if (window.currentPlane === 'copper') finalAmount = 0.00005;
-        else if (window.currentPlane === 'bronze') finalAmount = 0.0005;
-        else if (window.currentPlane === 'gold') finalAmount = 0.005;
-        else finalAmount = 0.00005; // Стандартный
+        finalAmount = config.usdt;
         window.usdtMoney += finalAmount;
     }
 
