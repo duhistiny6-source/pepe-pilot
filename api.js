@@ -14,7 +14,7 @@ window.currentPlane = 'default';
 
 let audioCtx;
 
-// ЗВУКОВОЙ ДВИЖОК
+// ЗВУКОВОЙ ДВИЖОК - ТЕПЕРЬ ЕЩЕ МЯГЧЕ
 window.playBeep = function(freq, dur) {
     try {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -23,8 +23,11 @@ window.playBeep = function(freq, dur) {
         const gain = audioCtx.createGain();
         osc.connect(gain); gain.connect(audioCtx.destination);
         osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.05, audioCtx.currentTime); // Сделал бип громче
+        
+        // Уменьшил громкость бипа с 0.05 до 0.02 для мягкости
+        gain.gain.setValueAtTime(0.02, audioCtx.currentTime); 
         gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+        
         osc.start(); osc.stop(audioCtx.currentTime + dur);
     } catch (e) {}
 };
@@ -65,6 +68,7 @@ const translations = {
 
 window.changeLanguage = function(lang) {
     const t = translations[lang];
+    if (!t) return;
     document.getElementById('txt-settings-title').innerText = t.settings;
     document.getElementById('txt-shop-title').innerText = t.shop;
     document.getElementById('txt-tasks-title').innerText = t.tasks;
