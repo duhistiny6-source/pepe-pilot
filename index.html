@@ -8,66 +8,71 @@
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
-        body { margin:0; padding:0; overflow:hidden; background:#000; font-family: sans-serif; }
-        
-        /* Верхняя панель */
-        #top-bar { position: fixed; top: 10px; left: 0; width: 100%; z-index: 1000; display: flex; justify-content: space-between; padding: 0 15px; box-sizing: border-box; pointer-events: none; }
-        .stat-box { background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 8px; color: #fff; font-size: 12px; display: flex; align-items: center; gap: 5px; pointer-events: auto; }
-        
-        /* Шестеренка */
-        #settings-btn { position: fixed; top: 10px; right: 10px; z-index: 1001; cursor: pointer; font-size: 20px; filter: drop-shadow(0 0 2px #000); }
+        body { margin:0; padding:0; overflow:hidden; background:#000; touch-action: none; font-family: sans-serif; }
+        #top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 40px; background: rgba(0, 0, 0, 0.4); z-index: 1000; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; box-sizing: border-box; }
+        #energy-container { color: #0f0; font-size: 14px; font-weight: bold; }
+        #balance-container { display: flex; gap: 15px; color: #fff; font-size: 12px; }
+        .coin-icon { width: 14px; height: 14px; vertical-align: middle; }
+        #settings-btn { color: #555; font-size: 20px; cursor: pointer; }
 
-        /* Нижнее меню */
-        #nav-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; height: 65px; background: rgba(0, 0, 0, 0.85); border: 1px solid #444; border-radius: 18px; display: flex; justify-content: space-around; align-items: center; z-index: 1000; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; cursor: pointer; flex: 1; }
-        .nav-item img { width: 24px; height: 24px; margin-bottom: 4px; }
-        .nav-text { font-size: 9px; text-transform: uppercase; color: #aaa; }
+        #nav-bar { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 90%; height: 60px; background: rgba(0, 0, 0, 0.9); border: 1px solid #333; border-radius: 15px; display: flex; justify-content: space-around; align-items: center; z-index: 1000; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; text-decoration: none; font-size: 10px; opacity: 0.8; cursor: pointer; }
+        .nav-item span { font-size: 20px; margin-bottom: 2px; }
 
-        /* Окна */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
-        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 20px; border-radius: 25px; width: 85%; color: white; text-align: center; }
-        .shop-row { display: flex; align-items: center; background: #252525; margin: 10px 0; padding: 10px; border-radius: 15px; border: 1px solid #444; }
-        .buy-btn { background: #0f0; color: #000; border: none; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        /* Ангар - красивое центрирование */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center; }
+        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 20px; border-radius: 20px; width: 85%; color: white; text-align: center; }
+        .shop-row { border: 1px solid #444; border-radius: 12px; padding: 10px; margin: 10px 0; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); }
+        .buy-btn { background: #0f0; color: #000; border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="settings-btn" onclick="toggleModal('settings-modal')">⚙️</div>
-
 <div id="top-bar">
-    <div class="stat-box" style="color:#0f0">⚡ <span id="energy">100</span></div>
-    <div style="display:flex; gap:10px">
-        <div class="stat-box">USDT: <span id="money" style="color:#0f0">0.00000</span></div>
-        <div class="stat-box"><img src="logo..png" style="width:14px"> <span id="frog-money" style="color:#ffcc00">0</span></div>
+    <div id="energy-container">⚡ <span id="energy">100</span></div>
+    <div id="balance-container">
+        <div>USDT: <span id="money" style="color:#0f0">0.00000</span></div>
+        <div><img src="logo..png" class="coin-icon"> PLT: <span id="frog-money" style="color:#ffcc00">0</span></div>
     </div>
+    <div id="settings-btn" onclick="toggleModal('settings-modal')">⚙️</div>
 </div>
 
 <div id="shop-modal" class="modal">
     <div class="modal-content">
         <h2 id="txt-shop-title">АНГАР</h2>
-        <div class="shop-row" style="border-color:#cd7f32">
-            <img src="plane_copper.png" width="50">
-            <div style="flex:1; text-align:left; padding-left:10px">
-                <b id="txt-copper">МЕДНЫЙ</b><br><small>10 USDT</small>
+        <div class="shop-row" style="border-color: #cd7f32;">
+            <img src="plane_copper.png" width="45">
+            <div style="flex-grow:1; text-align:left; padding: 0 10px;">
+                <b id="txt-plane-copper" style="color:#cd7f32">МЕДНЫЙ</b><br>
+                <small style="color:#0f0">+10 PLT | 10 USDT</small>
             </div>
-            <button class="buy-btn" onclick="buyPlane('copper', 10)">КУПИТЬ</button>
+            <button class="buy-btn buy-btn-text" onclick="buyPlane('copper', 10)">КУПИТЬ</button>
         </div>
-        <div class="shop-row" style="border-color:#ffd700">
-            <img src="plane_gold.png" width="50">
-            <div style="flex:1; text-align:left; padding-left:10px">
-                <b id="txt-gold">ЗОЛОТОЙ</b><br><small>50 USDT</small>
+        <div class="shop-row" style="border-color: #b08d57;">
+            <img src="plane_bronze.png" width="45">
+            <div style="flex-grow:1; text-align:left; padding: 0 10px;">
+                <b id="txt-plane-bronze" style="color:#b08d57">БРОНЗОВЫЙ</b><br>
+                <small style="color:#0f0">+25 PLT | 25 USDT</small>
             </div>
-            <button class="buy-btn" onclick="buyPlane('gold', 50)">КУПИТЬ</button>
+            <button class="buy-btn buy-btn-text" onclick="buyPlane('bronze', 25)">КУПИТЬ</button>
         </div>
-        <p onclick="toggleModal('shop-modal')" style="color:#888; cursor:pointer" id="txt-close">Закрыть</p>
+        <div class="shop-row" style="border-color: #ffd700;">
+            <img src="plane_gold.png" width="45">
+            <div style="flex-grow:1; text-align:left; padding: 0 10px;">
+                <b id="txt-plane-gold" style="color:#ffd700">ЗОЛОТОЙ</b><br>
+                <small style="color:#0f0">+50 PLT | 50 USDT</small>
+            </div>
+            <button class="buy-btn buy-btn-text" onclick="buyPlane('gold', 50)">КУПИТЬ</button>
+        </div>
+        <div class="txt-close-all" style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('shop-modal')">Закрыть</div>
     </div>
 </div>
 
 <div id="nav-bar">
-    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text">Магазин</div></div>
-    <div class="nav-item" onclick="tg.showAlert('Задания скоро!')"><span>📜</span><div class="nav-text">Задания</div></div>
-    <div class="nav-item" onclick="openFriends()"><span>👥</span><div class="nav-text">Друзья</div></div>
-    <div class="nav-item" onclick="tonConnectUI.openModal()"><span>👛</span><div class="nav-text">Кошелек</div></div>
+    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div id="nav-shop">МАГАЗИН</div></div>
+    <div class="nav-item" onclick="tg.showAlert('Задания скоро!')"><span>📜</span><div>ЗАДАНИЯ</div></div>
+    <div class="nav-item" onclick="openFriends()"><span>👥</span><div>ДРУЗЬЯ</div></div>
+    <div class="nav-item" onclick="tonConnectUI.openModal()"><span>👛</span><div>КОШЕЛЕК</div></div>
 </div>
 
 <script src="api.js"></script>
