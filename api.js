@@ -11,10 +11,10 @@ window.frogMoney = 0;
 window.usdtMoney = 0;
 window.energy = 100;
 window.currentPlane = 'default';
-
 let audioCtx;
+let nextRestoreTime = null;
 
-// ЗВУКОВОЙ ДВИЖОК - ТЕПЕРЬ ЕЩЕ МЯГЧЕ
+// ЗВУКОВОЙ ДВИЖОК
 window.playBeep = function(freq, dur) {
     try {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -23,11 +23,8 @@ window.playBeep = function(freq, dur) {
         const gain = audioCtx.createGain();
         osc.connect(gain); gain.connect(audioCtx.destination);
         osc.frequency.value = freq;
-        
-        // Уменьшил громкость бипа с 0.05 до 0.02 для мягкости
-        gain.gain.setValueAtTime(0.02, audioCtx.currentTime); 
+        gain.gain.setValueAtTime(0.02, audioCtx.currentTime); // МЯГКИЙ ГРОМКОСТЬ 2%
         gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
-        
         osc.start(); osc.stop(audioCtx.currentTime + dur);
     } catch (e) {}
 };
@@ -41,45 +38,89 @@ window.connectWallet = async function() {
     try { await tonConnectUI.openModal(); } catch (e) {}
 };
 
-window.buyPlane = async function(type, price) {
-    if (window.usdtMoney < price) { tg.showAlert("Недостаточно USDT!"); return; }
-    tg.showConfirm(`Купить этот самолет?`, async (ok) => {
+// СИСТЕМА ЭНЕРГИИ
+window.checkEnergy = function() {
+    if (window.energy <= 0) {
+        if (!nextRestoreTime) {
+            nextRestoreTime = Date.now() + 2 * 60 * 60 * 1000;
+        }
+        window.toggleModal('energy-modal');
+        updateTimerDisplay();
+        return false;
+    }
+    return true;
+};
+
+function updateTimerDisplay() {
+    const display = document.getElementById('timer-display');
+    const interval = setInterval(() => {
+        let diff = nextRestoreTime - Date.now();
+        if (diff <= 0 || window.energy > 0) {
+            clearInterval(interval);
+            if (diff <= 0) { window.energy = 100; window.updateUI(); nextRestoreTime = null; }
+            return;
+        }
+        let h = Math.floor(diff / 3600000);
+        let m = Math.floor((diff % 3600000) / 60000);
+        let s = Math.floor((diff % 60000) / 1000);
+        display.innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    }, 1000);
+}
+
+window.watchAd = function() {
+    tg.showConfirm("Посмотреть рекламу?", (ok) => {
         if (ok) {
-            window.usdtMoney -= price; window.currentPlane = type;
-            window.updateUI(); if (window.changePlaneSkin) window.changePlaneSkin(type);
-            window.toggleModal('shop-modal'); tg.showAlert("Успешно!");
-            try { fetch(`${RENDER_URL}/api/buy-plane`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tgId: userId, planeType: type, price: price }) }); } catch (e) {}
+            window.energy = 100;
+            nextRestoreTime = null;
+            window.updateUI();
+            window.toggleModal('energy-modal');
+            tg.showAlert("Энергия восстановлена!");
         }
     });
+};
+
+// СБОР МОНЕТОК
+window.saveCollect = async function(amount, type) {
+    let finalAmount = 0;
+    if (type === 'plt') {
+        const pltRewards = { default: 10, copper: 20, bronze: 50, gold: 100 };
+        finalAmount = pltRewards[window.currentPlane] || 10;
+        window.frogMoney += finalAmount;
+    } else {
+        const usdtRewards = { default: 0.00001, copper: 0.0001, bronze: 0.0005, gold: 0.001 };
+        finalAmount = usdtRewards[window.currentPlane] || 0.00001; // НОВЫЙ НОМИНАЛ
+        window.usdtMoney += finalAmount;
+    }
+    window.updateUI();
+    try { fetch(`${RENDER_URL}/api/collect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tgId: userId, amount: finalAmount, type: type }) }); } catch (e) {}
 };
 
 const translations = {
     ru: {
         settings: "НАСТРОЙКИ", shop: "АНГАР", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК", close: "Закрыть",
-        price: "Цена", buy: "КУПИТЬ", sub: "Подписаться на канал", invite: "📢 ПРИГЛАСИТЬ", fdesc: "Приглашай друзей и получай 10%!",
-        cplane: "МЕДНЫЙ", bplane: "БРОНЗОВЫЙ", gplane: "ЗОЛОТОЙ"
+        price: "Цена", buy: "КУПИТЬ", sub: "Подписаться", invite: "📢 ПРИГЛАСИТЬ", fdesc: "Приглашай друзей и получай 10%!",
+        cplane: "МЕДНЫЙ", bplane: "БРОНЗОВЫЙ", gplane: "ЗОЛОТОЙ", en_title: "НЕТ ЭНЕРГИИ", en_desc: "Восстановление через:", en_btn: "📺 СМОТРЕТЬ РЕКЛАМУ (+100 ⚡)"
     },
     en: {
         settings: "SETTINGS", shop: "HANGAR", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET", close: "Close",
-        price: "Price", buy: "BUY", sub: "Subscribe to channel", invite: "📢 INVITE", fdesc: "Invite friends and get 10%!",
-        cplane: "COPPER", bplane: "BRONZE", gplane: "GOLD"
+        price: "Price", buy: "BUY", sub: "Subscribe", invite: "📢 INVITE", fdesc: "Invite friends and get 10%!",
+        cplane: "COPPER", bplane: "BRONZE", gplane: "GOLD", en_title: "NO ENERGY", en_desc: "Restoration in:", en_btn: "📺 WATCH AD (+100 ⚡)"
     }
 };
 
 window.changeLanguage = function(lang) {
     const t = translations[lang];
-    if (!t) return;
     document.getElementById('txt-settings-title').innerText = t.settings;
     document.getElementById('txt-shop-title').innerText = t.shop;
     document.getElementById('txt-tasks-title').innerText = t.tasks;
     document.getElementById('txt-friends-title').innerText = t.friends;
-    document.getElementById('txt-friends-desc').innerText = t.fdesc;
     document.getElementById('nav-shop').innerText = t.shop;
     document.getElementById('nav-tasks').innerText = t.tasks;
     document.getElementById('nav-friends').innerText = t.friends;
     document.getElementById('nav-wallet').innerText = t.wallet;
-    document.getElementById('task-sub').innerText = t.sub;
-    document.getElementById('btn-invite').innerText = t.invite;
+    document.getElementById('txt-energy-title').innerText = t.en_title;
+    document.getElementById('txt-energy-desc').innerText = t.en_desc;
+    document.getElementById('btn-ad').innerText = t.en_btn;
     document.getElementById('plane-name-copper').innerText = t.cplane;
     document.getElementById('plane-name-bronze').innerText = t.bplane;
     document.getElementById('plane-name-gold').innerText = t.gplane;
@@ -89,29 +130,10 @@ window.changeLanguage = function(lang) {
     window.toggleModal('settings-modal');
 };
 
-window.saveCollect = async function(amount, type) {
-    let finalAmount = 0;
-    if (type === 'plt') {
-        if (window.currentPlane === 'copper') finalAmount = 20;
-        else if (window.currentPlane === 'bronze') finalAmount = 50;
-        else if (window.currentPlane === 'gold') finalAmount = 100;
-        else finalAmount = 10;
-        window.frogMoney += finalAmount;
-    } else {
-        if (window.currentPlane === 'copper') finalAmount = 0.0001;
-        else if (window.currentPlane === 'bronze') finalAmount = 0.0005;
-        else if (window.currentPlane === 'gold') finalAmount = 0.001;
-        else finalAmount = 0.00005;
-        window.usdtMoney += finalAmount;
-    }
-    window.updateUI();
-    try { fetch(`${RENDER_URL}/api/collect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tgId: userId, amount: finalAmount, type: type }) }); } catch (e) {}
-};
-
 window.updateUI = function() {
-    if (document.getElementById('money')) document.getElementById('money').innerText = window.usdtMoney.toFixed(5);
-    if (document.getElementById('frog-money')) document.getElementById('frog-money').innerText = Math.floor(window.frogMoney);
-    if (document.getElementById('energy')) document.getElementById('energy').innerText = window.energy;
-    if (document.getElementById('ref-link-display')) document.getElementById('ref-link-display').innerText = `t.me/YOUR_BOT?start=${userId}`;
+    document.getElementById('money').innerText = window.usdtMoney.toFixed(5);
+    document.getElementById('frog-money').innerText = Math.floor(window.frogMoney);
+    document.getElementById('energy').innerText = window.energy;
+    document.getElementById('ref-link-display').innerText = `t.me/YOUR_BOT?start=${userId}`;
 };
 window.updateUI();
