@@ -1,18 +1,12 @@
 const config = {
-    type: Phaser.AUTO,
-    width: window.innerWidth,
-    height: window.innerHeight,
-    physics: { default: 'arcade' },
-    scene: { preload, create, update }
+    type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight,
+    physics: { default: 'arcade' }, scene: { preload, create, update }
 };
 const game = new Phaser.Game(config);
 let plane, hook, rope, targets, isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, distance = 25;
 
 function preload() {
-    // Выводим в консоль, если файл не грузится
-    this.load.on('loaderror', (file) => { console.log('Ошибка загрузки: ' + file.key); });
-
     this.load.image('sky', 'pg.jpeg');
     this.load.image('hook', 'kleshn.png');
     this.load.image('usdt', 'usdt.png');
@@ -26,7 +20,6 @@ function preload() {
 
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
-    
     targets = this.physics.add.group();
     for(let i=0; i<6; i++) spawn(this);
     
@@ -34,14 +27,12 @@ function create() {
     hook = this.add.sprite(0, 0, 'hook').setDisplaySize(60, 60).setDepth(50);
     this.physics.add.existing(hook);
 
-    // Безопасная инициализация самолета
-    let tex = 'plane';
-    if(window.currentPlane !== 'default') tex = 'plane_' + window.currentPlane;
+    let tex = (window.currentPlane === 'default') ? 'plane' : 'plane_' + window.currentPlane;
     plane = this.add.image(config.width/2, 120, tex).setDisplaySize(280, 180).setDepth(60);
 
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
-            caughtItem = item;
+            caughtItem = item; 
             caughtItem.body.enable = false;
             if (window.playBeep) window.playBeep(450, 0.1);
             isLaunching = false; isReturning = true;
@@ -60,18 +51,18 @@ function create() {
 
 function spawn(scene) {
     let x = Phaser.Math.Between(50, config.width - 50);
-    let y = Phaser.Math.Between(config.height * 0.5, config.height - 100);
-    let type = (Phaser.Math.Between(1, 100) <= 70) ? 'pilot_coin' : 'usdt';
+    let y = Phaser.Math.Between(config.height * 0.5, config.height - 120);
+    let type = (Phaser.Math.Between(1, 100) <= 75) ? 'pilot_coin' : 'usdt';
     targets.create(x, y, type).setScale(0.12).setDepth(40);
 }
 
 function update() {
     plane.y = 120 + Math.sin(this.time.now / 600) * 5;
-    let startX = plane.x, startY = plane.y + 20;
+    let startX = plane.x, startY = plane.y + 25;
 
     if (!isLaunching && !isReturning) {
         angle += 0.015;
-        if (Math.abs(angle) > 0.4) angle *= -1; // Упрощенное качание
+        if (Math.abs(angle) > 0.45) angle *= -1;
         distance = 25;
     } else if (isLaunching) {
         distance += 12;
@@ -90,8 +81,5 @@ function update() {
     hook.x = startX + Math.sin(angle) * distance;
     hook.y = startY + Math.cos(angle) * distance;
     rope.clear().lineStyle(2, 0xffffff, 0.5).lineBetween(startX, startY, hook.x, hook.y);
-    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 10; }
+    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; }
 }
-       
-    
- 
