@@ -20,17 +20,13 @@ function preload() {
 
 function create() {
     this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
-    
     try {
-        // МУЗЫКА 3% (0.03) — очень тихо
-        bgMusic = this.sound.add('theme', { volume: 0.03, loop: true });
+        bgMusic = this.sound.add('theme', { volume: 0.01, loop: true }); // МУЗЫКА 1%
     } catch (e) {}
-    
     this.input.once('pointerdown', () => { if (bgMusic && !bgMusic.isPlaying) bgMusic.play(); });
 
     targets = this.physics.add.group();
     for(let i=0; i<6; i++) spawn(this);
-    
     rope = this.add.graphics().setDepth(5);
     hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(65, 65);
     this.physics.add.existing(hook);
@@ -41,15 +37,11 @@ function create() {
     if(window.currentPlane === 'gold') tex = 'plane_gold';
     plane = this.add.image(config.width/2, 120, tex).setDisplaySize(280, 180).setDepth(60);
 
-    // СИГНАЛ ПРИ КАСАНИИ МОНЕТКИ (УДАР КЛЕШНИ)
     this.physics.add.overlap(hook, targets, (h, item) => {
         if (isLaunching && !caughtItem) {
             caughtItem = item; caughtItem.body.enable = false;
             if (caughtItem.pulse) caughtItem.pulse.stop();
-            
-            // Звук захвата (частота 400Гц)
-            if (window.playBeep) window.playBeep(400, 0.1); 
-            
+            if (window.playBeep) window.playBeep(450, 0.1); // СИГНАЛ ЗАХВАТА
             isLaunching = false; isReturning = true;
         }
     });
@@ -57,9 +49,7 @@ function create() {
     this.input.on('pointerdown', () => {
         if (!isLaunching && !isReturning && window.energy > 0) {
             isLaunching = true; window.energy--; if (window.updateUI) window.updateUI();
-            
-            // СИГНАЛ ПРИ ЗАПУСКЕ КЛЕШНИ
-            if (window.playBeep) window.playBeep(200, 0.05); 
+            if (window.playBeep) window.playBeep(250, 0.06); // СИГНАЛ ЗАПУСКА
         }
     });
 }
@@ -69,18 +59,11 @@ function spawn(scene) {
     let y = Phaser.Math.Between(config.height * 0.5, config.height - 130);
     let type = (Phaser.Math.Between(1, 100) <= 70) ? 'pilot_coin' : 'usdt';
     let coin = targets.create(x, y, type).setScale(type === 'pilot_coin' ? 0.10 : 0.12).setDepth(40);
-    
-    coin.pulse = scene.tweens.add({
-        targets: coin, scale: (type === 'pilot_coin' ? 0.12 : 0.14),
-        duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
-    });
+    coin.pulse = scene.tweens.add({ targets: coin, scale: (type === 'pilot_coin' ? 0.12 : 0.14), duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 }
 
 function showValue(scene, isPlt) {
-    let val = isPlt ? 
-        (window.currentPlane === 'copper' ? "20" : window.currentPlane === 'bronze' ? "50" : window.currentPlane === 'gold' ? "100" : "10") :
-        (window.currentPlane === 'copper' ? "0.0001" : window.currentPlane === 'bronze' ? "0.0005" : window.currentPlane === 'gold' ? "0.001" : "0.00005");
-    
+    let val = isPlt ? (window.currentPlane === 'copper' ? "20" : window.currentPlane === 'bronze' ? "50" : window.currentPlane === 'gold' ? "100" : "10") : (window.currentPlane === 'copper' ? "0.0001" : window.currentPlane === 'bronze' ? "0.0005" : window.currentPlane === 'gold' ? "0.001" : "0.00005");
     let txt = scene.add.text(plane.x, plane.y - 40, `+${val}`, { font: 'bold 28px Arial', fill: isPlt ? '#ffcc00' : '#00ff00' }).setOrigin(0.5).setDepth(100);
     scene.tweens.add({ targets: txt, y: txt.y - 70, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
 }
@@ -97,11 +80,8 @@ function update() {
         if (distance <= 25) {
             isReturning = false;
             if (caughtItem) {
+                if (window.playBeep) window.playBeep(700, 0.12); // СИГНАЛ УДАРА ОБ САМОЛЕТ
                 showValue(this, caughtItem.texture.key === 'pilot_coin');
-                
-                // СИГНАЛ ПРИ УДАРЕ ОБ САМОЛЕТ (УСПЕШНЫЙ СБОР)
-                if (window.playBeep) window.playBeep(600, 0.15); 
-                
                 window.saveCollect(0, caughtItem.texture.key === 'pilot_coin' ? 'plt' : 'usdt');
                 caughtItem.destroy(); caughtItem = null; spawn(this);
             }
@@ -111,3 +91,4 @@ function update() {
     rope.clear().lineStyle(2, 0xffffff, 0.6).lineBetween(startX, startY, startX + Math.sin(angle) * (distance - 20), startY + Math.cos(angle) * (distance - 20));
     if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; }
 }
+          
