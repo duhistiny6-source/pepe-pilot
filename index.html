@@ -23,7 +23,7 @@
         .nav-item span { font-size: 18px; }
         .nav-text { font-size: 8px; margin-top: 1px; color: #bbb; text-transform: uppercase; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
-        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 280px; max-width: 90%; }
+        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 280px; max-width: 90%; max-height: 80vh; overflow-y: auto; }
         .task-item { background: #222; border: 1px solid #444; border-radius: 10px; padding: 10px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
         .task-info { text-align: left; }
         .task-title { font-size: 13px; font-weight: bold; color: #fff; }
@@ -59,6 +59,38 @@
         <button class="lang-btn" onclick="changeLanguage('ru')">РУССКИЙ</button>
         <button class="lang-btn" onclick="changeLanguage('en')">ENGLISH</button>
         <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('settings-modal')" id="txt-close">Закрыть</div>
+    </div>
+</div>
+
+<div id="shop-modal" class="modal">
+    <div class="modal-content">
+        <h3 id="txt-shop-title">АНГАР</h3>
+        
+        <div class="task-item">
+            <div class="task-info">
+                <div class="task-title" style="color:#cd7f32">МЕДНЫЙ</div>
+                <div class="task-reward">Цена: 10 USDT</div>
+            </div>
+            <button class="task-btn" onclick="buyPlane('copper', 10)">КУПИТЬ</button>
+        </div>
+
+        <div class="task-item">
+            <div class="task-info">
+                <div class="task-title" style="color:#b08d57">БРОНЗОВЫЙ</div>
+                <div class="task-reward">Цена: 25 USDT</div>
+            </div>
+            <button class="task-btn" onclick="buyPlane('bronze', 25)">КУПИТЬ</button>
+        </div>
+
+        <div class="task-item">
+            <div class="task-info">
+                <div class="task-title" style="color:#ffd700">ЗОЛОТОЙ</div>
+                <div class="task-reward">Цена: 50 USDT</div>
+            </div>
+            <button class="task-btn" onclick="buyPlane('gold', 50)">КУПИТЬ</button>
+        </div>
+
+        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('shop-modal')">Закрыть</div>
     </div>
 </div>
 
@@ -100,7 +132,7 @@
 </div>
 
 <div id="nav-bar">
-    <div class="nav-item"><span>🛒</span><div class="nav-text" id="nav-shop">МАГАЗИН</div></div>
+    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text" id="nav-shop">МАГАЗИН</div></div>
     <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text" id="nav-tasks">ЗАДАНИЯ</div></div>
     <div class="nav-item" onclick="openFriends()"><span>👥</span><div class="nav-text" id="nav-friends">ДРУЗЬЯ</div></div>
     <div class="nav-item" onclick="connectWallet()"><span>👛</span><div class="nav-text" id="nav-wallet">КОШЕЛЕК</div></div>
