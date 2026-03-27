@@ -8,24 +8,26 @@
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
-        body { margin:0; padding:0; overflow:hidden; background:#000; touch-action: none; font-family: sans-serif; }
-        #top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 35px; background: rgba(0, 0, 0, 0.4); z-index: 1000; display: flex; align-items: center; }
-        #energy-container { position: absolute; left: 12px; color: #0f0; font-size: 13px; font-weight: bold; }
-        #balance-container { width: 100%; display: flex; align-items: center; justify-content: center; gap: 15px; color: #fff; font-size: 11px; }
-        .balance-item { display: flex; align-items: center; gap: 4px; }
-        .coin-icon { width: 14px; height: 14px; }
-        #settings-btn { position: fixed; top: 7px; right: 10px; font-size: 18px; cursor: pointer; z-index: 1001; color: white; opacity: 0.8; }
+        body { margin:0; padding:0; overflow:hidden; background:#000; font-family: sans-serif; }
         
-        #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 85%; height: 50px; background: rgba(0, 0, 0, 0.9); border: 1px solid #333; border-radius: 12px; display: flex; justify-content: space-around; align-items: center; z-index: 200; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; flex: 1; cursor: pointer; }
-        .nav-text { font-size: 8px; margin-top: 1px; color: #bbb; text-transform: uppercase; }
+        /* Верхняя панель */
+        #top-bar { position: fixed; top: 10px; left: 0; width: 100%; z-index: 1000; display: flex; justify-content: space-between; padding: 0 15px; box-sizing: border-box; pointer-events: none; }
+        .stat-box { background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 8px; color: #fff; font-size: 12px; display: flex; align-items: center; gap: 5px; pointer-events: auto; }
+        
+        /* Шестеренка */
+        #settings-btn { position: fixed; top: 10px; right: 10px; z-index: 1001; cursor: pointer; font-size: 20px; filter: drop-shadow(0 0 2px #000); }
 
-        /* Модальные окна */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center; flex-direction: column; }
-        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 20px; border-radius: 20px; width: 80%; color: white; text-align: center; }
-        
-        .shop-item { background: #222; border: 1px solid #444; border-radius: 10px; padding: 8px; margin: 8px 0; display: flex; align-items: center; justify-content: space-between; }
-        .shop-btn { background: #0f0; color: #000; border: none; padding: 6px 10px; border-radius: 5px; font-weight: bold; font-size: 10px; }
+        /* Нижнее меню */
+        #nav-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; height: 65px; background: rgba(0, 0, 0, 0.85); border: 1px solid #444; border-radius: 18px; display: flex; justify-content: space-around; align-items: center; z-index: 1000; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; cursor: pointer; flex: 1; }
+        .nav-item img { width: 24px; height: 24px; margin-bottom: 4px; }
+        .nav-text { font-size: 9px; text-transform: uppercase; color: #aaa; }
+
+        /* Окна */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
+        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 20px; border-radius: 25px; width: 85%; color: white; text-align: center; }
+        .shop-row { display: flex; align-items: center; background: #252525; margin: 10px 0; padding: 10px; border-radius: 15px; border: 1px solid #444; }
+        .buy-btn { background: #0f0; color: #000; border: none; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -33,58 +35,39 @@
 <div id="settings-btn" onclick="toggleModal('settings-modal')">⚙️</div>
 
 <div id="top-bar">
-    <div id="energy-container">⚡ <span id="energy">100</span></div>
-    <div id="balance-container">
-        <div class="balance-item"><span>USDT:</span> <span id="money" style="color:#0f0">0.00000</span></div>
-        <div class="balance-item"><img src="logo..png" class="coin-icon"> <span>PLT:</span> <span id="frog-money" style="color:#ffcc00">0</span></div>
+    <div class="stat-box" style="color:#0f0">⚡ <span id="energy">100</span></div>
+    <div style="display:flex; gap:10px">
+        <div class="stat-box">USDT: <span id="money" style="color:#0f0">0.00000</span></div>
+        <div class="stat-box"><img src="logo..png" style="width:14px"> <span id="frog-money" style="color:#ffcc00">0</span></div>
     </div>
 </div>
 
 <div id="shop-modal" class="modal">
     <div class="modal-content">
-        <h3 id="txt-shop-title">АНГАР</h3>
-        <div class="shop-item" style="border-color:#cd7f32">
-            <img src="plane_copper.png" style="width:40px">
-            <div style="text-align:left; flex:1; margin-left:10px">
-                <div id="txt-plane-copper" style="color:#cd7f32; font-size:12px; font-weight:bold">МЕДНЫЙ</div>
-                <div style="font-size:10px">10 USDT | <span style="color:#0f0">+10 PLT</span></div>
+        <h2 id="txt-shop-title">АНГАР</h2>
+        <div class="shop-row" style="border-color:#cd7f32">
+            <img src="plane_copper.png" width="50">
+            <div style="flex:1; text-align:left; padding-left:10px">
+                <b id="txt-copper">МЕДНЫЙ</b><br><small>10 USDT</small>
             </div>
-            <button class="shop-btn buy-btn-text" onclick="buyPlane('copper', 10)">КУПИТЬ</button>
+            <button class="buy-btn" onclick="buyPlane('copper', 10)">КУПИТЬ</button>
         </div>
-        <div class="shop-item" style="border-color:#b08d57">
-            <img src="plane_bronze.png" style="width:40px">
-            <div style="text-align:left; flex:1; margin-left:10px">
-                <div id="txt-plane-bronze" style="color:#b08d57; font-size:12px; font-weight:bold">БРОНЗОВЫЙ</div>
-                <div style="font-size:10px">25 USDT | <span style="color:#0f0">+25 PLT</span></div>
+        <div class="shop-row" style="border-color:#ffd700">
+            <img src="plane_gold.png" width="50">
+            <div style="flex:1; text-align:left; padding-left:10px">
+                <b id="txt-gold">ЗОЛОТОЙ</b><br><small>50 USDT</small>
             </div>
-            <button class="shop-btn buy-btn-text" onclick="buyPlane('bronze', 25)">КУПИТЬ</button>
+            <button class="buy-btn" onclick="buyPlane('gold', 50)">КУПИТЬ</button>
         </div>
-        <div class="shop-item" style="border-color:#ffd700">
-            <img src="plane_gold.png" style="width:40px">
-            <div style="text-align:left; flex:1; margin-left:10px">
-                <div id="txt-plane-gold" style="color:#ffd700; font-size:12px; font-weight:bold">ЗОЛОТОЙ</div>
-                <div style="font-size:10px">50 USDT | <span style="color:#0f0">+50 PLT</span></div>
-            </div>
-            <button class="shop-btn buy-btn-text" onclick="buyPlane('gold', 50)">КУПИТЬ</button>
-        </div>
-        <div onclick="toggleModal('shop-modal')" style="margin-top:15px; color:#888; cursor:pointer" class="txt-close-all">Закрыть</div>
-    </div>
-</div>
-
-<div id="settings-modal" class="modal">
-    <div class="modal-content">
-        <h3 id="txt-settings-title">НАСТРОЙКИ</h3>
-        <button onclick="changeLanguage('ru')" style="width:100%; padding:10px; margin-bottom:10px">РУССКИЙ</button>
-        <button onclick="changeLanguage('en')" style="width:100%; padding:10px">ENGLISH</button>
-        <div onclick="toggleModal('settings-modal')" style="margin-top:15px; color:#888; cursor:pointer" class="txt-close-all">Закрыть</div>
+        <p onclick="toggleModal('shop-modal')" style="color:#888; cursor:pointer" id="txt-close">Закрыть</p>
     </div>
 </div>
 
 <div id="nav-bar">
-    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text" id="nav-shop">МАГАЗИН</div></div>
-    <div class="nav-item" onclick="tg.showAlert('Soon!')"><span>📜</span><div class="nav-text">ЗАДАНИЯ</div></div>
-    <div class="nav-item" onclick="openFriends()"><span>👥</span><div class="nav-text">ДРУЗЬЯ</div></div>
-    <div class="nav-item" onclick="tonConnectUI.openModal()"><span>👛</span><div class="nav-text">КОШЕЛЕК</div></div>
+    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text">Магазин</div></div>
+    <div class="nav-item" onclick="tg.showAlert('Задания скоро!')"><span>📜</span><div class="nav-text">Задания</div></div>
+    <div class="nav-item" onclick="openFriends()"><span>👥</span><div class="nav-text">Друзья</div></div>
+    <div class="nav-item" onclick="tonConnectUI.openModal()"><span>👛</span><div class="nav-text">Кошелек</div></div>
 </div>
 
 <script src="api.js"></script>
