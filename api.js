@@ -8,54 +8,37 @@ const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
 
 window.frogMoney = 0; window.usdtMoney = 0; window.energy = 100; window.currentPlane = 'default';
 
-window.toggleModal = function(id) {
-    const m = document.getElementById(id);
-    if (m) m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+window.toggleModal = (id) => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = (el.style.display === 'flex') ? 'none' : 'flex';
 };
 
-window.openFriends = function() {
-    tg.showAlert("Реферальная ссылка: https://t.me/your_bot?start=" + userId);
+window.openFriends = () => {
+    const link = `https://t.me/share/url?url=https://t.me/your_bot?start=${userId}`;
+    tg.openTelegramLink(link);
 };
 
-window.buyPlane = function(type, price) {
-    if (window.usdtMoney < price) { tg.showAlert("Недостаточно USDT!"); return; }
-    window.usdtMoney -= price; window.currentPlane = type;
-    if (window.changePlaneSkin) window.changePlaneSkin(type);
-    window.updateUI(); window.toggleModal('shop-modal');
-};
-
-const translations = {
-    ru: { settings: "НАСТРОЙКИ", shop: "АНГАР", copper: "МЕДНЫЙ", bronze: "БРОНЗОВЫЙ", gold: "ЗОЛОТОЙ", buy: "КУПИТЬ", close: "Закрыть" },
-    en: { settings: "SETTINGS", shop: "HANGAR", copper: "COPPER", bronze: "BRONZE", gold: "GOLD", buy: "BUY", close: "Close" }
-};
-
-window.changeLanguage = function(lang) {
-    const t = translations[lang]; if (!t) return;
-    document.getElementById('txt-settings-title').innerText = t.settings;
-    document.getElementById('nav-shop').innerText = t.shop;
-    document.getElementById('txt-shop-title').innerText = t.shop;
-    document.getElementById('txt-plane-copper').innerText = t.copper;
-    document.getElementById('txt-plane-bronze').innerText = t.bronze;
-    document.getElementById('txt-plane-gold').innerText = t.gold;
-    document.querySelectorAll('.buy-btn-text').forEach(b => b.innerText = t.buy);
-    document.querySelectorAll('.txt-close-all').forEach(c => c.innerText = t.close);
-    window.toggleModal('settings-modal');
-};
-
-window.saveCollect = function(dummy, type) {
-    let amount = 0;
-    if (type === 'plt') {
-        amount = (window.currentPlane === 'gold') ? 50 : (window.currentPlane === 'bronze') ? 25 : 10;
-        window.frogMoney += amount;
+window.buyPlane = (type, price) => {
+    if(window.usdtMoney >= price) {
+        window.usdtMoney -= price;
+        window.currentPlane = type;
+        if(window.updatePlane) window.updatePlane(type);
+        window.updateUI();
+        window.toggleModal('shop-modal');
     } else {
-        amount = (window.currentPlane === 'gold') ? 0.005 : (window.currentPlane === 'bronze') ? 0.0005 : 0.00005;
-        window.usdtMoney += amount;
+        tg.showAlert("Недостаточно USDT");
     }
+};
+
+window.saveCollect = (type) => {
+    let bonus = (window.currentPlane === 'gold') ? 5 : (window.currentPlane === 'copper') ? 2 : 1;
+    if(type === 'plt') window.frogMoney += (10 * bonus);
+    else window.usdtMoney += (0.00005 * bonus);
     window.updateUI();
 };
 
-window.updateUI = function() {
+window.updateUI = () => {
     document.getElementById('money').innerText = window.usdtMoney.toFixed(5);
-    document.getElementById('frog-money').innerText = Math.floor(window.frogMoney);
+    document.getElementById('frog-money').innerText = window.frogMoney;
     document.getElementById('energy').innerText = window.energy;
 };
