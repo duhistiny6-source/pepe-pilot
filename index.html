@@ -9,10 +9,18 @@
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
         body { margin:0; padding:0; overflow:hidden; background:#000; touch-action: none; font-family: 'Segoe UI', Arial, sans-serif; }
-        #top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 50px; background: rgba(0, 0, 0, 0.4); z-index: 1000; backdrop-filter: blur(2px); display: flex; align-items: center; }
-        #energy-container { position: absolute; left: 12px; display: flex; flex-direction: column; align-items: flex-start; }
-        #energy-text { color: #0f0; font-size: 13px; font-weight: bold; text-shadow: 1px 1px 1px #000; }
-        #restore-btn { display: none; font-size: 8px; background: #ffcc00; color: #000; padding: 2px 6px; border-radius: 4px; margin-top: 2px; cursor: pointer; font-weight: bold; border: 1px solid #fff; text-transform: uppercase; }
+        #top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 35px; background: rgba(0, 0, 0, 0.4); z-index: 1000; backdrop-filter: blur(2px); display: flex; align-items: center; }
+        
+        /* ЮВЕЛИРНАЯ ВСТАВКА ТАЙМЕРА И КНОПКИ РЕКЛАМЫ */
+        #energy-container { position: absolute; left: 12px; top: 2px; display: flex; flex-direction: column; align-items: flex-start; line-height: 1.1; }
+        #energy-val { color: #0f0; font-size: 13px; font-weight: bold; text-shadow: 1px 1px 1px #000; }
+        #energy-timer { color: #aaa; font-size: 8px; font-family: monospace; }
+        #restore-btn { 
+            display: none; background: #ffcc00; color: #000; font-size: 7px; 
+            padding: 1px 4px; border-radius: 3px; cursor: pointer; 
+            font-weight: bold; border: 1px solid #fff; margin-top: 1px;
+        }
+
         #balance-container { width: 100%; display: flex; align-items: center; justify-content: center; gap: 15px; color: #fff; font-size: 11px; }
         .balance-item { display: flex; align-items: center; gap: 4px; }
         .coin-icon { width: 14px; height: 14px; }
@@ -38,8 +46,9 @@
 
 <div id="top-bar">
     <div id="energy-container">
-        <div id="energy-text">⚡ <span id="energy">100</span></div>
-        <div id="restore-btn" onclick="restoreEnergyByAd()">ВОССТАНОВИТЬ 📺</div>
+        <div id="energy-val">⚡ <span id="energy">100</span></div>
+        <div id="energy-timer">02:00:00</div>
+        <div id="restore-btn" onclick="restoreEnergyByAd()">AD ⚡</div>
     </div>
     <div id="balance-container">
         <div class="balance-item"><span>USDT:</span> <span id="money" style="color:#0f0">0.00000</span></div>
@@ -49,68 +58,51 @@
     </div>
 </div>
 
-<div id="settings-modal" class="modal">
-    <div class="modal-content">
-        <h3 id="txt-settings-title">НАСТРОЙКИ</h3>
-        <button class="lang-btn" onclick="changeLanguage('ru')">РУССКИЙ</button>
-        <button class="lang-btn" onclick="changeLanguage('en')">ENGLISH</button>
-        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('settings-modal')" class="txt-close">Закрыть</div>
-    </div>
-</div>
-
 <div id="shop-modal" class="modal">
     <div class="modal-content">
         <h3 id="txt-shop-title">АНГАР</h3>
         <div class="task-item">
             <img src="plane_copper.png" style="width: 50px; height: 35px; object-fit: contain; margin-right: 10px;">
-            <div class="task-info" style="flex: 1;"><div class="task-title" style="color:#cd7f32" id="plane-name-copper">МЕДНЫЙ</div><div class="task-reward"><span class="txt-price">Цена</span>: 10 USDT</div><div style="font-size: 9px; color: #0f0;">+20 PTL / +0.0001 USDT</div></div>
+            <div class="task-info" style="flex: 1;"><div class="task-title" style="color:#cd7f32">МЕДНЫЙ</div><div class="task-reward">Цена: 10 USDT</div><div style="font-size: 9px; color: #0f0;">+20 PTL / +0.0001 USDT</div></div>
             <button class="task-btn buy-btn" onclick="buyPlane('copper', 10)">КУПИТЬ</button>
         </div>
         <div class="task-item">
             <img src="plane_bronze.png" style="width: 50px; height: 35px; object-fit: contain; margin-right: 10px;">
-            <div class="task-info" style="flex: 1;"><div class="task-title" style="color:#b08d57" id="plane-name-bronze">БРОНЗОВЫЙ</div><div class="task-reward"><span class="txt-price">Цена</span>: 25 USDT</div><div style="font-size: 9px; color: #0f0;">+50 PTL / +0.0005 USDT</div></div>
+            <div class="task-info" style="flex: 1;"><div class="task-title" style="color:#b08d57">БРОНЗОВЫЙ</div><div class="task-reward">Цена: 25 USDT</div><div style="font-size: 9px; color: #0f0;">+50 PTL / +0.0005 USDT</div></div>
             <button class="task-btn buy-btn" onclick="buyPlane('bronze', 25)">КУПИТЬ</button>
         </div>
         <div class="task-item">
             <img src="plane_gold.png" style="width: 50px; height: 35px; object-fit: contain; margin-right: 10px;">
-            <div class="task-info" style="flex: 1;"><div class="task-title" style="color:#ffd700" id="plane-name-gold">ЗОЛОТОЙ</div><div class="task-reward"><span class="txt-price">Цена</span>: 50 USDT</div><div style="font-size: 9px; color: #0f0;">+100 PTL / +0.001 USDT</div></div>
+            <div class="task-info" style="flex: 1;"><div class="task-title" style="color:#ffd700">ЗОЛОТОЙ</div><div class="task-reward">Цена: 50 USDT</div><div style="font-size: 9px; color: #0f0;">+100 PTL / +0.001 USDT</div></div>
             <button class="task-btn buy-btn" onclick="buyPlane('gold', 50)">КУПИТЬ</button>
         </div>
-        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('shop-modal')" class="txt-close">Закрыть</div>
+        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('shop-modal')">Закрыть</div>
     </div>
 </div>
 
-<div id="tasks-modal" class="modal">
+<div id="settings-modal" class="modal">
     <div class="modal-content">
-        <h3 id="txt-tasks-title">ЗАДАНИЯ</h3>
-        <div class="task-item">
-            <div class="task-info"><div class="task-title" id="task-sub">Подписаться на канал</div><div class="task-reward">+100 ⚡ Энергии</div></div>
-            <button class="task-btn" onclick="tg.openTelegramLink('https://t.me/your_channel')">GO</button>
-        </div>
-        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('tasks-modal')" class="txt-close">Закрыть</div>
-    </div>
-</div>
-
-<div id="friends-modal" class="modal">
-    <div class="modal-content">
-        <h3 id="txt-friends-title">ДРУЗЬЯ</h3>
-        <p id="txt-friends-desc" style="font-size: 11px; color: #ccc;">Приглашай друзей и получай 10% от их сбора!</p>
-        <div id="ref-link-display">Загрузка...</div>
-        <button class="lang-btn" id="btn-invite">📢 ПРИГЛАСИТЬ</button>
-        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('friends-modal')" class="txt-close">Закрыть</div>
+        <h3 id="txt-settings-title">НАСТРОЙКИ</h3>
+        <button class="lang-btn" onclick="changeLanguage('ru')">РУССКИЙ</button>
+        <button class="lang-btn" onclick="changeLanguage('en')">ENGLISH</button>
+        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('settings-modal')">Закрыть</div>
     </div>
 </div>
 
 <div id="nav-bar">
-    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text" id="nav-shop">АНГАР</div></div>
-    <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text" id="nav-tasks">ЗАДАНИЯ</div></div>
-    <div class="nav-item" onclick="toggleModal('friends-modal')"><span>👥</span><div class="nav-text" id="nav-friends">ДРУЗЬЯ</div></div>
-    <div class="nav-item" onclick="connectWallet()"><span>👛</span><div class="nav-text" id="nav-wallet">КОШЕЛЕК</div></div>
+    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text">АНГАР</div></div>
+    <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text">ЗАДАНИЯ</div></div>
+    <div class="nav-item"><span>👥</span><div class="nav-text">ДРУЗЬЯ</div></div>
+    <div class="nav-item"><span>👛</span><div class="nav-text">КОШЕЛЕК</div></div>
 </div>
 
 <script src="api.js"></script>
 <script src="game.js"></script>
-
+<script>
+    function toggleModal(id) {
+        const m = document.getElementById(id);
+        m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+    }
+</script>
 </body>
 </html>
-      
