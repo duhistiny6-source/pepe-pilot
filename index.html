@@ -30,8 +30,6 @@
         .task-reward { font-size: 11px; color: #0f0; }
         .task-btn { background: #0f0; color: #000; border: none; padding: 6px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
         .lang-btn { background: #333; color: #0f0; border: 1px solid #0f0; padding: 12px 20px; margin: 10px 0; cursor: pointer; border-radius: 10px; font-weight: bold; width: 100%; }
-        #ad-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
-        #ref-link-display { background: #000; padding: 8px; border-radius: 5px; font-size: 10px; color: #0f0; margin: 10px 0; word-break: break-all; border: 1px dashed #444; }
     </style>
 </head>
 <body>
@@ -48,11 +46,6 @@
     </div>
 </div>
 
-<div id="recovery-block">
-    <button id="ad-button" onclick="startAd()">📺 РЕКЛАМА</button>
-    <div id="timer-display"><span id="txt-recovery">Rec</span>: <span id="time-left">02:00:00</span></div>
-</div>
-
 <div id="settings-modal" class="modal">
     <div class="modal-content">
         <h3 id="txt-settings-title">НАСТРОЙКИ</h3>
@@ -67,25 +60,31 @@
         <h3 id="txt-shop-title">АНГАР</h3>
         
         <div class="task-item">
-            <div class="task-info">
+            <img src="plane_copper.png" style="width: 50px; height: 35px; object-fit: contain; margin-right: 10px;">
+            <div class="task-info" style="flex: 1;">
                 <div class="task-title" style="color:#cd7f32">МЕДНЫЙ</div>
                 <div class="task-reward">Цена: 10 USDT</div>
+                <div style="font-size: 9px; color: #0f0;">+20 PTL / +0.0001 USDT</div>
             </div>
             <button class="task-btn" onclick="buyPlane('copper', 10)">КУПИТЬ</button>
         </div>
 
         <div class="task-item">
-            <div class="task-info">
+            <img src="plane_bronze.png" style="width: 50px; height: 35px; object-fit: contain; margin-right: 10px;">
+            <div class="task-info" style="flex: 1;">
                 <div class="task-title" style="color:#b08d57">БРОНЗОВЫЙ</div>
                 <div class="task-reward">Цена: 25 USDT</div>
+                <div style="font-size: 9px; color: #0f0;">+50 PTL / +0.0005 USDT</div>
             </div>
             <button class="task-btn" onclick="buyPlane('bronze', 25)">КУПИТЬ</button>
         </div>
 
         <div class="task-item">
-            <div class="task-info">
+            <img src="plane_gold.png" style="width: 50px; height: 35px; object-fit: contain; margin-right: 10px;">
+            <div class="task-info" style="flex: 1;">
                 <div class="task-title" style="color:#ffd700">ЗОЛОТОЙ</div>
                 <div class="task-reward">Цена: 50 USDT</div>
+                <div style="font-size: 9px; color: #0f0;">+100 PTL / +0.001 USDT</div>
             </div>
             <button class="task-btn" onclick="buyPlane('gold', 50)">КУПИТЬ</button>
         </div>
@@ -94,45 +93,8 @@
     </div>
 </div>
 
-<div id="tasks-modal" class="modal">
-    <div class="modal-content">
-        <h3 id="txt-tasks-title">ЗАДАНИЯ</h3>
-        <div class="task-item">
-            <div class="task-info">
-                <div class="task-title">Посмотреть рекламу</div>
-                <div class="task-reward">+100 ⚡ Энергии</div>
-            </div>
-            <button class="task-btn" onclick="doAdTask()">📺 СМОТРЕТЬ</button>
-        </div>
-        <div class="task-item">
-            <div class="task-info">
-                <div class="task-title">Подписаться на канал</div>
-                <div class="task-reward">+100 ⚡ Энергии</div>
-            </div>
-            <button class="task-btn" onclick="doTask('https://t.me/your_channel', 100)">GO</button>
-        </div>
-        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('tasks-modal')">Закрыть</div>
-    </div>
-</div>
-
-<div id="friends-modal" class="modal">
-    <div class="modal-content">
-        <h3 id="txt-friends-title">ДРУЗЬЯ (0)</h3>
-        <p style="font-size: 11px; color: #ccc;">Приглашай друзей и получай 10% от их сбора!</p>
-        <div id="ref-link-display">Загрузка ссылки...</div>
-        <button class="lang-btn" onclick="shareInvite()" style="background:#0088cc; border:none; color:#fff;">📢 ПРИГЛАСИТЬ</button>
-        <button class="lang-btn" onclick="copyLink()">📋 КОПИРОВАТЬ</button>
-        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('friends-modal')">Закрыть</div>
-    </div>
-</div>
-
-<div id="ad-overlay">
-    <h2 id="txt-ad-watching">СМОТРИМ РОЛИК...</h2>
-    <p id="ad-timer">Осталось: 5 сек.</p>
-</div>
-
 <div id="nav-bar">
-    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text" id="nav-shop">МАГАЗИН</div></div>
+    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text" id="nav-shop">АНГАР</div></div>
     <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text" id="nav-tasks">ЗАДАНИЯ</div></div>
     <div class="nav-item" onclick="openFriends()"><span>👥</span><div class="nav-text" id="nav-friends">ДРУЗЬЯ</div></div>
     <div class="nav-item" onclick="connectWallet()"><span>👛</span><div class="nav-text" id="nav-wallet">КОШЕЛЕК</div></div>
