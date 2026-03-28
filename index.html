@@ -14,14 +14,14 @@
         #energy-section { display: flex; align-items: center; min-width: 60px; }
         #energy-active { color: #0f0; font-size: 14px; font-weight: bold; }
         #energy-depleted { display: none; flex-direction: column; align-items: flex-start; }
-        #energy-timer { color: #aaa; font-size: 8px; font-family: monospace; line-height: 1; }
+        #energy-timer { color: #aaa; font-size: 8px; font-family: monospace; }
         #ad-btn { background: #ffcc00; color: #000; font-size: 7px; padding: 1px 4px; border-radius: 3px; font-weight: bold; cursor: pointer; border: 1px solid #fff; margin-top: 1px; }
 
         #balance-section { display: flex; gap: 15px; color: #fff; font-size: 12px; font-weight: bold; }
-        #settings-btn { font-size: 20px; cursor: pointer; color: #fff; opacity: 0.8; }
+        #settings-btn { font-size: 20px; cursor: pointer; color: #fff; }
         
         #nav-bar { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 90%; height: 55px; background: rgba(0,0,0,0.9); border-radius: 15px; display: flex; justify-content: space-around; align-items: center; z-index: 500; border: 1px solid #333; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; cursor: pointer; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; cursor: pointer; flex: 1; }
         .nav-text { font-size: 8px; color: #bbb; margin-top: 2px; font-weight: bold; text-transform: uppercase; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
@@ -49,17 +49,15 @@
 
 <div id="nav-bar">
     <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text">АНГАР</div></div>
-    <div class="nav-item"><span>📜</span><div class="nav-text">ЗАДАНИЯ</div></div>
-    <div class="nav-item"><span>👥</span><div class="nav-text">ДРУЗЬЯ</div></div>
-    <div class="nav-item" onclick="connectWallet()"><span>👛</span><div class="nav-text">КОШЕЛЕК</div></div>
+    <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text">ЗАДАНИЯ</div></div>
+    <div class="nav-item" onclick="toggleModal('friends-modal')"><span>👥</span><div class="nav-text">ДРУЗЬЯ</div></div>
+    <div class="nav-item" onclick="toggleModal('wallet-modal')"><span>👛</span><div class="nav-text">КОШЕЛЕК</div></div>
 </div>
 
-<div id="settings-modal" class="modal"><div class="modal-content">
-    <h3>SETTINGS / НАСТРОЙКИ</h3>
-    <button onclick="setLang('ru')" style="width:100%; padding:10px; margin-bottom:5px;">РУССКИЙ</button>
-    <button onclick="setLang('en')" style="width:100%; padding:10px;">ENGLISH</button>
-    <p onclick="toggleModal('settings-modal')" style="cursor:pointer; color:#888; margin-top:15px;">Close</p>
-</div></div>
+<div id="settings-modal" class="modal"><div class="modal-content"><h3>НАСТРОЙКИ</h3><button onclick="setLang('ru')">РУССКИЙ</button><button onclick="setLang('en')">ENGLISH</button><p onclick="toggleModal('settings-modal')" style="cursor:pointer; color:#888;">Закрыть</p></div></div>
+<div id="tasks-modal" class="modal"><div class="modal-content"><h3>ЗАДАНИЯ</h3><p>Список заданий пуст</p><button onclick="toggleModal('tasks-modal')">ОК</button></div></div>
+<div id="friends-modal" class="modal"><div class="modal-content"><h3>ДРУЗЬЯ</h3><p>У вас пока нет друзей</p><button onclick="toggleModal('friends-modal')">ОК</button></div></div>
+<div id="wallet-modal" class="modal"><div class="modal-content"><h3>КОШЕЛЕК</h3><p>Подключите TON кошелек</p><button onclick="connectWallet()">CONNECT</button><button onclick="toggleModal('wallet-modal')">ОК</button></div></div>
 
 <div id="shop-modal" class="modal"><div class="modal-content">
     <h3>АНГАР</h3>
@@ -71,9 +69,6 @@
 
 <script>
     window.energy = 100; window.plt = 3; window.usdt = 0.00004;
-    const MY_WALLET = "UQBZ-j9v-Y20h8yrtlahvFOTvaTK8rR1577NBZjK1GKE16_V";
-    const tg = window.Telegram.WebApp; tg.expand();
-
     function updateUI() {
         document.getElementById('en-val').innerText = window.energy;
         document.getElementById('frog-money').innerText = window.plt;
@@ -86,12 +81,10 @@
             document.getElementById('energy-depleted').style.display = 'none';
         }
     }
-
     function watchAd() { window.energy = 100; updateUI(); }
     function toggleModal(id) { let m = document.getElementById(id); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; }
-    async function connectWallet() { /* TonConnect logic here */ }
+    function connectWallet() { alert("Connecting..."); }
 
-    // --- PHASER ENGINE ---
     const config = { type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight, physics: { default: 'arcade' }, scene: { preload, create, update } };
     const game = new Phaser.Game(config);
     let plane, hook, rope, targets, bgMusic, beep, isLaunching = false, isReturning = false, caughtItem = null;
@@ -107,23 +100,23 @@
     function create() {
         this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
         try { 
-            bgMusic = this.sound.add('music', { volume: 0.05, loop: true }); 
+            bgMusic = this.sound.add('music', { volume: 0.03, loop: true }); 
             beep = this.sound.add('beep', { volume: 0.4 });
         } catch(e){}
 
         targets = this.physics.add.group();
         for(let i=0; i<6; i++) spawnItem(this);
 
-        rope = this.add.graphics();
-        hook = this.add.sprite(0, 0, 'hook').setDisplaySize(60, 60).setDepth(10);
+        rope = this.add.graphics().setDepth(10);
+        hook = this.add.sprite(0, 0, 'hook').setDisplaySize(65, 65).setDepth(15);
         this.physics.add.existing(hook);
-        plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(260, 170).setDepth(5);
+        plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(260, 170).setDepth(20);
 
         this.physics.add.overlap(hook, targets, (h, item) => {
             if (isLaunching && !caughtItem) {
                 caughtItem = item; item.body.enable = false;
                 isLaunching = false; isReturning = true;
-                if(beep) beep.play(); // Звук захвата
+                if(beep) beep.play();
             }
         });
 
@@ -139,7 +132,7 @@
         let x = Phaser.Math.Between(50, config.width - 50);
         let y = Phaser.Math.Between(config.height * 0.5, config.height - 150);
         let type = (Math.random() > 0.7) ? 'plt' : 'usdt';
-        let item = targets.create(x, y, type).setScale(0.12);
+        let item = targets.create(x, y, type).setScale(0.12).setDepth(5);
         scene.tweens.add({ targets: item, scale: 0.14, duration: 800, yoyo: true, repeat: -1 });
     }
 
@@ -156,11 +149,12 @@
             if (distance <= 25) {
                 isReturning = false;
                 if (caughtItem) {
-                    // ЦИФРЫ ВЫЛЕТАЮТ ПРИ УДАРЕ ОБ САМОЛЕТ (ДОСТАВКА)
                     let isP = caughtItem.texture.key === 'plt';
+                    // ЦИФРЫ ВЫБИВАЮТСЯ СПЕРЕДИ (высокий depth)
                     let txt = this.add.text(plane.x, plane.y, isP ? "+1 PLT" : "+0.00001 USDT", {
                         fontSize:'22px', fill: isP?'#ffcc00':'#0f0', fontWeight:'bold', stroke: '#000', strokeThickness: 3
-                    }).setOrigin(0.5);
+                    }).setOrigin(0.5).setDepth(200);
+                    
                     this.tweens.add({targets: txt, y: plane.y - 100, alpha: 0, duration: 1000, onComplete: () => txt.destroy()});
                     
                     if(isP) window.plt += 1; else window.usdt += 0.00001;
