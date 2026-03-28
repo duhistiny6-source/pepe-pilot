@@ -8,26 +8,27 @@
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
-        body { margin:0; padding:0; overflow:hidden; background:#000; touch-action: none; font-family: sans-serif; }
+        body { margin:0; padding:0; overflow:hidden; background:#000; touch-action: none; font-family: 'Arial', sans-serif; }
         #top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 50px; background: rgba(0,0,0,0.4); z-index: 1000; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; box-sizing: border-box; }
         
         #energy-section { display: flex; align-items: center; min-width: 60px; }
-        #energy-active { color: #0f0; font-size: 14px; font-weight: bold; }
+        #energy-active { color: #0f0; font-size: 15px; font-weight: bold; text-shadow: 1px 1px 2px #000; }
         #energy-depleted { display: none; flex-direction: column; align-items: flex-start; }
-        #energy-timer { color: #aaa; font-size: 8px; font-family: monospace; }
-        #ad-btn { background: #ffcc00; color: #000; font-size: 7px; padding: 1px 4px; border-radius: 3px; font-weight: bold; cursor: pointer; border: 1px solid #fff; margin-top: 1px; }
+        #energy-timer { color: #ccc; font-size: 9px; font-family: monospace; }
+        #ad-btn { background: #ffcc00; color: #000; font-size: 8px; padding: 2px 6px; border-radius: 4px; font-weight: bold; cursor: pointer; border: 1px solid #fff; margin-top: 2px; }
 
-        #balance-section { display: flex; gap: 15px; color: #fff; font-size: 12px; font-weight: bold; }
-        #settings-btn { font-size: 20px; cursor: pointer; color: #fff; }
+        #balance-section { display: flex; gap: 15px; color: #fff; font-size: 13px; font-weight: bold; text-shadow: 1px 1px 2px #000; }
+        #settings-btn { font-size: 22px; cursor: pointer; color: #fff; }
         
-        #nav-bar { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 90%; height: 55px; background: rgba(0,0,0,0.9); border-radius: 15px; display: flex; justify-content: space-around; align-items: center; z-index: 500; border: 1px solid #333; }
+        #nav-bar { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 92%; height: 60px; background: rgba(0,0,0,0.9); border-radius: 18px; display: flex; justify-content: space-around; align-items: center; z-index: 500; border: 1px solid #444; }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; cursor: pointer; flex: 1; }
-        .nav-text { font-size: 8px; color: #bbb; margin-top: 2px; font-weight: bold; text-transform: uppercase; }
+        .nav-text { font-size: 9px; color: #bbb; margin-top: 3px; font-weight: bold; text-transform: uppercase; }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
-        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 20px; border-radius: 20px; text-align: center; width: 85%; color: #fff; }
-        .lot { background: #222; border: 1px solid #444; border-radius: 12px; padding: 10px; margin: 10px 0; display: flex; align-items: center; justify-content: space-between; }
-        .buy-btn { background: #0f0; color: #000; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 20px; border-radius: 20px; text-align: center; width: 85%; color: #fff; box-shadow: 0 0 20px #0f0; }
+        .lot { background: #252525; border: 1px solid #444; border-radius: 12px; padding: 12px; margin: 10px 0; display: flex; align-items: center; justify-content: space-between; }
+        .buy-btn { background: #0f0; color: #000; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .lang-btn { background: #333; color: #0f0; border: 1px solid #0f0; padding: 12px; width: 100%; margin: 5px 0; border-radius: 10px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -48,42 +49,58 @@
 </div>
 
 <div id="nav-bar">
-    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text">АНГАР</div></div>
-    <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text">ЗАДАНИЯ</div></div>
-    <div class="nav-item" onclick="toggleModal('friends-modal')"><span>👥</span><div class="nav-text">ДРУЗЬЯ</div></div>
-    <div class="nav-item" onclick="toggleModal('wallet-modal')"><span>👛</span><div class="nav-text">КОШЕЛЕК</div></div>
+    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text" id="n-shop">АНГАР</div></div>
+    <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text" id="n-tasks">ЗАДАНИЯ</div></div>
+    <div class="nav-item" onclick="toggleModal('friends-modal')"><span>👥</span><div class="nav-text" id="n-friends">ДРУЗЬЯ</div></div>
+    <div class="nav-item" onclick="toggleModal('wallet-modal')"><span>👛</span><div class="nav-text" id="n-wallet">КОШЕЛЕК</div></div>
 </div>
 
-<div id="settings-modal" class="modal"><div class="modal-content"><h3>НАСТРОЙКИ</h3><button onclick="setLang('ru')">РУССКИЙ</button><button onclick="setLang('en')">ENGLISH</button><p onclick="toggleModal('settings-modal')" style="cursor:pointer; color:#888;">Закрыть</p></div></div>
-<div id="tasks-modal" class="modal"><div class="modal-content"><h3>ЗАДАНИЯ</h3><p>Список заданий пуст</p><button onclick="toggleModal('tasks-modal')">ОК</button></div></div>
-<div id="friends-modal" class="modal"><div class="modal-content"><h3>ДРУЗЬЯ</h3><p>У вас пока нет друзей</p><button onclick="toggleModal('friends-modal')">ОК</button></div></div>
-<div id="wallet-modal" class="modal"><div class="modal-content"><h3>КОШЕЛЕК</h3><p>Подключите TON кошелек</p><button onclick="connectWallet()">CONNECT</button><button onclick="toggleModal('wallet-modal')">ОК</button></div></div>
-
-<div id="shop-modal" class="modal"><div class="modal-content">
-    <h3>АНГАР</h3>
-    <div class="lot"><img src="plane_copper.png" width="40"><div><b>МЕДНЫЙ</b><br><small>+5 PLT | +0.00005 USDT</small></div><button class="buy-btn" onclick="pay(10)">10T</button></div>
-    <div class="lot"><img src="plane_bronze.png" width="40"><div><b>БРОНЗОВЫЙ</b><br><small>+10 PLT | +0.0001 USDT</small></div><button class="buy-btn" onclick="pay(25)">25T</button></div>
-    <div class="lot"><img src="plane_gold.png" width="40"><div><b>ЗОЛОТОЙ</b><br><small>+25 PLT | +0.001 USDT</small></div><button class="buy-btn" onclick="pay(50)">50T</button></div>
-    <p onclick="toggleModal('shop-modal')" style="cursor:pointer; color:#888;">Закрыть</p>
+<div id="settings-modal" class="modal"><div class="modal-content">
+    <h3 id="h-sett">НАСТРОЙКИ</h3>
+    <button class="lang-btn" onclick="setLang('ru')">РУССКИЙ</button>
+    <button class="lang-btn" onclick="setLang('en')">ENGLISH</button>
+    <p onclick="toggleModal('settings-modal')" style="cursor:pointer; color:#aaa; margin-top:15px;" id="h-close1">Закрыть</p>
 </div></div>
 
+<div id="shop-modal" class="modal"><div class="modal-content">
+    <h3 id="h-shop">АНГАР</h3>
+    <div class="lot"><img src="plane_copper.png" width="45"><div style="text-align:left; flex:1; margin-left:10px;"><b id="p1-n">МЕДНЫЙ</b><br><small>+5 PLT | +0.00005 USDT</small></div><button class="buy-btn">10 TON</button></div>
+    <div class="lot"><img src="plane_bronze.png" width="45"><div style="text-align:left; flex:1; margin-left:10px;"><b id="p2-n">БРОНЗОВЫЙ</b><br><small>+10 PLT | +0.0001 USDT</small></div><button class="buy-btn">25 TON</button></div>
+    <div class="lot"><img src="plane_gold.png" width="45"><div style="text-align:left; flex:1; margin-left:10px;"><b id="p3-n">ЗОЛОТОЙ</b><br><small>+25 PLT | +0.001 USDT</small></div><button class="buy-btn">50 TON</button></div>
+    <p onclick="toggleModal('shop-modal')" style="cursor:pointer; color:#aaa;" id="h-close2">Закрыть</p>
+</div></div>
+
+<div id="tasks-modal" class="modal"><div class="modal-content"><h3 id="h-tasks-t">ЗАДАНИЯ</h3><p>Coming Soon...</p><button onclick="toggleModal('tasks-modal')">OK</button></div></div>
+<div id="friends-modal" class="modal"><div class="modal-content"><h3 id="h-friends-t">ДРУЗЬЯ</h3><p>Coming Soon...</p><button onclick="toggleModal('friends-modal')">OK</button></div></div>
+<div id="wallet-modal" class="modal"><div class="modal-content"><h3 id="h-wallet-t">КОШЕЛЕК</h3><p>Connect your TON wallet</p><button class="buy-btn">CONNECT</button><br><br><button onclick="toggleModal('wallet-modal')">OK</button></div></div>
+
 <script>
+    const translations = {
+        ru: { shop:"АНГАР", tasks:"ЗАДАНИЯ", friends:"ДРУЗЬЯ", wallet:"КОШЕЛЕК", sett:"НАСТРОЙКИ", close:"Закрыть", p1:"МЕДНЫЙ", p2:"БРОНЗОВЫЙ", p3:"ЗОЛОТОЙ" },
+        en: { shop:"HANGAR", tasks:"TASKS", friends:"FRIENDS", wallet:"WALLET", sett:"SETTINGS", close:"Close", p1:"COPPER", p2:"BRONZE", p3:"GOLD" }
+    };
+
+    function setLang(l) {
+        const t = translations[l];
+        document.getElementById('n-shop').innerText = t.shop; document.getElementById('n-tasks').innerText = t.tasks;
+        document.getElementById('n-friends').innerText = t.friends; document.getElementById('n-wallet').innerText = t.wallet;
+        document.getElementById('h-sett').innerText = t.sett; document.getElementById('h-shop').innerText = t.shop;
+        document.getElementById('h-close1').innerText = t.close; document.getElementById('h-close2').innerText = t.close;
+        document.getElementById('p1-n').innerText = t.p1; document.getElementById('p2-n').innerText = t.p2; document.getElementById('p3-n').innerText = t.p3;
+        document.getElementById('h-tasks-t').innerText = t.tasks; document.getElementById('h-friends-t').innerText = t.friends;
+        document.getElementById('h-wallet-t').innerText = t.wallet;
+    }
+
     window.energy = 100; window.plt = 3; window.usdt = 0.00004;
     function updateUI() {
         document.getElementById('en-val').innerText = window.energy;
         document.getElementById('frog-money').innerText = window.plt;
         document.getElementById('money').innerText = window.usdt.toFixed(5);
-        if(window.energy <= 0) {
-            document.getElementById('energy-active').style.display = 'none';
-            document.getElementById('energy-depleted').style.display = 'flex';
-        } else {
-            document.getElementById('energy-active').style.display = 'block';
-            document.getElementById('energy-depleted').style.display = 'none';
-        }
+        document.getElementById('energy-active').style.display = (window.energy <= 0) ? 'none' : 'block';
+        document.getElementById('energy-depleted').style.display = (window.energy <= 0) ? 'flex' : 'none';
     }
     function watchAd() { window.energy = 100; updateUI(); }
     function toggleModal(id) { let m = document.getElementById(id); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; }
-    function connectWallet() { alert("Connecting..."); }
 
     const config = { type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight, physics: { default: 'arcade' }, scene: { preload, create, update } };
     const game = new Phaser.Game(config);
@@ -100,15 +117,15 @@
     function create() {
         this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
         try { 
-            bgMusic = this.sound.add('music', { volume: 0.03, loop: true }); 
-            beep = this.sound.add('beep', { volume: 0.4 });
+            bgMusic = this.sound.add('music', { volume: 0.01, loop: true }); 
+            beep = this.sound.add('beep', { volume: 0.3 });
         } catch(e){}
 
         targets = this.physics.add.group();
         for(let i=0; i<6; i++) spawnItem(this);
 
         rope = this.add.graphics().setDepth(10);
-        hook = this.add.sprite(0, 0, 'hook').setDisplaySize(65, 65).setDepth(15);
+        hook = this.add.sprite(0, 0, 'hook').setDisplaySize(60, 60).setDepth(15);
         this.physics.add.existing(hook);
         plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(260, 170).setDepth(20);
 
@@ -150,12 +167,12 @@
                 isReturning = false;
                 if (caughtItem) {
                     let isP = caughtItem.texture.key === 'plt';
-                    // ЦИФРЫ ВЫБИВАЮТСЯ СПЕРЕДИ (высокий depth)
-                    let txt = this.add.text(plane.x, plane.y, isP ? "+1 PLT" : "+0.00001 USDT", {
-                        fontSize:'22px', fill: isP?'#ffcc00':'#0f0', fontWeight:'bold', stroke: '#000', strokeThickness: 3
-                    }).setOrigin(0.5).setDepth(200);
+                    // ЯРКИЕ ЦИФРЫ ПЕРЕД САМОЛЕТОМ
+                    let txt = this.add.text(plane.x, plane.y, isP ? "+1 PLT" : "+0.00001", {
+                        fontSize:'26px', fill: isP?'#ffff00':'#00ff00', fontWeight:'900', stroke: '#000000', strokeThickness: 4
+                    }).setOrigin(0.5).setDepth(1000);
                     
-                    this.tweens.add({targets: txt, y: plane.y - 100, alpha: 0, duration: 1000, onComplete: () => txt.destroy()});
+                    this.tweens.add({targets: txt, y: plane.y - 120, alpha: 0, duration: 1000, onComplete: () => txt.destroy()});
                     
                     if(isP) window.plt += 1; else window.usdt += 0.00001;
                     updateUI(); caughtItem.destroy(); caughtItem = null; spawnItem(this);
