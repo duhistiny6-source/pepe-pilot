@@ -1,138 +1,124 @@
-const config = {
-    type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight,
-    physics: { default: 'arcade' }, scene: { preload, create, update }
-};
-const game = new Phaser.Game(config);
-let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
-let angle = 0, swingSpeed = 0.015, distance = 25;
-
-// Глобальная функция обновления UI
-window.updateUI = function() {
-    const energyEl = document.getElementById('energy');
-    const restoreBtn = document.getElementById('restore-btn');
-    if (energyEl) energyEl.innerText = Math.floor(window.energy);
-    
-    // Показываем кнопку рекламы только если энергия на нуле
-    if (window.energy <= 0) {
-        restoreBtn.style.display = "block";
-    } else {
-        restoreBtn.style.display = "none";
-    }
-}
-
-// Функция восстановления за рекламу
-window.restoreEnergyByAd = function() {
-    // Тут будет вызов рекламы. Пока имитируем успех:
-    window.energy = 100;
-    window.updateUI();
-    // Отправляем на сервер обновленную энергию
-    saveEnergyToServer(100);
-}
-
-function preload() {
-    this.load.image('sky', 'pg.jpeg');
-    this.load.image('hook', 'kleshn.png');
-    this.load.image('usdt', 'usdt.png');
-    this.load.image('pilot_coin', 'logo..png');
-    this.load.image('plane', 'pepe.png');
-    this.load.image('plane_copper', 'plane_copper.png');
-    this.load.image('plane_bronze', 'plane_bronze.png');
-    this.load.image('plane_gold', 'plane_gold.png');
-    this.load.audio('theme', 'music.mp3');
-}
-
-function create() {
-    this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
-    try {
-        bgMusic = this.sound.add('theme', { volume: 0.01, loop: true });
-    } catch (e) {}
-    this.input.once('pointerdown', () => { if (bgMusic && !bgMusic.isPlaying) bgMusic.play(); });
-
-    targets = this.physics.add.group();
-    for(let i=0; i<6; i++) spawn(this);
-    rope = this.add.graphics().setDepth(5);
-    hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(65, 65);
-    this.physics.add.existing(hook);
-
-    let tex = 'plane';
-    if(window.currentPlane === 'copper') tex = 'plane_copper';
-    if(window.currentPlane === 'bronze') tex = 'plane_bronze';
-    if(window.currentPlane === 'gold') tex = 'plane_gold';
-    plane = this.add.image(config.width/2, 120, tex).setDisplaySize(280, 180).setDepth(60);
-
-    this.physics.add.overlap(hook, targets, (h, item) => {
-        if (isLaunching && !caughtItem) {
-            caughtItem = item; caughtItem.body.enable = false;
-            if (caughtItem.pulse) caughtItem.pulse.stop();
-            if (window.playBeep) window.playBeep(450, 0.1);
-            isLaunching = false; isReturning = true;
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pepe Pilot: Crypto Edition</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <style>
+        body { margin:0; padding:0; overflow:hidden; background:#000; touch-action: none; font-family: 'Segoe UI', Arial, sans-serif; }
+        #top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 35px; background: rgba(0, 0, 0, 0.4); z-index: 1000; backdrop-filter: blur(2px); display: flex; align-items: center; }
+        #energy-container { position: absolute; left: 12px; color: #0f0; font-size: 13px; font-weight: bold; text-shadow: 1px 1px 1px #000; }
+        #balance-container { width: 100%; display: flex; align-items: center; justify-content: center; gap: 15px; color: #fff; font-size: 11px; }
+        .balance-item { display: flex; align-items: center; gap: 4px; }
+        .coin-icon { width: 14px; height: 14px; }
+        #settings-btn { position: fixed; top: 7px; right: 10px; font-size: 18px; cursor: pointer; z-index: 1001; opacity: 0.8; color: white; }
+        
+        /* КНОПКА РЕКЛАМЫ */
+        #restore-btn { 
+            display: none; position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); 
+            background: linear-gradient(180deg, #ffcc00 0%, #ff9900 100%); color: #000; 
+            border: none; padding: 10px 25px; border-radius: 20px; font-weight: bold; 
+            z-index: 500; box-shadow: 0 0 15px rgba(255, 204, 0, 0.5); cursor: pointer;
+            animation: pulse 1.5s infinite;
         }
-    });
+        @keyframes pulse { 0% { scale: 1; } 50% { scale: 1.05; } 100% { scale: 1; } }
 
-    this.input.on('pointerdown', (pointer) => {
-        // Проверяем, что нажали не на кнопки интерфейса
-        if (pointer.y > 50 && pointer.y < config.height - 80) {
-            if (!isLaunching && !isReturning) {
-                if (window.energy >= 1) {
-                    isLaunching = true; 
-                    window.energy--; 
-                    window.updateUI();
-                    saveEnergyToServer(window.energy); // Сохраняем расход
-                    if (window.playBeep) window.playBeep(250, 0.06);
-                } else {
-                    // Тряска экрана или звук ошибки, если энергии нет
-                    this.cameras.main.shake(100, 0.01);
-                }
-            }
-        }
-    });
-}
+        #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 85%; height: 50px; background: rgba(0, 0, 0, 0.9); border: 1px solid #333; border-radius: 12px; display: flex; justify-content: space-around; align-items: center; z-index: 200; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; font-weight: bold; flex: 1; opacity: 0.9; cursor: pointer; }
+        .nav-item span { font-size: 18px; }
+        .nav-text { font-size: 8px; margin-top: 1px; color: #bbb; text-transform: uppercase; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
+        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 280px; max-width: 90%; max-height: 80vh; overflow-y: auto; }
+        .task-item { background: #222; border: 1px solid #444; border-radius: 10px; padding: 10px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+        .task-info { text-align: left; }
+        .task-title { font-size: 13px; font-weight: bold; color: #fff; }
+        .task-reward { font-size: 11px; color: #0f0; }
+        .task-btn { background: #0f0; color: #000; border: none; padding: 6px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .lang-btn { background: #333; color: #0f0; border: 1px solid #0f0; padding: 12px 20px; margin: 10px 0; cursor: pointer; border-radius: 10px; font-weight: bold; width: 100%; }
+        #ref-link-display { background: #000; padding: 8px; border-radius: 5px; font-size: 10px; color: #0f0; margin: 10px 0; word-break: break-all; border: 1px dashed #444; }
+    </style>
+</head>
+<body>
 
-function spawn(scene) {
-    let x = Phaser.Math.Between(60, config.width - 60);
-    let y = Phaser.Math.Between(config.height * 0.5, config.height - 130);
-    let type = (Phaser.Math.Between(1, 100) <= 70) ? 'pilot_coin' : 'usdt';
-    let coin = targets.create(x, y, type).setScale(type === 'pilot_coin' ? 0.10 : 0.12).setDepth(40);
-    coin.pulse = scene.tweens.add({ targets: coin, scale: (type === 'pilot_coin' ? 0.12 : 0.14), duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-}
+<div id="settings-btn" onclick="toggleModal('settings-modal')">⚙️</div>
 
-function showValue(scene, isPlt) {
-    let val = isPlt ? (window.currentPlane === 'copper' ? "20" : window.currentPlane === 'bronze' ? "50" : window.currentPlane === 'gold' ? "100" : "10") : (window.currentPlane === 'copper' ? "0.0001" : window.currentPlane === 'bronze' ? "0.0005" : window.currentPlane === 'gold' ? "0.001" : "0.00005");
-    let txt = scene.add.text(plane.x, plane.y - 40, `+${val}`, { font: 'bold 28px Arial', fill: isPlt ? '#ffcc00' : '#00ff00' }).setOrigin(0.5).setDepth(100);
-    scene.tweens.add({ targets: txt, y: txt.y - 70, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
-}
+<div id="top-bar">
+    <div id="energy-container">⚡ <span id="energy">100</span></div>
+    <div id="balance-container">
+        <div class="balance-item"><span>USDT:</span> <span id="money" style="color:#0f0">0.0000</span></div>
+        <div class="balance-item">
+            <img src="logo..png" class="coin-icon"> <span>PLT:</span> <span id="frog-money" style="color:#ffcc00">0</span>
+        </div>
+    </div>
+</div>
 
-function update() {
-    plane.y = 120 + Math.sin(this.time.now / 600) * 8;
-    let startX = plane.x - 5, startY = plane.y + 20;
-    if (!isLaunching && !isReturning) {
-        angle += swingSpeed; if (angle > 0.4 || angle < -0.4) swingSpeed *= -1; distance = 25;
-    } else if (isLaunching) {
-        distance += 14; if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
-    } else if (isReturning) {
-        distance -= 6;
-        if (distance <= 25) {
-            isReturning = false;
-            if (caughtItem) {
-                if (window.playBeep) window.playBeep(700, 0.12);
-                showValue(this, caughtItem.texture.key === 'pilot_coin');
-                window.saveCollect(0, caughtItem.texture.key === 'pilot_coin' ? 'plt' : 'usdt');
-                caughtItem.destroy(); caughtItem = null; spawn(this);
-            }
-        }
-    }
-    hook.x = startX + Math.sin(angle) * distance; hook.y = startY + Math.cos(angle) * distance; hook.rotation = -angle;
-    rope.clear().lineStyle(2, 0xffffff, 0.6).lineBetween(startX, startY, startX + Math.sin(angle) * (distance - 20), startY + Math.cos(angle) * (distance - 20));
-    if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; }
-}
+<button id="restore-btn" onclick="restoreEnergyByAd()">ВОССТАНОВИТЬ 📺</button>
 
-// Функция для API (нужно добавить в api.js или оставить тут)
-function saveEnergyToServer(val) {
-    if(!window.userId) return;
-    fetch('/api/energy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tgId: window.userId, energy: val })
-    }).catch(e => console.error("Energy save error"));
-}
- 
+<div id="settings-modal" class="modal">
+    <div class="modal-content">
+        <h3 id="txt-settings-title">НАСТРОЙКИ</h3>
+        <button class="lang-btn" onclick="changeLanguage('ru')">РУССКИЙ</button>
+        <button class="lang-btn" onclick="changeLanguage('en')">ENGLISH</button>
+        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('settings-modal')" class="txt-close">Закрыть</div>
+    </div>
+</div>
+
+<div id="shop-modal" class="modal">
+    <div class="modal-content">
+        <h3 id="txt-shop-title">АНГАР</h3>
+        <div class="task-item">
+            <img src="plane_copper.png" style="width: 50px; height: 35px; object-fit: contain; margin-right: 10px;">
+            <div class="task-info" style="flex: 1;"><div class="task-title" style="color:#cd7f32" id="plane-name-copper">МЕДНЫЙ</div><div class="task-reward"><span class="txt-price">Цена</span>: 10 USDT</div><div style="font-size: 9px; color: #0f0;">+20 PTL / +0.0001 USDT</div></div>
+            <button class="task-btn buy-btn" onclick="buyPlane('copper', 10)">КУПИТЬ</button>
+        </div>
+        <div class="task-item">
+            <img src="plane_bronze.png" style="width: 50px; height: 35px; object-fit: contain; margin-right: 10px;">
+            <div class="task-info" style="flex: 1;"><div class="task-title" style="color:#b08d57" id="plane-name-bronze">БРОНЗОВЫЙ</div><div class="task-reward"><span class="txt-price">Цена</span>: 25 USDT</div><div style="font-size: 9px; color: #0f0;">+50 PTL / +0.0005 USDT</div></div>
+            <button class="task-btn buy-btn" onclick="buyPlane('bronze', 25)">КУПИТЬ</button>
+        </div>
+        <div class="task-item">
+            <img src="plane_gold.png" style="width: 50px; height: 35px; object-fit: contain; margin-right: 10px;">
+            <div class="task-info" style="flex: 1;"><div class="task-title" style="color:#ffd700" id="plane-name-gold">ЗОЛОТОЙ</div><div class="task-reward"><span class="txt-price">Цена</span>: 50 USDT</div><div style="font-size: 9px; color: #0f0;">+100 PTL / +0.001 USDT</div></div>
+            <button class="task-btn buy-btn" onclick="buyPlane('gold', 50)">КУПИТЬ</button>
+        </div>
+        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('shop-modal')" class="txt-close">Закрыть</div>
+    </div>
+</div>
+
+<div id="tasks-modal" class="modal">
+    <div class="modal-content">
+        <h3 id="txt-tasks-title">ЗАДАНИЯ</h3>
+        <div class="task-item">
+            <div class="task-info"><div class="task-title" id="task-sub">Подписаться на канал</div><div class="task-reward">+100 ⚡ Энергии</div></div>
+            <button class="task-btn" onclick="tg.openTelegramLink('https://t.me/your_channel')">GO</button>
+        </div>
+        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('tasks-modal')" class="txt-close">Закрыть</div>
+    </div>
+</div>
+
+<div id="friends-modal" class="modal">
+    <div class="modal-content">
+        <h3 id="txt-friends-title">ДРУЗЬЯ</h3>
+        <p id="txt-friends-desc" style="font-size: 11px; color: #ccc;">Приглашай друзей и получай 10% от их сбора!</p>
+        <div id="ref-link-display">Загрузка...</div>
+        <button class="lang-btn" onclick="tg.openTelegramLink('https://t.me/share/url?url=https://t.me/YOUR_BOT?start=' + userId)" id="btn-invite">📢 ПРИГЛАСИТЬ</button>
+        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('friends-modal')" class="txt-close">Закрыть</div>
+    </div>
+</div>
+
+<div id="nav-bar">
+    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text" id="nav-shop">АНГАР</div></div>
+    <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text" id="nav-tasks">ЗАДАНИЯ</div></div>
+    <div class="nav-item" onclick="toggleModal('friends-modal')"><span>👥</span><div class="nav-text" id="nav-friends">ДРУЗЬЯ</div></div>
+    <div class="nav-item" onclick="connectWallet()"><span>👛</span><div class="nav-text" id="nav-wallet">КОШЕЛЕК</div></div>
+</div>
+
+<script src="api.js"></script>
+<script src="game.js"></script>
+
+</body>
+</html>
+  
