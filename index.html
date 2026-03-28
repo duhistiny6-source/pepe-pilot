@@ -11,10 +11,9 @@
         body { margin:0; padding:0; overflow:hidden; background:#000; touch-action: none; font-family: 'Segoe UI', Arial, sans-serif; }
         #top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 35px; background: rgba(0, 0, 0, 0.4); z-index: 1000; backdrop-filter: blur(2px); display: flex; align-items: center; }
         
-        /* Блок энергии с таймером и AD */
-        #energy-container { position: absolute; left: 12px; display: flex; flex-direction: column; align-items: flex-start; line-height: 1; }
+        #energy-container { position: absolute; left: 12px; display: flex; flex-direction: column; align-items: flex-start; }
         #energy-main { color: #0f0; font-size: 13px; font-weight: bold; text-shadow: 1px 1px 1px #000; }
-        #energy-info-extra { display: none; margin-top: 2px; }
+        #energy-info-extra { display: none; margin-top: 2px; } 
         #energy-timer { color: #aaa; font-size: 8px; font-family: monospace; }
         #restore-btn { background: #ffcc00; color: #000; font-size: 7px; padding: 1px 4px; border-radius: 3px; cursor: pointer; font-weight: bold; border: 1px solid #fff; margin-top: 1px; }
 
@@ -22,19 +21,18 @@
         .balance-item { display: flex; align-items: center; gap: 4px; }
         .coin-icon { width: 14px; height: 14px; }
         #settings-btn { position: fixed; top: 7px; right: 10px; font-size: 18px; cursor: pointer; z-index: 1001; opacity: 0.8; color: white; }
+        
         #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 85%; height: 50px; background: rgba(0, 0, 0, 0.9); border: 1px solid #333; border-radius: 12px; display: flex; justify-content: space-around; align-items: center; z-index: 200; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; font-weight: bold; flex: 1; opacity: 0.9; cursor: pointer; }
-        .nav-item span { font-size: 18px; }
         .nav-text { font-size: 8px; margin-top: 1px; color: #bbb; text-transform: uppercase; }
+
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; color: #fff; justify-content: center; align-items: center; flex-direction: column; }
         .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 25px; border-radius: 20px; text-align: center; min-width: 280px; max-width: 90%; max-height: 80vh; overflow-y: auto; }
         .task-item { background: #222; border: 1px solid #444; border-radius: 10px; padding: 10px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
-        .task-info { text-align: left; }
-        .task-title { font-size: 13px; font-weight: bold; color: #fff; }
+        .task-info { text-align: left; flex: 1; margin-left: 10px; }
+        .task-title { font-size: 13px; font-weight: bold; }
         .task-reward { font-size: 11px; color: #0f0; }
         .task-btn { background: #0f0; color: #000; border: none; padding: 6px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
-        .lang-btn { background: #333; color: #0f0; border: 1px solid #0f0; padding: 12px 20px; margin: 10px 0; cursor: pointer; border-radius: 10px; font-weight: bold; width: 100%; }
-        #ref-link-display { background: #000; padding: 8px; border-radius: 5px; font-size: 10px; color: #0f0; margin: 10px 0; word-break: break-all; border: 1px dashed #444; }
     </style>
 </head>
 <body>
@@ -45,7 +43,7 @@
     <div id="energy-container">
         <div id="energy-main">⚡ <span id="energy">100</span></div>
         <div id="energy-info-extra">
-            <div id="energy-timer">00:00:00</div>
+            <div id="energy-timer">02:00:00</div>
             <div id="restore-btn" onclick="restoreEnergyByAd()">AD ⚡</div>
         </div>
     </div>
@@ -57,78 +55,73 @@
     </div>
 </div>
 
-<div id="settings-modal" class="modal">
-    <div class="modal-content">
-        <h3 id="txt-settings-title">НАСТРОЙКИ</h3>
-        <button class="lang-btn" onclick="changeLanguage('ru')">РУССКИЙ</button>
-        <button class="lang-btn" onclick="changeLanguage('en')">ENGLISH</button>
-        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('settings-modal')" class="txt-close">Закрыть</div>
-    </div>
-</div>
-
 <div id="shop-modal" class="modal">
     <div class="modal-content">
-        <h3 id="txt-shop-title">АНГАР</h3>
-        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('shop-modal')" class="txt-close">Закрыть</div>
+        <h3>АНГАР</h3>
+        <div class="task-item">
+            <img src="plane_copper.png" style="width: 50px;">
+            <div class="task-info"><div class="task-title" style="color:#cd7f32">МЕДНЫЙ</div><div class="task-reward">Цена: 10 TON</div></div>
+            <button class="task-btn" onclick="buyPlane('copper', 10)">КУПИТЬ</button>
+        </div>
+        <div class="task-item">
+            <img src="plane_bronze.png" style="width: 50px;">
+            <div class="task-info"><div class="task-title" style="color:#b08d57">БРОНЗОВЫЙ</div><div class="task-reward">Цена: 25 TON</div></div>
+            <button class="task-btn" onclick="buyPlane('bronze', 25)">КУПИТЬ</button>
+        </div>
+        <div class="task-item">
+            <img src="plane_gold.png" style="width: 50px;">
+            <div class="task-info"><div class="task-title" style="color:#ffd700">ЗОЛОТОЙ</div><div class="task-reward">Цена: 50 TON</div></div>
+            <button class="task-btn" onclick="buyPlane('gold', 50)">КУПИТЬ</button>
+        </div>
+        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('shop-modal')">Закрыть</div>
     </div>
 </div>
 
 <div id="tasks-modal" class="modal">
     <div class="modal-content">
-        <h3 id="txt-tasks-title">ЗАДАНИЯ</h3>
-        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('tasks-modal')" class="txt-close">Закрыть</div>
-    </div>
-</div>
-
-<div id="friends-modal" class="modal">
-    <div class="modal-content">
-        <h3 id="txt-friends-title">ДРУЗЬЯ</h3>
-        <p id="txt-friends-desc" style="font-size: 11px; color: #ccc;">Приглашай друзей и получай 10% от их сбора!</p>
-        <div id="ref-link-display">Загрузка...</div>
-        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('friends-modal')" class="txt-close">Закрыть</div>
+        <h3>ЗАДАНИЯ</h3>
+        <div class="task-item">
+            <div class="task-info"><div class="task-title">Подписка на канал</div><div class="task-reward">+100 ⚡ Энергии</div></div>
+            <button class="task-btn" onclick="window.open('https://t.me/your_channel')">GO</button>
+        </div>
+        <div class="task-item">
+            <div class="task-info"><div class="task-title">Пригласить 5 друзей</div><div class="task-reward">+500 PLT</div></div>
+            <button class="task-btn" onclick="toggleModal('friends-modal')">GO</button>
+        </div>
+        <div style="margin-top:15px; color:#888; cursor:pointer;" onclick="toggleModal('tasks-modal')">Закрыть</div>
     </div>
 </div>
 
 <div id="nav-bar">
-    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text" id="nav-shop">АНГАР</div></div>
-    <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text" id="nav-tasks">ЗАДАНИЯ</div></div>
-    <div class="nav-item" onclick="toggleModal('friends-modal')"><span>👥</span><div class="nav-text" id="nav-friends">ДРУЗЬЯ</div></div>
-    <div class="nav-item" onclick="connectWallet()"><span>👛</span><div class="nav-text" id="nav-wallet">КОШЕЛЕК</div></div>
+    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text">АНГАР</div></div>
+    <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text">ЗАДАНИЯ</div></div>
+    <div class="nav-item" onclick="toggleModal('friends-modal')"><span>👥</span><div class="nav-text">ДРУЗЬЯ</div></div>
+    <div class="nav-item" onclick="connectWallet()"><span>👛</span><div class="nav-text">КОШЕЛЕК</div></div>
 </div>
 
 <script>
-    const tg = window.Telegram.WebApp;
+    const MY_WALLET = "ТВОЙ_АДРЕС_КОШЕЛЬКА"; // Сюда придут TON
     const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
         manifestUrl: 'https://duhistiny6-source.github.io/pepe-pilot/tonconnect-manifest.json',
         buttonRootId: null
     });
 
+    async function buyPlane(type, amountTon) {
+        if (!tonConnectUI.connected) { alert("Подключи кошелек!"); return; }
+        const transaction = {
+            validUntil: Math.floor(Date.now() / 1000) + 60,
+            messages: [{ address: MY_WALLET, amount: (amountTon * 1000000000).toString() }]
+        };
+        try {
+            await tonConnectUI.sendTransaction(transaction);
+            alert("Оплата " + amountTon + " TON получена!");
+            // Тут логика смены скина самолета
+        } catch(e) { alert("Ошибка транзакции"); }
+    }
+
     function toggleModal(id) {
         const m = document.getElementById(id);
         m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
-    }
-
-    async function connectWallet() {
-        try { await tonConnectUI.openModal(); } catch(e) { console.error(e); }
-    }
-
-    const translations = {
-        ru: { settings: "НАСТРОЙКИ", shop: "АНГАР", tasks: "ЗАДАНИЯ", friends: "ДРУЗЬЯ", wallet: "КОШЕЛЕК", close: "Закрыть", friendsDesc: "Приглашай друзей и получай 10%!" },
-        en: { settings: "SETTINGS", shop: "HANGAR", tasks: "TASKS", friends: "FRIENDS", wallet: "WALLET", close: "Close", friendsDesc: "Invite friends and get 10%!" }
-    };
-
-    function changeLanguage(lang) {
-        const t = translations[lang];
-        document.getElementById('txt-settings-title').innerText = t.settings;
-        document.getElementById('txt-shop-title').innerText = t.shop;
-        document.getElementById('txt-tasks-title').innerText = t.tasks;
-        document.getElementById('txt-friends-title').innerText = t.friends;
-        document.getElementById('nav-shop').innerText = t.shop;
-        document.getElementById('nav-tasks').innerText = t.tasks;
-        document.getElementById('nav-friends').innerText = t.friends;
-        document.getElementById('nav-wallet').innerText = t.wallet;
-        document.getElementById('txt-friends-desc').innerText = t.friendsDesc;
-        document.querySelectorAll('.txt-close').forEach(el => el.innerText = t.close);
     }
 </script>
 <script src="game.js"></script>
