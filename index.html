@@ -11,9 +11,11 @@
         body { margin:0; padding:0; overflow:hidden; background:#000; touch-action: none; font-family: 'Segoe UI', Arial, sans-serif; }
         #top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 35px; background: rgba(0, 0, 0, 0.4); z-index: 1000; display: flex; align-items: center; }
         
+        /* Скрытые по умолчанию таймер и AD */
         #energy-container { position: absolute; left: 12px; display: flex; flex-direction: column; top: 2px; }
-        #energy-main { color: #0f0; font-size: 13px; font-weight: bold; text-shadow: 1px 1px 1px #000; }
-        #energy-timer { color: #aaa; font-size: 8px; font-family: monospace; line-height: 1; }
+        #energy-main { color: #0f0; font-size: 14px; font-weight: bold; text-shadow: 1px 1px 1px #000; }
+        #energy-extra { display: none; margin-top: 1px; } 
+        #energy-timer { color: #aaa; font-size: 8px; font-family: monospace; }
         #ad-btn { background: #ffcc00; color: #000; font-size: 7px; padding: 1px 4px; border-radius: 3px; cursor: pointer; font-weight: bold; border: 1px solid #fff; margin-top: 1px; width: fit-content; }
 
         #balance-container { width: 100%; display: flex; align-items: center; justify-content: center; gap: 15px; color: #fff; font-size: 11px; }
@@ -25,9 +27,10 @@
         .nav-text { font-size: 8px; margin-top: 1px; color: #bbb; text-transform: uppercase; font-weight: bold; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; }
-        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 20px; border-radius: 20px; text-align: center; width: 80%; color: #fff; }
+        .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 20px; border-radius: 20px; text-align: center; width: 85%; color: #fff; max-height: 80vh; overflow-y: auto; }
         .lot-item { background: #222; border: 1px solid #444; border-radius: 12px; padding: 10px; margin: 10px 0; display: flex; align-items: center; justify-content: space-between; }
         .buy-btn { background: #0f0; color: #000; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .desc { font-size: 10px; color: #aaa; margin-top: 2px; }
     </style>
 </head>
 <body>
@@ -37,11 +40,13 @@
 <div id="top-bar">
     <div id="energy-container">
         <div id="energy-main">⚡ <span id="energy">100</span></div>
-        <div id="energy-timer">02:00:00</div>
-        <div id="ad-btn" onclick="window.energy=100;window.updateUI();">AD</div>
+        <div id="energy-extra" id="energy-extra-block">
+            <div id="energy-timer">02:00:00</div>
+            <div id="ad-btn" onclick="window.energy=100;window.updateUI();">AD ⚡</div>
+        </div>
     </div>
     <div id="balance-container">
-        <div>USDT: <span id="money" style="color:#0f0">0.0000</span></div>
+        <div>USDT: <span id="money" style="color:#0f0">0.00000</span></div>
         <div>PLT: <span id="frog-money" style="color:#ffcc00">0</span></div>
     </div>
 </div>
@@ -57,23 +62,34 @@
     <h3>АНГАР</h3>
     <div class="lot-item">
         <img src="plane_copper.png" width="45">
-        <div style="text-align:left; flex:1; margin-left:10px;">МЕДНЫЙ<br><small>10 TON</small></div>
-        <button class="buy-btn" onclick="sendPay(10)">BUY</button>
+        <div style="text-align:left; flex:1; margin-left:10px;">
+            <div style="color:#cd7f32; font-weight:bold;">МЕДНЫЙ</div>
+            <div class="desc">Доход: 5 PLT | 0.00005 USDT</div>
+        </div>
+        <button class="buy-btn" onclick="sendPay(10)">10 TON</button>
     </div>
     <div class="lot-item">
         <img src="plane_bronze.png" width="45">
-        <div style="text-align:left; flex:1; margin-left:10px;">БРОНЗОВЫЙ<br><small>25 TON</small></div>
-        <button class="buy-btn" onclick="sendPay(25)">BUY</button>
+        <div style="text-align:left; flex:1; margin-left:10px;">
+            <div style="color:#b08d57; font-weight:bold;">БРОНЗОВЫЙ</div>
+            <div class="desc">Доход: 10 PLT | 0.0001 USDT</div>
+        </div>
+        <button class="buy-btn" onclick="sendPay(25)">25 TON</button>
     </div>
     <div class="lot-item">
         <img src="plane_gold.png" width="45">
-        <div style="text-align:left; flex:1; margin-left:10px;">ЗОЛОТОЙ<br><small>50 TON</small></div>
-        <button class="buy-btn" onclick="sendPay(50)">BUY</button>
+        <div style="text-align:left; flex:1; margin-left:10px;">
+            <div style="color:#ffd700; font-weight:bold;">ЗОЛОТОЙ</div>
+            <div class="desc">Доход: 25 PLT | 0.001 USDT</div>
+        </div>
+        <button class="buy-btn" onclick="sendPay(50)">50 TON</button>
     </div>
     <div onclick="toggleModal('shop-modal')" style="margin-top:15px; color:#888; cursor:pointer;">Закрыть</div>
 </div></div>
 
-<div id="settings-modal" class="modal"><div class="modal-content"><h3>НАСТРОЙКИ</h3><button onclick="toggleModal('settings-modal')">OK</button></div></div>
+<div id="tasks-modal" class="modal"><div class="modal-content"><h3>ЗАДАНИЯ</h3><p>Скоро здесь появятся новые миссии!</p><button onclick="toggleModal('tasks-modal')">OK</button></div></div>
+<div id="friends-modal" class="modal"><div class="modal-content"><h3>ДРУЗЬЯ</h3><p>Приглашай друзей и получай бонусы!</p><button onclick="toggleModal('friends-modal')">OK</button></div></div>
+<div id="settings-modal" class="modal"><div class="modal-content"><h3>НАСТРОЙКИ</h3><p>Громкость музыки: 100%</p><button onclick="toggleModal('settings-modal')">ЗАКРЫТЬ</button></div></div>
 
 <script>
     const MY_WALLET = "UQBZ-j9v-Y20h8yrtlahvFOTvaTK8rR1577NBZjK1GKE16_V";
@@ -100,10 +116,12 @@
     window.updateUI = function() {
         document.getElementById('energy').innerText = window.energy;
         document.getElementById('frog-money').innerText = window.plt;
-        document.getElementById('money').innerText = window.usdt.toFixed(4);
+        document.getElementById('money').innerText = window.usdt.toFixed(5);
+        // Скрываем/показываем таймер и AD
+        document.getElementById('energy-extra').style.display = (window.energy < 100) ? "block" : "none";
     };
 
-    // --- ФАЗЕР (МЕХАНИКА И ЭФФЕКТЫ) ---
+    // --- ИГРА ---
     const config = { type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight, physics: { default: 'arcade' }, scene: { preload, create, update } };
     const game = new Phaser.Game(config);
     let plane, hook, rope, targets, bgMusic, beep, isLaunching = false, isReturning = false, caughtItem = null;
@@ -112,16 +130,19 @@
     function preload() {
         this.load.image('sky', 'pg.jpeg');
         this.load.image('hook', 'kleshn.png');
-        this.load.image('usdt', 'usdt.png');
-        this.load.image('plt', 'logo..png');
-        this.load.image('plane', 'pepe.png');
+        this.load.image('usdt_img', 'usdt.png');
+        this.load.image('plt_img', 'logo..png');
+        this.load.image('plane_img', 'pepe.png');
         this.load.audio('theme', 'music.mp3');
-        this.load.audio('beep', 'beep.mp3');
+        this.load.audio('beep_snd', 'beep.mp3');
     }
 
     function create() {
         this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
-        try { bgMusic = this.sound.add('theme', { volume: 0.1, loop: true }); beep = this.sound.add('beep', { volume: 0.4 }); } catch(e){}
+        try { 
+            bgMusic = this.sound.add('theme', { volume: 0.1, loop: true }); 
+            beep = this.sound.add('beep_snd', { volume: 0.6 }); 
+        } catch(e){}
         
         targets = this.physics.add.group();
         for(let i=0; i<6; i++) spawn(this);
@@ -129,17 +150,20 @@
         rope = this.add.graphics().setDepth(5);
         hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(65, 65);
         this.physics.add.existing(hook);
-        plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
+        plane = this.add.image(config.width/2, 120, 'plane_img').setDisplaySize(280, 180).setDepth(60);
 
         this.physics.add.overlap(hook, targets, (h, item) => {
             if (isLaunching && !caughtItem) {
                 caughtItem = item; item.body.enable = false;
                 isLaunching = false; isReturning = true;
                 if(beep) beep.play();
-                // ВЫЛЕТ ЦИФР
-                let val = item.texture.key === 'plt' ? "+10 PLT" : "+0.0001 USDT";
-                let txt = this.add.text(item.x, item.y, val, {fontSize:'22px', fill:'#0f0', fontWeight:'bold'}).setDepth(100);
-                this.tweens.add({targets: txt, y: item.y-120, alpha: 0, duration: 1000, onComplete: () => txt.destroy()});
+                
+                // ЦИФРЫ ПРИ УДАРЕ
+                let isPlt = (item.texture.key === 'plt_img');
+                let valText = isPlt ? "+1" : "+0.00001";
+                let colText = isPlt ? "#ffcc00" : "#00ff00";
+                let txt = this.add.text(item.x, item.y - 20, valText, {fontSize:'24px', fill: colText, fontWeight:'bold', stroke: '#000', strokeThickness: 3}).setDepth(100);
+                this.tweens.add({targets: txt, y: item.y - 120, alpha: 0, duration: 1000, onComplete: () => txt.destroy()});
             }
         });
 
@@ -154,10 +178,9 @@
     function spawn(scene) {
         let x = Phaser.Math.Between(50, config.width - 50);
         let y = Phaser.Math.Between(config.height * 0.45, config.height - 150);
-        let type = (Math.random() > 0.7) ? 'plt' : 'usdt';
+        let type = (Math.random() > 0.7) ? 'plt_img' : 'usdt_img';
         let item = targets.create(x, y, type).setScale(0.12).setDepth(40);
-        // ПУЛЬСАЦИЯ
-        scene.tweens.add({ targets: item, scale: 0.15, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+        scene.tweens.add({ targets: item, scale: 0.15, duration: 900, yoyo: true, repeat: -1 });
     }
 
     function update() {
@@ -168,11 +191,11 @@
         } else if (isLaunching) {
             distance += 15; if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
         } else if (isReturning) {
-            distance -= 7;
+            distance -= 4; // МЕДЛЕННЫЙ ВОЗВРАТ (был 7)
             if (distance <= 25) {
                 isReturning = false;
                 if (caughtItem) { 
-                    if(caughtItem.texture.key === 'plt') window.plt += 10; else window.usdt += 0.0001;
+                    if(caughtItem.texture.key === 'plt_img') window.plt += 1; else window.usdt += 0.00001;
                     window.updateUI(); caughtItem.destroy(); caughtItem = null; spawn(this); 
                 }
             }
