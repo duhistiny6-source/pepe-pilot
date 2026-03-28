@@ -6,18 +6,13 @@ const game = new Phaser.Game(config);
 let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
 let angle = 0, swingSpeed = 0.015, distance = 25;
 
-// Синхронизация интерфейса
+// Глобальная функция обновления UI
 window.updateUI = function() {
     const energyEl = document.getElementById('energy');
     const restoreBtn = document.getElementById('restore-btn');
-    const moneyEl = document.getElementById('money');
-    const frogMoneyEl = document.getElementById('frog-money');
-
-    if (energyEl) energyEl.innerText = Math.floor(window.energy || 0);
-    if (moneyEl) moneyEl.innerText = (window.usdtBalance || 0).toFixed(5);
-    if (frogMoneyEl) frogMoneyEl.innerText = Math.floor(window.pltBalance || 0);
+    if (energyEl) energyEl.innerText = Math.floor(window.energy);
     
-    // Показываем кнопку восстановления, если энергия кончилась
+    // Показываем кнопку рекламы только если энергия на нуле
     if (window.energy <= 0) {
         restoreBtn.style.display = "block";
     } else {
@@ -25,20 +20,13 @@ window.updateUI = function() {
     }
 }
 
-// Функция для кнопки "Восстановить"
+// Функция восстановления за рекламу
 window.restoreEnergyByAd = function() {
+    // Тут будет вызов рекламы. Пока имитируем успех:
     window.energy = 100;
     window.updateUI();
+    // Отправляем на сервер обновленную энергию
     saveEnergyToServer(100);
-}
-
-function saveEnergyToServer(val) {
-    if(!window.userId) return;
-    fetch('/api/energy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tgId: window.userId, energy: val })
-    }).catch(e => console.error("Error saving energy"));
 }
 
 function preload() {
@@ -82,15 +70,20 @@ function create() {
     });
 
     this.input.on('pointerdown', (pointer) => {
-        // Не запускаем, если кликнули по кнопкам меню (верх/низ)
-        if (pointer.y < 60 || pointer.y > config.height - 70) return;
-
-        if (!isLaunching && !isReturning && window.energy > 0) {
-            isLaunching = true; 
-            window.energy--; 
-            window.updateUI();
-            saveEnergyToServer(window.energy);
-            if (window.playBeep) window.playBeep(250, 0.06);
+        // Проверяем, что нажали не на кнопки интерфейса
+        if (pointer.y > 50 && pointer.y < config.height - 80) {
+            if (!isLaunching && !isReturning) {
+                if (window.energy >= 1) {
+                    isLaunching = true; 
+                    window.energy--; 
+                    window.updateUI();
+                    saveEnergyToServer(window.energy); // Сохраняем расход
+                    if (window.playBeep) window.playBeep(250, 0.06);
+                } else {
+                    // Тряска экрана или звук ошибки, если энергии нет
+                    this.cameras.main.shake(100, 0.01);
+                }
+            }
         }
     });
 }
@@ -122,18 +115,8 @@ function update() {
             isReturning = false;
             if (caughtItem) {
                 if (window.playBeep) window.playBeep(700, 0.12);
-                let isPlt = caughtItem.texture.key === 'pilot_coin';
-                showValue(this, isPlt);
-                
-                // Исправленное начисление баланса
-                let addVal = isPlt ? (window.currentPlane === 'copper' ? 20 : window.currentPlane === 'bronze' ? 50 : window.currentPlane === 'gold' ? 100 : 10) : (window.currentPlane === 'copper' ? 0.0001 : window.currentPlane === 'bronze' ? 0.0005 : window.currentPlane === 'gold' ? 0.001 : 0.00005);
-                
-                if(isPlt) window.pltBalance += addVal; else window.usdtBalance += addVal;
-                window.updateUI();
-
-                // Отправка на сервер
-                if(window.saveCollect) window.saveCollect(addVal, isPlt ? 'plt' : 'usdt');
-                
+                showValue(this, caughtItem.texture.key === 'pilot_coin');
+                window.saveCollect(0, caughtItem.texture.key === 'pilot_coin' ? 'plt' : 'usdt');
                 caughtItem.destroy(); caughtItem = null; spawn(this);
             }
         }
@@ -142,3 +125,14 @@ function update() {
     rope.clear().lineStyle(2, 0xffffff, 0.6).lineBetween(startX, startY, startX + Math.sin(angle) * (distance - 20), startY + Math.cos(angle) * (distance - 20));
     if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; }
 }
+
+// Функция для API (нужно добавить в api.js или оставить тут)
+function saveEnergyToServer(val) {
+    if(!window.userId) return;
+    fetch('/api/energy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tgId: window.userId, energy: val })
+    }).catch(e => console.error("Energy save error"));
+}
+ 
