@@ -27,6 +27,7 @@
         .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 20px; border-radius: 20px; text-align: center; width: 85%; color: #fff; }
         .lot-item { background: #222; border: 1px solid #444; border-radius: 10px; padding: 10px; margin: 8px 0; display: flex; align-items: center; }
         .buy-btn { background: #0f0; color: #000; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; margin-left: auto; cursor: pointer; }
+        .lot-img { width: 45px; height: auto; margin-right: 10px; }
     </style>
 </head>
 <body>
@@ -40,7 +41,7 @@
     <div id="settings-btn" onclick="toggleModal('settings-modal')">⚙️</div>
 </div>
 
-<div id="restore-btn" onclick="watchAd()">RETORE ENERGY AD ⚡</div>
+<div id="restore-btn" onclick="watchAd()">RESTORE ENERGY AD ⚡</div>
 
 <div id="nav-bar">
     <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text" id="t-shop">АНГАР</div></div>
@@ -50,59 +51,18 @@
     <div class="nav-item" onclick="toggleModal('wallet-modal')"><span>👛</span><div class="nav-text" id="t-wallet">КОШЕЛЕК</div></div>
 </div>
 
-<div id="settings-modal" class="modal"><div class="modal-content">
-    <h3 id="h-sett">НАСТРОЙКИ</h3>
-    <button style="width:100%; padding:12px; margin:8px 0; border-radius:8px;" onclick="setLang('ru')">РУССКИЙ</button>
-    <button style="width:100%; padding:12px; margin:8px 0; border-radius:8px;" onclick="setLang('en')">ENGLISH</button>
-    <p onclick="toggleModal('settings-modal')" style="cursor:pointer; color:#aaa; margin-top:15px;" id="c-1">Закрыть</p>
-</div></div>
-
 <div id="shop-modal" class="modal"><div class="modal-content">
     <h3 id="h-shop">АНГАР</h3>
-    <div class="lot-item"><div style="text-align:left;"><b id="p1-n">МЕДНЫЙ</b><br><small id="p1-d">+5 PLT | +0.00005 USDT</small></div><button class="buy-btn">10 TON</button></div>
-    <div class="lot-item"><div style="text-align:left;"><b id="p2-n">БРОНЗОВЫЙ</b><br><small id="p2-d">+10 PLT | +0.0001 USDT</small></div><button class="buy-btn">25 TON</button></div>
-    <div class="lot-item"><div style="text-align:left;"><b id="p3-n">ЗОЛОТОЙ</b><br><small id="p3-d">+25 PLT | +0.001 USDT</small></div><button class="buy-btn">50 TON</button></div>
+    <div class="lot-item"><img src="pepe.png" class="lot-img"><div style="text-align:left;"><b id="p1-n">МЕДНЫЙ</b><br><small id="p1-d">+5 PLT | +0.00005 USDT</small></div><button class="buy-btn">10 TON</button></div>
+    <div class="lot-item"><img src="pepe.png" class="lot-img"><div style="text-align:left;"><b id="p2-n">БРОНЗОВЫЙ</b><br><small id="p2-d">+10 PLT | +0.0001 USDT</small></div><button class="buy-btn">25 TON</button></div>
+    <div class="lot-item"><img src="pepe.png" class="lot-img"><div style="text-align:left;"><b id="p3-n">ЗОЛОТОЙ</b><br><small id="p3-d">+25 PLT | +0.001 USDT</small></div><button class="buy-btn">50 TON</button></div>
     <p onclick="toggleModal('shop-modal')" style="cursor:pointer; color:#aaa;" id="c-2">Закрыть</p>
 </div></div>
 
-<div id="tasks-modal" class="modal"><div class="modal-content"><h3 id="h-tasks">ЗАДАНИЯ</h3><p id="m-tasks">Список пуст</p><button class="buy-btn" onclick="toggleModal('tasks-modal')" style="margin: 10px auto;">OK</button></div></div>
-<div id="rank-modal" class="modal"><div class="modal-content"><h3 id="h-rank">РЕЙТИНГ</h3><p id="m-rank">Скоро...</p><button class="buy-btn" onclick="toggleModal('rank-modal')" style="margin: 10px auto;">OK</button></div></div>
-<div id="friends-modal" class="modal"><div class="modal-content"><h3 id="h-friends">ДРУЗЬЯ</h3><p id="m-friends">Нет друзей</p><button class="buy-btn" onclick="toggleModal('friends-modal')" style="margin: 10px auto;">OK</button></div></div>
-<div id="wallet-modal" class="modal"><div class="modal-content"><h3 id="h-wallet">КОШЕЛЕК</h3><p id="m-wallet">Подключите кошелек</p><button class="buy-btn" onclick="toggleModal('wallet-modal')" style="margin: 10px auto;">OK</button></div></div>
-
 <script>
-    const trans = {
-        ru: { shop:"АНГАР", tasks:"ЗАДАНИЯ", rank:"РЕЙТИНГ", friends:"ДРУЗЬЯ", wallet:"КОШЕЛЕК", sett:"НАСТРОЙКИ", close:"Закрыть", p1:"МЕДНЫЙ", p2:"БРОНЗОВЫЙ", p3:"ЗОЛОТОЙ", empty:"Пусто", soon:"Скоро", walletMsg: "Подключите кошелек" },
-        en: { shop:"HANGAR", tasks:"TASKS", rank:"RANK", friends:"FRIENDS", wallet:"WALLET", sett:"SETTINGS", close:"Close", p1:"COPPER", p2:"BRONZE", p3:"GOLD", empty:"Empty", soon:"Soon", walletMsg: "Connect Wallet" }
-    };
-
-    function setLang(l) {
-        const t = trans[l];
-        document.getElementById('t-shop').innerText = t.shop; document.getElementById('t-tasks').innerText = t.tasks;
-        document.getElementById('t-rank').innerText = t.rank; document.getElementById('t-friends').innerText = t.friends;
-        document.getElementById('t-wallet').innerText = t.wallet; document.getElementById('h-sett').innerText = t.sett;
-        document.getElementById('h-shop').innerText = t.shop; document.getElementById('h-tasks').innerText = t.tasks;
-        document.getElementById('h-rank').innerText = t.rank; document.getElementById('h-friends').innerText = t.friends;
-        document.getElementById('h-wallet').innerText = t.wallet; document.getElementById('p1-n').innerText = t.p1;
-        document.getElementById('p2-n').innerText = t.p2; document.getElementById('p3-n').innerText = t.p3;
-        document.getElementById('c-1').innerText = t.close; document.getElementById('c-2').innerText = t.close;
-        document.getElementById('m-tasks').innerText = t.empty; document.getElementById('m-rank').innerText = t.soon;
-        document.getElementById('m-wallet').innerText = t.walletMsg;
-    }
-
-    window.energy = 100; window.plt = 3; window.usdt = 0.00004;
-    function updateUI() {
-        document.getElementById('en-val').innerText = window.energy;
-        document.getElementById('p-val').innerText = window.plt;
-        document.getElementById('u-val').innerText = window.usdt.toFixed(5);
-        document.getElementById('restore-btn').style.display = (window.energy <= 0) ? "block" : "none";
-    }
-    function watchAd() { window.energy = 100; updateUI(); }
-    function toggleModal(id) { let m = document.getElementById(id); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; }
-
-    // ТИХИЙ ЗВУК
+    // ТИХИЙ ЗВУКОВОЙ ДВИЖОК
     let audioCtx = null;
-    function playBeep(hz, dur, vol = 0.015) { // Громкость снижена до 0.015
+    function playBeep(hz, dur, vol = 0.015) {
         try {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -115,18 +75,17 @@
 
     const config = { type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight, physics: { default: 'arcade' }, scene: { preload, create, update } };
     const game = new Phaser.Game(config);
-    let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
+    let plane, hook, rope, targets, isLaunching = false, isReturning = false, caughtItem = null;
     let angle = 0, swingSpeed = 0.015, distance = 25;
 
     function preload() {
         this.load.image('sky', 'pg.jpeg'); this.load.image('hook', 'kleshn.png');
         this.load.image('usdt', 'usdt.png'); this.load.image('plt', 'logo..png');
-        this.load.image('plane', 'pepe.png'); this.load.audio('theme', 'music.mp3');
+        this.load.image('plane', 'pepe.png');
     }
 
     function create() {
         this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
-        try { bgMusic = this.sound.add('theme', { volume: 0.003, loop: true }); } catch(e){}
         targets = this.physics.add.group();
         for(let i=0; i<6; i++) spawn(this);
         rope = this.add.graphics().setDepth(5);
@@ -137,7 +96,7 @@
         this.physics.add.overlap(hook, targets, (h, item) => {
             if (isLaunching && !caughtItem) {
                 caughtItem = item; item.body.enable = false;
-                playBeep(380, 0.06); // СИГНАЛ 1: ЛОВЛЯ
+                playBeep(380, 0.06); // СИГНАЛ 1: ЛОВЛЯ (Тихо)
                 isLaunching = false; isReturning = true;
             }
         });
@@ -145,14 +104,13 @@
         this.input.on('pointerdown', (p) => {
             if (p.y > 60 && p.y < config.height - 80 && !isLaunching && !isReturning && window.energy > 0) {
                 isLaunching = true; window.energy--; updateUI();
-                if(bgMusic && !bgMusic.isPlaying) bgMusic.play();
             }
         });
     }
 
     function spawn(scene) {
         let x = Phaser.Math.Between(60, config.width - 60);
-        let y = Phaser.Math.Between(config.height * 0.5, config.height - 150);
+        let y = Phaser.Math.Between(config.height * 0.5, config.height - 160);
         let type = (Math.random() > 0.3) ? 'plt' : 'usdt';
         let coin = targets.create(x, y, type).setScale(0.12).setDepth(40);
         scene.tweens.add({ targets: coin, scale: 0.14, duration: 1000, yoyo: true, repeat: -1 });
@@ -171,21 +129,27 @@
             if (distance <= 25) {
                 isReturning = false;
                 if (caughtItem) {
-                    playBeep(650, 0.08); // СИГНАЛ 2: САМОЛЕТ
+                    playBeep(650, 0.08); // СИГНАЛ 2: САМОЛЕТ (Тихо)
                     let isP = caughtItem.texture.key === 'plt';
-                    let txt = this.add.text(plane.x, plane.y - 40, isP ? "+1 PLT" : "+0.00001", { 
-                        font: 'bold 26px Arial', fill: isP ? '#ffcc00' : '#00ff00', stroke: '#000', strokeThickness: 4 
-                    }).setOrigin(0.5).setDepth(200);
-                    this.tweens.add({ targets: txt, y: txt.y - 70, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
                     if(isP) window.plt += 1; else window.usdt += 0.00001;
                     updateUI(); caughtItem.destroy(); caughtItem = null; spawn(this);
                 }
             }
         }
-        hook.x = startX + Math.sin(angle) * distance; hook.y = startY + Math.cos(angle) * distance; hook.rotation = -angle;
-        rope.clear().lineStyle(2, 0xffffff, 0.5).lineBetween(startX, startY, startX + Math.sin(angle) * (distance - 20), startY + Math.cos(angle) * (distance - 20));
+        hook.x = startX + Math.sin(angle) * distance; hook.y = startY + Math.cos(angle) * distance;
+        rope.clear().lineStyle(2, 0xffffff, 0.5).lineBetween(startX, startY, hook.x, hook.y);
         if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; }
     }
+
+    // Вспомогательные функции UI...
+    function updateUI() {
+        document.getElementById('en-val').innerText = window.energy;
+        document.getElementById('p-val').innerText = window.plt;
+        document.getElementById('u-val').innerText = window.usdt.toFixed(5);
+        document.getElementById('restore-btn').style.display = (window.energy <= 0) ? "block" : "none";
+    }
+    function toggleModal(id) { let m = document.getElementById(id); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; }
+    function watchAd() { window.energy = 100; updateUI(); }
 </script>
 </body>
 </html>
