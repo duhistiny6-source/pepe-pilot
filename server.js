@@ -1,4 +1,4 @@
-require('dotenv').config(); // Это позволяет коду видеть твой секретный файл .env
+require('dotenv').config(); // Загружает переменные из секретного файла .env
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -8,19 +8,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- НАСТРОЙКИ (БЕРУТСЯ ИЗ СЕКРЕТНОГО ФАЙЛА) ---
+// Параметры берутся из переменных окружения (настроены в Render)
 const MONGO_URI = process.env.MONGO_URI; 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const WEB_APP_URL = "https://duhistiny6-source.github.io/pepe-pilot/"; 
 
 const bot = new Telegraf(BOT_TOKEN);
 
-// Подключение к MongoDB
+// Подключение к базе данных MongoDB
 mongoose.connect(MONGO_URI)
     .then(() => console.log("MongoDB подключена успешно!"))
-    .catch(err => console.error("Ошибка базы:", err));
+    .catch(err => console.error("Ошибка подключения к MongoDB:", err));
 
-// Схема пользователя
+// Модель пользователя
 const userSchema = new mongoose.Schema({
     tgId: { type: String, unique: true },
     balancePLT: { type: Number, default: 0 },
@@ -28,9 +28,9 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', userSchema);
 
-// --- КОМАНДЫ БОТА ---
+// Команды телеграм-бота
 bot.start((ctx) => {
-    ctx.reply('Добро пожаловать в Pepe Pilot! 🚀\n\nНажми на кнопку ниже, чтобы запустить игру.', {
+    ctx.reply('Добро пожаловать в Pepe Pilot! 🚀\n\nНажми на кнопку ниже, чтобы начать игру.', {
         reply_markup: {
             inline_keyboard: [[
                 { text: "Играть 🎮", web_app: { url: WEB_APP_URL } }
@@ -39,9 +39,7 @@ bot.start((ctx) => {
     });
 });
 
-// --- API ДЛЯ ИГРЫ ---
-
-// Загрузка данных пользователя
+// API Эндпоинты
 app.get('/api/user/:id', async (req, res) => {
     try {
         let user = await User.findOne({ tgId: req.params.id });
@@ -50,7 +48,6 @@ app.get('/api/user/:id', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Сохранение монет
 app.post('/api/collect', async (req, res) => {
     const { tgId, amount, type } = req.body;
     try {
@@ -64,13 +61,13 @@ app.post('/api/collect', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Запуск
+// Запуск сервера на порту из конфига Render
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Сервер работает на порту ${PORT}`);
-    bot.launch().catch(err => console.error("Ошибка запуска бота:", err)); 
+    console.log(`Сервер запущен на порту ${PORT}`);
+    bot.launch().catch(err => console.error("Ошибка запуска бота:", err));
 });
 
-// Плавная остановка
+// Корректное завершение работы
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
