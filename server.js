@@ -8,27 +8,20 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- ДАННЫЕ ИЗ .ENV ---
+// --- ДАННЫЕ ИЗ ПЕРЕМЕННЫХ ОКРУЖЕНИЯ ---
 const MONGO_URI = process.env.MONGO_URI; 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const WEB_APP_URL = "https://duhistiny6-source.github.io/pepe-pilot/"; 
 
-// Проверка наличия токена в логах (для отладки)
-if (!BOT_TOKEN) {
-    console.error("ОШИБКА: BOT_TOKEN не найден в переменных окружения!");
-}
-
 const bot = new Telegraf(BOT_TOKEN);
 
-// Чтобы Render не выключал сервер, добавим главную страницу
-app.get('/', (req, res) => {
-    res.send('Сервер Pepe Pilot запущен и работает!');
-});
+// Главная страница для Render
+app.get('/', (req, res) => res.send('Pepe Pilot Server is Running!'));
 
-// Подключение к MongoDB
-mongoose.connect(MONGO_URI)
-    .then(() => console.log("✅ MongoDB подключена успешно!"))
-    .catch(err => console.error("❌ Ошибка базы:", err));
+// Подключение к MongoDB с обработкой ошибок, чтобы не "вешать" сервер
+mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log("✅ MongoDB подключена!"))
+    .catch(err => console.error("❌ Ошибка базы (но бот всё равно запустится):", err.message));
 
 // Схема пользователя
 const userSchema = new mongoose.Schema({
@@ -40,7 +33,7 @@ const User = mongoose.model('User', userSchema);
 
 // --- КОМАНДЫ БОТА ---
 bot.start((ctx) => {
-    console.log(`Получена команда /start от пользователя: ${ctx.from.id}`);
+    console.log(`Команда /start от: ${ctx.from.id}`);
     ctx.reply('Добро пожаловать в Pepe Pilot! 🚀\n\nНажми на кнопку ниже, чтобы запустить игру.', {
         reply_markup: {
             inline_keyboard: [[
@@ -50,7 +43,7 @@ bot.start((ctx) => {
     });
 });
 
-// --- API ЭНДПОИНТЫ ---
+// --- API ДЛЯ ИГРЫ ---
 app.get('/api/user/:id', async (req, res) => {
     try {
         let user = await User.findOne({ tgId: req.params.id });
@@ -64,27 +57,23 @@ app.post('/api/collect', async (req, res) => {
     try {
         let updateField = (type === 'usdt') ? { balanceUSDT: amount } : { balancePLT: amount };
         const user = await User.findOneAndUpdate(
-            { tgId: tgId },
-            { $inc: updateField },
-            { new: true, upsert: true }
+            { tgId: tgId }, { $inc: updateField }, { new: true, upsert: true }
         );
         res.json(user);
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- ЗАПУСК ---
+// --- ЗАПУСК СЕРВЕРА И БОТА ---
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-    console.log(`🚀 Сервер запущен на порту ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Сервер на порту ${PORT}`);
     
-    // Запуск бота
     bot.launch()
-        .then(() => console.log("🤖 Телеграм бот запущен и слушает сообщения!"))
-        .catch(err => console.error("❌ Ошибка запуска бота:", err));
+        .then(() => console.log("🤖 Бот запущен в Telegram!"))
+        .catch(err => console.error("❌ Ошибка бота:", err));
 });
 
-// Остановка
+// Мягкая остановка
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
-
-
+         
