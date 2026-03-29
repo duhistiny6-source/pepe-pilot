@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config(); 
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -8,19 +8,29 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Параметры берутся из переменных окружения (настроены в Render)
+// --- ДАННЫЕ ИЗ .ENV ---
 const MONGO_URI = process.env.MONGO_URI; 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const WEB_APP_URL = "https://duhistiny6-source.github.io/pepe-pilot/"; 
 
+// Проверка наличия токена в логах (для отладки)
+if (!BOT_TOKEN) {
+    console.error("ОШИБКА: BOT_TOKEN не найден в переменных окружения!");
+}
+
 const bot = new Telegraf(BOT_TOKEN);
 
-// Подключение к базе данных MongoDB
-mongoose.connect(MONGO_URI)
-    .then(() => console.log("MongoDB подключена успешно!"))
-    .catch(err => console.error("Ошибка подключения к MongoDB:", err));
+// Чтобы Render не выключал сервер, добавим главную страницу
+app.get('/', (req, res) => {
+    res.send('Сервер Pepe Pilot запущен и работает!');
+});
 
-// Модель пользователя
+// Подключение к MongoDB
+mongoose.connect(MONGO_URI)
+    .then(() => console.log("✅ MongoDB подключена успешно!"))
+    .catch(err => console.error("❌ Ошибка базы:", err));
+
+// Схема пользователя
 const userSchema = new mongoose.Schema({
     tgId: { type: String, unique: true },
     balancePLT: { type: Number, default: 0 },
@@ -28,9 +38,10 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', userSchema);
 
-// Команды телеграм-бота
+// --- КОМАНДЫ БОТА ---
 bot.start((ctx) => {
-    ctx.reply('Добро пожаловать в Pepe Pilot! 🚀\n\nНажми на кнопку ниже, чтобы начать игру.', {
+    console.log(`Получена команда /start от пользователя: ${ctx.from.id}`);
+    ctx.reply('Добро пожаловать в Pepe Pilot! 🚀\n\nНажми на кнопку ниже, чтобы запустить игру.', {
         reply_markup: {
             inline_keyboard: [[
                 { text: "Играть 🎮", web_app: { url: WEB_APP_URL } }
@@ -39,7 +50,7 @@ bot.start((ctx) => {
     });
 });
 
-// API Эндпоинты
+// --- API ЭНДПОИНТЫ ---
 app.get('/api/user/:id', async (req, res) => {
     try {
         let user = await User.findOne({ tgId: req.params.id });
@@ -61,13 +72,19 @@ app.post('/api/collect', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Запуск сервера на порту из конфига Render
-const PORT = process.env.PORT || 3000;
+// --- ЗАПУСК ---
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-    console.log(`Сервер запущен на порту ${PORT}`);
-    bot.launch().catch(err => console.error("Ошибка запуска бота:", err));
+    console.log(`🚀 Сервер запущен на порту ${PORT}`);
+    
+    // Запуск бота
+    bot.launch()
+        .then(() => console.log("🤖 Телеграм бот запущен и слушает сообщения!"))
+        .catch(err => console.error("❌ Ошибка запуска бота:", err));
 });
 
-// Корректное завершение работы
+// Остановка
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
+
+
