@@ -25,72 +25,65 @@
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 20px; border-radius: 20px; text-align: center; width: 85%; color: #fff; box-sizing: border-box; }
-        .lot-item { background: #222; border: 1px solid #444; border-radius: 10px; padding: 8px; margin: 8px 0; display: flex; align-items: center; }
         .buy-btn { background: #0f0; color: #000; border: none; padding: 10px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
-        
-        .invite-box { background: #222; padding: 15px; border-radius: 15px; margin-top: 15px; border: 1px dashed #0f0; }
-        .ref-link { font-size: 10px; color: #0f0; word-break: break-all; margin: 10px 0; background: #000; padding: 5px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
 <div id="top-bar">
-    <div id="energy-container">⚡ <span id="en-val">...</span></div>
+    <div id="energy-container">⚡ <span id="en-val">100</span></div>
     <div id="balance-container">
-        <div>USDT: <span id="u-val" style="color:#0f0">...</span></div>
-        <div>PLT: <span id="p-val" style="color:#ffcc00">...</span></div>
+        <div>USDT: <span id="u-val" style="color:#0f0">0.00004</span></div>
+        <div>PLT: <span id="p-val" style="color:#ffcc00">3</span></div>
     </div>
     <div id="settings-btn" onclick="toggleModal('settings-modal')">⚙️</div>
 </div>
 
-<div id="restore-btn" onclick="watchAd()">RETORE ENERGY AD ⚡</div>
+<div id="restore-btn" onclick="watchAd()">RESTORE ENERGY AD ⚡</div>
 
 <div id="nav-bar">
-    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text" id="t-shop">АНГАР</div></div>
-    <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text" id="t-tasks">ЗАДАНИЯ</div></div>
-    <div class="nav-item" onclick="toggleModal('rank-modal')"><span>🏆</span><div class="nav-text" id="t-rank">РЕЙТИНГ</div></div>
-    <div class="nav-item" onclick="toggleModal('friends-modal')"><span>👥</span><div class="nav-text" id="t-friends">ДРУЗЬЯ</div></div>
-    <div class="nav-item" onclick="toggleModal('wallet-modal')"><span>👛</span><div class="nav-text" id="t-wallet">КОШЕЛЕК</div></div>
+    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text">АНГАР</div></div>
+    <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text">ЗАДАНИЯ</div></div>
+    <div class="nav-item" onclick="toggleModal('rank-modal')"><span>🏆</span><div class="nav-text">РЕЙТИНГ</div></div>
+    <div class="nav-item" onclick="toggleModal('friends-modal')"><span>👥</span><div class="nav-text">ДРУЗЬЯ</div></div>
+    <div class="nav-item" onclick="toggleModal('wallet-modal')"><span>👛</span><div class="nav-text">КОШЕЛЕК</div></div>
 </div>
 
-<div id="settings-modal" class="modal"><div class="modal-content"><h3 id="h-sett">НАСТРОЙКИ</h3><button style="width:100%; padding:10px; margin:5px 0;" onclick="setLang('ru')">РУССКИЙ</button><button style="width:100%; padding:10px; margin:5px 0;" onclick="setLang('en')">ENGLISH</button><p onclick="toggleModal('settings-modal')" style="cursor:pointer; color:#aaa; margin-top:10px;" id="c-1">Закрыть</p></div></div>
-<div id="shop-modal" class="modal"><div class="modal-content"><h3 id="h-shop">АНГАР</h3><div class="lot-item"><div style="text-align:left; margin-left:10px;"><b id="p1-n">МЕДНЫЙ</b><br><small id="p1-d">+5 PLT | +0.00005 USDT</small></div><button class="buy-btn" style="width:auto; margin:0">10 TON</button></div><p onclick="toggleModal('shop-modal')" style="cursor:pointer; color:#aaa;" id="c-2">Закрыть</p></div></div>
-<div id="tasks-modal" class="modal"><div class="modal-content"><h3 id="h-tasks">ЗАДАНИЯ</h3><p id="m-tasks">Список пуст</p><button class="buy-btn" onclick="toggleModal('tasks-modal')">OK</button></div></div>
-<div id="rank-modal" class="modal"><div class="modal-content"><h3 id="h-rank">РЕЙТИНГ</h3><p id="m-rank">Скоро...</p><button class="buy-btn" onclick="toggleModal('rank-modal')">OK</button></div></div>
-<div id="friends-modal" class="modal"><div class="modal-content"><h3 id="h-friends">ДРУЗЬЯ</h3><p id="m-friends">Приглашай друзей и получай бонусы!</p><div class="invite-box"><div id="ref-link-text" class="ref-link">Загрузка...</div><button class="buy-btn" onclick="inviteFriend()">ПРИГЛАСИТЬ</button></div><p onclick="toggleModal('friends-modal')" style="cursor:pointer; color:#aaa; margin-top:15px;">Закрыть</p></div></div>
-<div id="wallet-modal" class="modal"><div class="modal-content"><h3 id="h-wallet">КОШЕЛЕК</h3><p id="m-wallet">Подключите кошелек</p><button class="buy-btn" onclick="toggleModal('wallet-modal')">OK</button></div></div>
+<div id="settings-modal" class="modal"><div class="modal-content"><h3>НАСТРОЙКИ</h3><button class="buy-btn" onclick="toggleModal('settings-modal')">ЗАКРЫТЬ</button></div></div>
+<div id="shop-modal" class="modal"><div class="modal-content"><h3>МАГАЗИН</h3><button class="buy-btn" onclick="toggleModal('shop-modal')">ЗАКРЫТЬ</button></div></div>
+<div id="tasks-modal" class="modal"><div class="modal-content"><h3>ЗАДАНИЯ</h3><button class="buy-btn" onclick="toggleModal('tasks-modal')">ЗАКРЫТЬ</button></div></div>
+<div id="rank-modal" class="modal"><div class="modal-content"><h3>РЕЙТИНГ</h3><button class="buy-btn" onclick="toggleModal('rank-modal')">ЗАКРЫТЬ</button></div></div>
+<div id="friends-modal" class="modal"><div class="modal-content"><h3>ДРУЗЬЯ</h3><button class="buy-btn" onclick="toggleModal('friends-modal')">ЗАКРЫТЬ</button></div></div>
+<div id="wallet-modal" class="modal"><div class="modal-content"><h3>КОШЕЛЕК</h3><button class="buy-btn" onclick="toggleModal('wallet-modal')">ЗАКРЫТЬ</button></div></div>
 
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    // --- ТВОИ НАСТРОЙКИ ИЗ СКРИНШОТОВ ---
-    const SERVER_URL = "https://pepe-pilot.onrender.com"; 
-    const botUsername = "PepePilot_bot";
-    const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "0";
-    
-    // Баланс по умолчанию
-    window.energy = 100; window.plt = 3; window.usdt = 0.00004;
+    // --- НАСТРОЙКИ СЕРВЕРА ---
+    const SERVER_URL = "https://pepe-pilot.onrender.com"; // Проверь этот URL!
+    const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "local_user";
 
-    // Реферальная ссылка
-    const inviteURL = `https://t.me/${botUsername}/game?startapp=${userId}`;
-    document.getElementById('ref-link-text').innerText = inviteURL;
+    // Переменные баланса
+    window.energy = 100;
+    window.plt = 3;
+    window.usdt = 0.00004;
 
-    // ЗАГРУЗКА ДАННЫХ ИЗ MONGODB
+    // Функция загрузки из базы
     async function loadData() {
         try {
-            const res = await fetch(`${SERVER_URL}/api/user/${userId}`);
-            if (res.ok) {
-                const data = await res.json();
-                window.energy = data.energy ?? 100;
-                window.plt = data.plt ?? 3;
-                window.usdt = data.usdt ?? 0.00004;
+            const response = await fetch(`${SERVER_URL}/api/user/${userId}`);
+            if (response.ok) {
+                const data = await response.json();
+                window.energy = data.energy !== undefined ? data.energy : 100;
+                window.plt = data.plt !== undefined ? data.plt : 3;
+                window.usdt = data.usdt !== undefined ? data.usdt : 0.00004;
+                updateUI(false); 
             }
-        } catch (e) { console.log("Используем локальные данные"); }
-        updateUI(false); // Обновляем экран без повторного сохранения
+        } catch (e) { console.log("БД недоступна, играем локально"); }
     }
 
-    // СОХРАНЕНИЕ ДАННЫХ В MONGODB
+    // Функция сохранения в базу
     async function saveData() {
         try {
             await fetch(`${SERVER_URL}/api/save`, {
@@ -103,7 +96,7 @@
                     usdt: window.usdt
                 })
             });
-        } catch (e) { console.error("Ошибка базы данных"); }
+        } catch (e) { console.error("Ошибка сохранения"); }
     }
 
     function updateUI(shouldSave = true) {
@@ -115,22 +108,31 @@
         if (shouldSave) saveData();
     }
 
-    // Запуск при старте
-    loadData();
-
-    function inviteFriend() {
-        const msg = encodeURIComponent("Стань пилотом Pepe Pilot и зарабатывай PLT вместе со мной!");
-        const fullUrl = `https://t.me/share/url?url=${inviteURL}&text=${msg}`;
-        tg.openTelegramLink(fullUrl);
+    function toggleModal(id) {
+        const m = document.getElementById(id);
+        m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
     }
 
-    function watchAd() { window.energy = 100; updateUI(); }
-    function toggleModal(id) { let m = document.getElementById(id); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; }
+    function watchAd() {
+        window.energy = 100;
+        updateUI();
+    }
 
-    // --- ИГРА PHASER ---
-    const config = { type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight, physics: { default: 'arcade' }, scene: { preload, create, update } };
+    // Загружаем данные при старте
+    loadData();
+
+    // --- ФИЗИКА ИГРЫ (ТВОЙ ОРИГИНАЛЬНЫЙ КОД) ---
+    const config = {
+        type: Phaser.AUTO,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        physics: { default: 'arcade' },
+        scene: { preload, create, update }
+    };
+
     const game = new Phaser.Game(config);
-    let plane, hook, rope, targets, isLaunching = false, isReturning = false, caughtItem = null;
+    let plane, hook, rope, targets;
+    let isLaunching = false, isReturning = false, caughtItem = null;
     let angle = 0, swingSpeed = 0.015, distance = 25;
 
     function preload() {
@@ -145,21 +147,27 @@
         this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
         targets = this.physics.add.group();
         for(let i=0; i<6; i++) spawn(this);
+
         rope = this.add.graphics().setDepth(5);
         hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(65, 65);
         this.physics.add.existing(hook);
+
         plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
 
         this.physics.add.overlap(hook, targets, (h, item) => {
             if (isLaunching && !caughtItem) {
-                caughtItem = item; item.body.enable = false;
-                isLaunching = false; isReturning = true;
+                caughtItem = item;
+                item.body.enable = false;
+                isLaunching = false;
+                isReturning = true;
             }
         });
 
-        this.input.on('pointerdown', (p) => {
-            if (p.y > 60 && p.y < config.height - 80 && !isLaunching && !isReturning && window.energy > 0) {
-                isLaunching = true; window.energy--; updateUI();
+        this.input.on('pointerdown', (pointer) => {
+            if (pointer.y > 60 && pointer.y < config.height - 80 && !isLaunching && !isReturning && window.energy > 0) {
+                isLaunching = true;
+                window.energy--;
+                updateUI();
             }
         });
     }
@@ -168,30 +176,53 @@
         let x = Phaser.Math.Between(60, config.width - 60);
         let y = Phaser.Math.Between(config.height * 0.5, config.height - 130);
         let type = (Math.random() > 0.3) ? 'plt' : 'usdt';
-        targets.create(x, y, type).setScale(0.11).setDepth(40);
+        let item = targets.create(x, y, type);
+        item.setScale(0.11).setDepth(40);
     }
 
     function update() {
-        let startX = plane.x - 5, startY = plane.y + 20;
+        let startX = plane.x - 5;
+        let startY = plane.y + 20;
+
         if (!isLaunching && !isReturning) {
-            angle += swingSpeed; if (angle > 0.4 || angle < -0.4) swingSpeed *= -1;
+            angle += swingSpeed;
+            if (angle > 0.4 || angle < -0.4) swingSpeed *= -1;
         } else if (isLaunching) {
-            distance += 14; if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
+            distance += 14;
+            if (distance > config.height - 110) {
+                isLaunching = false;
+                isReturning = true;
+            }
         } else if (isReturning) {
             distance -= 6;
             if (distance <= 25) {
                 isReturning = false;
                 if (caughtItem) {
-                    let isP = caughtItem.texture.key === 'plt';
-                    if(isP) window.plt += 1; else window.usdt += 0.00001;
-                    updateUI(); caughtItem.destroy(); caughtItem = null; spawn(this);
+                    if (caughtItem.texture.key === 'plt') window.plt += 1;
+                    else window.usdt += 0.00001;
+                    
+                    updateUI();
+                    caughtItem.destroy();
+                    caughtItem = null;
+                    spawn(this);
                 }
             }
         }
-        hook.x = startX + Math.sin(angle) * distance; hook.y = startY + Math.cos(angle) * distance; hook.rotation = -angle;
-        rope.clear().lineStyle(2, 0xffffff, 0.6).lineBetween(startX, startY, hook.x, hook.y);
-        if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; }
+
+        hook.x = startX + Math.sin(angle) * distance;
+        hook.y = startY + Math.cos(angle) * distance;
+        hook.rotation = -angle;
+
+        rope.clear();
+        rope.lineStyle(2, 0xffffff, 0.6);
+        rope.lineBetween(startX, startY, hook.x, hook.y);
+
+        if (caughtItem) {
+            caughtItem.x = hook.x;
+            caughtItem.y = hook.y + 15;
+        }
     }
 </script>
 </body>
 </html>
+
