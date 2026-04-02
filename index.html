@@ -11,26 +11,17 @@
         #top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 40px; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; box-sizing: border-box; }
         #energy-container { color: #0f0; font-size: 14px; font-weight: bold; }
         #balance-container { display: flex; gap: 15px; color: #fff; font-size: 11px; }
-        #settings-btn { font-size: 20px; cursor: pointer; color: white; }
         
-        #restore-btn { 
-            display: none; position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); 
-            background: #ffcc00; color: #000; border: 2px solid #fff; padding: 10px 20px; 
-            border-radius: 20px; font-weight: bold; z-index: 500; cursor: pointer;
-        }
-
         #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 90%; height: 55px; background: rgba(0,0,0,0.9); border-radius: 15px; display: flex; justify-content: space-around; align-items: center; z-index: 200; border: 1px solid #333; }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; flex: 1; cursor: pointer; }
         .nav-text { font-size: 7px; margin-top: 2px; color: #bbb; text-transform: uppercase; font-weight: bold; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 20px; border-radius: 20px; text-align: center; width: 85%; color: #fff; box-sizing: border-box; }
-        .lot-item { background: #222; border: 1px solid #444; border-radius: 10px; padding: 8px; margin: 8px 0; display: flex; align-items: center; }
-        .buy-btn { background: #0f0; color: #000; border: none; padding: 10px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+        .buy-btn { background: #0f0; color: #000; border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; font-size: 14px; }
         
-        /* Стили для друзей */
         .invite-box { background: #222; padding: 15px; border-radius: 15px; margin-top: 15px; border: 1px dashed #0f0; }
-        .ref-link { font-size: 10px; color: #0f0; word-break: break-all; margin: 10px 0; background: #000; padding: 5px; border-radius: 5px; cursor: pointer; }
+        .ref-link { font-size: 10px; color: #0f0; word-break: break-all; margin: 10px 0; background: #000; padding: 8px; border-radius: 5px; }
     </style>
 </head>
 <body>
@@ -41,175 +32,144 @@
         <div>USDT: <span id="u-val" style="color:#0f0">0.00004</span></div>
         <div>PLT: <span id="p-val" style="color:#ffcc00">3</span></div>
     </div>
-    <div id="settings-btn" onclick="toggleModal('settings-modal')">⚙️</div>
 </div>
-
-<div id="restore-btn" onclick="watchAd()">RETORE ENERGY AD ⚡</div>
 
 <div id="nav-bar">
-    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text" id="t-shop">АНГАР</div></div>
-    <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text" id="t-tasks">ЗАДАНИЯ</div></div>
-    <div class="nav-item" onclick="toggleModal('rank-modal')"><span>🏆</span><div class="nav-text" id="t-rank">РЕЙТИНГ</div></div>
-    <div class="nav-item" onclick="toggleModal('friends-modal')"><span>👥</span><div class="nav-text" id="t-friends">ДРУЗЬЯ</div></div>
-    <div class="nav-item" onclick="toggleModal('wallet-modal')"><span>👛</span><div class="nav-text" id="t-wallet">КОШЕЛЕК</div></div>
+    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text">АНГАР</div></div>
+    <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text">ЗАДАНИЯ</div></div>
+    <div class="nav-item" onclick="toggleModal('rank-modal')"><span>🏆</span><div class="nav-text">РЕЙТИНГ</div></div>
+    <div class="nav-item" onclick="toggleModal('friends-modal')"><span>👥</span><div class="nav-text">ДРУЗЬЯ</div></div>
+    <div class="nav-item" onclick="toggleModal('wallet-modal')"><span>👛</span><div class="nav-text">КОШЕЛЕК</div></div>
 </div>
-
-<div id="settings-modal" class="modal"><div class="modal-content">
-    <h3 id="h-sett">НАСТРОЙКИ</h3>
-    <button style="width:100%; padding:10px; margin:5px 0;" onclick="setLang('ru')">РУССКИЙ</button>
-    <button style="width:100%; padding:10px; margin:5px 0;" onclick="setLang('en')">ENGLISH</button>
-    <p onclick="toggleModal('settings-modal')" style="cursor:pointer; color:#aaa; margin-top:10px;" id="c-1">Закрыть</p>
-</div></div>
-
-<div id="shop-modal" class="modal"><div class="modal-content">
-    <h3 id="h-shop">АНГАР</h3>
-    <div class="lot-item"><div style="text-align:left; margin-left:10px;"><b id="p1-n">МЕДНЫЙ</b><br><small id="p1-d">+5 PLT | +0.00005 USDT</small></div><button class="buy-btn" style="width:auto; margin-left: auto;">10 TON</button></div>
-    <div class="lot-item"><div style="text-align:left; margin-left:10px;"><b id="p2-n">БРОНЗОВЫЙ</b><br><small id="p2-d">+10 PLT | +0.0001 USDT</small></div><button class="buy-btn" style="width:auto; margin-left: auto;">25 TON</button></div>
-    <p onclick="toggleModal('shop-modal')" style="cursor:pointer; color:#aaa;" id="c-2">Закрыть</p>
-</div></div>
 
 <div id="friends-modal" class="modal">
     <div class="modal-content">
-        <h3 id="h-friends">ДРУЗЬЯ</h3>
-        <p id="m-friends">Приглашай друзей и получай бонусы!</p>
+        <h3>ДРУЗЬЯ</h3>
+        <p>Приглашай друзей и получай бонусы!</p>
         <div class="invite-box">
-            <div id="ref-link-text" class="ref-link" onclick="copyLink()">Генерация ссылки...</div>
-            <button class="buy-btn" onclick="inviteFriend()">ПРИГЛАСИТЬ</button>
+            <div id="ref-link-text" class="ref-link">Загрузка ссылки...</div>
+            <button class="buy-btn" onclick="inviteFriend()">ПРИГЛАСИТЬ ДРУГА</button>
         </div>
         <p onclick="toggleModal('friends-modal')" style="cursor:pointer; color:#aaa; margin-top:15px;">Закрыть</p>
     </div>
 </div>
 
-<div id="tasks-modal" class="modal"><div class="modal-content"><h3 id="h-tasks">ЗАДАНИЯ</h3><p id="m-tasks">Пусто</p><button class="buy-btn" onclick="toggleModal('tasks-modal')">OK</button></div></div>
-<div id="rank-modal" class="modal"><div class="modal-content"><h3 id="h-rank">РЕЙТИНГ</h3><p id="m-rank">Скоро</p><button class="buy-btn" onclick="toggleModal('rank-modal')">OK</button></div></div>
-<div id="wallet-modal" class="modal"><div class="modal-content"><h3 id="h-wallet">КОШЕЛЕК</h3><p id="m-wallet">Подключите TON</p><button class="buy-btn" onclick="toggleModal('wallet-modal')">OK</button></div></div>
+<div id="shop-modal" class="modal"><div class="modal-content"><h3>АНГАР</h3><p>Скоро в продаже самолеты</p><button class="buy-btn" onclick="toggleModal('shop-modal')">ЗАКРЫТЬ</button></div></div>
+<div id="tasks-modal" class="modal"><div class="modal-content"><h3>ЗАДАНИЯ</h3><p>Список пуст</p><button class="buy-btn" onclick="toggleModal('tasks-modal')">ОК</button></div></div>
+<div id="rank-modal" class="modal"><div class="modal-content"><h3>РЕЙТИНГ</h3><p>Ты в топе!</p><button class="buy-btn" onclick="toggleModal('rank-modal')">ОК</button></div></div>
+<div id="wallet-modal" class="modal"><div class="modal-content"><h3>КОШЕЛЕК</h3><p>Подключи TON кошелек</p><button class="buy-btn" onclick="toggleModal('wallet-modal')">ОК</button></div></div>
 
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
-    tg.headerColor = "#000000";
 
-    // ДАННЫЕ ТВОЕГО НОВОГО БОТА
-    const botUsername = "Frog_Pilot_Game_bot"; 
+    // НАСТРОЙКИ (БЕЗ ТОКЕНОВ!)
+    const botUsername = "PepePilot_bot"; // Твой основной юзернейм
     const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "0";
+    
+    // Ссылка на WebApp (нужно настроить /newapp в BotFather с коротким именем 'game')
     const inviteURL = `https://t.me/${botUsername}/game?startapp=${userId}`;
-
-    // Отображаем ссылку в окне
     document.getElementById('ref-link-text').innerText = inviteURL;
 
     function inviteFriend() {
-        const msg = encodeURIComponent("Летай со мной в Frog Pilot! 🐸🚀 Собирай USDT и качай самолет!");
+        const msg = encodeURIComponent("Летай со мной в Frog Pilot! 🐸 Собирай монеты и качайся!");
         const fullUrl = `https://t.me/share/url?url=${inviteURL}&text=${msg}`;
         tg.openTelegramLink(fullUrl);
     }
 
-    function copyLink() {
-        navigator.clipboard.writeText(inviteURL);
-        tg.showAlert("Ссылка скопирована в буфер!");
+    function toggleModal(id) {
+        let m = document.getElementById(id);
+        m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
     }
 
-    const trans = {
-        ru: { shop:"АНГАР", tasks:"ЗАДАНИЯ", rank:"РЕЙТИНГ", friends:"ДРУЗЬЯ", wallet:"КОШЕЛЕК", sett:"НАСТРОЙКИ", close:"Закрыть", p1:"МЕДНЫЙ", p2:"БРОНЗОВЫЙ", empty:"Пусто", soon:"Скоро" },
-        en: { shop:"HANGAR", tasks:"TASKS", rank:"RANK", friends:"FRIENDS", wallet:"WALLET", sett:"SETTINGS", close:"Close", p1:"COPPER", p2:"BRONZE", empty:"Empty", soon:"Soon" }
+    // ИГРА (PHASER)
+    const config = {
+        type: Phaser.AUTO,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        physics: { default: 'arcade' },
+        scene: { preload, create, update }
     };
-
-    function setLang(l) {
-        const t = trans[l];
-        document.querySelectorAll('.nav-text').forEach((el, i) => {
-            const keys = ['shop','tasks','rank','friends','wallet'];
-            el.innerText = t[keys[i]];
-        });
-        document.getElementById('h-friends').innerText = t.friends;
-        document.getElementById('c-1').innerText = t.close;
-        document.getElementById('c-2').innerText = t.close;
-    }
-
-    window.energy = 100; window.plt = 3; window.usdt = 0.00004;
-    function updateUI() {
-        document.getElementById('en-val').innerText = window.energy;
-        document.getElementById('p-val').innerText = window.plt;
-        document.getElementById('u-val').innerText = window.usdt.toFixed(5);
-        document.getElementById('restore-btn').style.display = (window.energy <= 0) ? "block" : "none";
-    }
-
-    function watchAd() { window.energy = 100; updateUI(); }
-    function toggleModal(id) { 
-        let m = document.getElementById(id); 
-        m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; 
-    }
-
-    // ИГРОВАЯ ЛОГИКА (PHASER)
-    const config = { type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight, physics: { default: 'arcade' }, scene: { preload, create, update } };
     const game = new Phaser.Game(config);
-    let plane, hook, rope, targets, bgMusic, isLaunching = false, isReturning = false, caughtItem = null;
+
+    let plane, hook, rope, targets, isLaunching = false, isReturning = false, caughtItem = null;
     let angle = 0, swingSpeed = 0.015, distance = 25;
 
     function preload() {
-        this.load.image('sky', 'pg.jpeg'); 
+        this.load.image('sky', 'pg.jpeg');
         this.load.image('hook', 'kleshn.png');
-        this.load.image('usdt', 'usdt.png'); 
+        this.load.image('usdt', 'usdt.png');
         this.load.image('plt', 'logo..png');
-        this.load.image('plane', 'pepe.png'); 
-        try { this.load.audio('theme', 'music.mp3'); } catch(e){}
+        this.load.image('plane', 'pepe.png');
     }
 
     function create() {
         this.add.image(config.width/2, config.height/2, 'sky').setDisplaySize(config.width, config.height);
-        try { bgMusic = this.sound.add('theme', { volume: 0.01, loop: true }); } catch(e){}
         targets = this.physics.add.group();
-        for(let i=0; i<6; i++) spawn(this);
-        rope = this.add.graphics().setDepth(5);
-        hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(65, 65);
+        for(let i=0; i<5; i++) spawn(this);
+        
+        rope = this.add.graphics();
+        hook = this.add.sprite(0, 0, 'hook').setDepth(50).setDisplaySize(60, 60);
         this.physics.add.existing(hook);
-        plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(280, 180).setDepth(60);
+        plane = this.add.image(config.width/2, 120, 'plane').setDisplaySize(250, 150).setDepth(60);
 
         this.physics.add.overlap(hook, targets, (h, item) => {
             if (isLaunching && !caughtItem) {
-                caughtItem = item; item.body.enable = false;
-                isLaunching = false; isReturning = true;
+                caughtItem = item;
+                item.body.enable = false;
+                isLaunching = false;
+                isReturning = true;
             }
         });
 
         this.input.on('pointerdown', (p) => {
-            if (p.y > 60 && p.y < config.height - 80 && !isLaunching && !isReturning && window.energy > 0) {
-                isLaunching = true; window.energy--; updateUI();
-                if(bgMusic && !bgMusic.isPlaying) bgMusic.play();
+            if (!isLaunching && !isReturning && p.y > 150) {
+                isLaunching = true;
             }
         });
     }
 
     function spawn(scene) {
-        let x = Phaser.Math.Between(60, config.width - 60);
-        let y = Phaser.Math.Between(config.height * 0.5, config.height - 130);
-        let type = (Math.random() > 0.3) ? 'plt' : 'usdt';
-        let coin = targets.create(x, y, type).setScale(0.11).setDepth(40);
-        scene.tweens.add({ targets: coin, scale: 0.13, duration: 1000, yoyo: true, repeat: -1 });
+        let x = Phaser.Math.Between(50, config.width - 50);
+        let y = Phaser.Math.Between(config.height * 0.4, config.height - 150);
+        let type = (Math.random() > 0.5) ? 'plt' : 'usdt';
+        targets.create(x, y, type).setScale(0.12).setDepth(40);
     }
 
     function update() {
-        plane.y = 120 + Math.sin(this.time.now / 600) * 8;
-        let startX = plane.x - 5, startY = plane.y + 20;
+        let startX = plane.x;
+        let startY = plane.y + 20;
 
         if (!isLaunching && !isReturning) {
-            angle += swingSpeed; if (angle > 0.4 || angle < -0.4) swingSpeed *= -1; distance = 25;
+            angle += swingSpeed;
+            if (angle > 0.5 || angle < -0.5) swingSpeed *= -1;
         } else if (isLaunching) {
-            distance += 14; if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
+            distance += 12;
+            if (distance > config.height - 100) { isLaunching = false; isReturning = true; }
         } else if (isReturning) {
-            distance -= 4;
+            distance -= 8;
             if (distance <= 25) {
                 isReturning = false;
                 if (caughtItem) {
-                    let isP = caughtItem.texture.key === 'plt';
-                    if(isP) window.plt += 1; else window.usdt += 0.00001;
-                    updateUI(); caughtItem.destroy(); caughtItem = null; spawn(this);
+                    caughtItem.destroy();
+                    caughtItem = null;
+                    spawn(this);
                 }
             }
         }
-        hook.x = startX + Math.sin(angle) * distance; hook.y = startY + Math.cos(angle) * distance; hook.rotation = -angle;
-        rope.clear().lineStyle(2, 0xffffff, 0.6).lineBetween(startX, startY, startX + Math.sin(angle) * (distance - 20), startY + Math.cos(angle) * (distance - 20));
-        if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; }
+
+        hook.x = startX + Math.sin(angle) * distance;
+        hook.y = startY + Math.cos(angle) * distance;
+        hook.rotation = -angle;
+
+        rope.clear().lineStyle(2, 0xffffff, 0.5);
+        rope.lineBetween(startX, startY, hook.x, hook.y);
+
+        if (caughtItem) {
+            caughtItem.x = hook.x;
+            caughtItem.y = hook.y + 10;
+        }
     }
 </script>
 </body>
 </html>
-    
