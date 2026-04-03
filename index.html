@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -12,21 +12,24 @@
         #energy-container { color: #0f0; font-size: 14px; font-weight: bold; }
         #balance-container { display: flex; gap: 15px; color: #fff; font-size: 11px; }
         #settings-btn { font-size: 20px; cursor: pointer; color: white; }
-        #restore-btn { display: none; position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #ffcc00; color: #000; border: 2px solid #fff; padding: 10px 20px; border-radius: 20px; font-weight: bold; z-index: 500; cursor: pointer; }
+        
+        #restore-btn { 
+            display: none; position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); 
+            background: #ffcc00; color: #000; border: 2px solid #fff; padding: 10px 20px; 
+            border-radius: 20px; font-weight: bold; z-index: 500; cursor: pointer;
+        }
+
         #nav-bar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); width: 90%; height: 55px; background: rgba(0,0,0,0.9); border-radius: 15px; display: flex; justify-content: space-around; align-items: center; z-index: 200; border: 1px solid #333; }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #fff; flex: 1; cursor: pointer; }
         .nav-text { font-size: 7px; margin-top: 2px; color: #bbb; text-transform: uppercase; font-weight: bold; }
+
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: #1a1a1a; border: 2px solid #0f0; padding: 20px; border-radius: 20px; text-align: center; width: 85%; color: #fff; box-sizing: border-box; }
         .lot-item { background: #222; border: 1px solid #444; border-radius: 10px; padding: 8px; margin: 8px 0; display: flex; align-items: center; }
         .buy-btn { background: #0f0; color: #000; border: none; padding: 10px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+        
         .invite-box { background: #222; padding: 15px; border-radius: 15px; margin-top: 15px; border: 1px dashed #0f0; }
         .ref-link { font-size: 10px; color: #0f0; word-break: break-all; margin: 10px 0; background: #000; padding: 5px; border-radius: 5px; }
-        #ad-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; justify-content: center; align-items: center; }
-        .ad-modal-content { background: #1a1a1a; border: 3px solid #ffcc00; padding: 30px; border-radius: 20px; text-align: center; width: 90%; color: #fff; box-sizing: border-box; }
-        .ad-modal-content h2 { color: #ffcc00; margin-top: 0; }
-        #ad-timer { font-size: 24px; color: #0f0; font-weight: bold; margin: 20px 0; }
-        .ad-skip-btn { background: #666; color: #fff; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -40,155 +43,103 @@
     <div id="settings-btn" onclick="toggleModal('settings-modal')">⚙️</div>
 </div>
 
-<div id="ad-modal">
-    <div class="ad-modal-content">
-        <h2>⚡ Energy Ended!</h2>
-        <p style="font-size: 16px;">Watch an ad to get 100 ⚡ energy</p>
-        <div id="ad-container" style="background: #000; border: 2px solid #0f0; padding: 40px; border-radius: 10px; margin: 20px 0; min-height: 200px; display: flex; align-items: center; justify-content: center;">
-            <p>Loading ad...</p>
-        </div>
-        <div id="ad-timer">Wait: <span id="timer-val">5</span>s</div>
-        <button class="ad-skip-btn" id="skip-btn" onclick="skipAd()" style="display:none;">SKIP</button>
-    </div>
-</div>
-
-<div id="restore-btn" onclick="watchAd()">WATCH AD FOR ENERGY ⚡</div>
+<div id="restore-btn" onclick="watchAd()">RETORE ENERGY AD ⚡</div>
 
 <div id="nav-bar">
-    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text" id="t-shop">SHOP</div></div>
-    <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text" id="t-tasks">TASKS</div></div>
-    <div class="nav-item" onclick="toggleModal('rank-modal')"><span>🏆</span><div class="nav-text" id="t-rank">RANK</div></div>
-    <div class="nav-item" onclick="toggleModal('friends-modal')"><span>👥</span><div class="nav-text" id="t-friends">FRIENDS</div></div>
-    <div class="nav-item" onclick="toggleModal('wallet-modal')"><span>👛</span><div class="nav-text" id="t-wallet">WALLET</div></div>
+    <div class="nav-item" onclick="toggleModal('shop-modal')"><span>🛒</span><div class="nav-text" id="t-shop">АНГАР</div></div>
+    <div class="nav-item" onclick="toggleModal('tasks-modal')"><span>📜</span><div class="nav-text" id="t-tasks">ЗАДАНИЯ</div></div>
+    <div class="nav-item" onclick="toggleModal('rank-modal')"><span>🏆</span><div class="nav-text" id="t-rank">РЕЙТИНГ</div></div>
+    <div class="nav-item" onclick="toggleModal('friends-modal')"><span>👥</span><div class="nav-text" id="t-friends">ДРУЗЬЯ</div></div>
+    <div class="nav-item" onclick="toggleModal('wallet-modal')"><span>👛</span><div class="nav-text" id="t-wallet">КОШЕЛЕК</div></div>
 </div>
 
 <div id="settings-modal" class="modal"><div class="modal-content">
-    <h3 id="h-sett">SETTINGS</h3>
+    <h3 id="h-sett">НАСТРОЙКИ</h3>
     <button style="width:100%; padding:10px; margin:5px 0;" onclick="setLang('ru')">РУССКИЙ</button>
     <button style="width:100%; padding:10px; margin:5px 0;" onclick="setLang('en')">ENGLISH</button>
-    <p onclick="toggleModal('settings-modal')" style="cursor:pointer; color:#aaa; margin-top:10px;" id="c-1">Close</p>
+    <p onclick="toggleModal('settings-modal')" style="cursor:pointer; color:#aaa; margin-top:10px;" id="c-1">Закрыть</p>
 </div></div>
 
 <div id="shop-modal" class="modal"><div class="modal-content">
-    <h3 id="h-shop">SHOP</h3>
-    <div class="lot-item"><img src="plane_copper.png" width="35" onerror="this.style.display='none'"><div style="text-align:left; margin-left:10px;"><b id="p1-n">COPPER</b><br><small id="p1-d">+5 PLT | +0.00005 USDT</small></div><button class="buy-btn" style="width:auto; margin:0">10 TON</button></div>
-    <div class="lot-item"><img src="plane_bronze.png" width="35" onerror="this.style.display='none'"><div style="text-align:left; margin-left:10px;"><b id="p2-n">BRONZE</b><br><small id="p2-d">+10 PLT | +0.0001 USDT</small></div><button class="buy-btn" style="width:auto; margin:0">25 TON</button></div>
-    <div class="lot-item"><img src="plane_gold.png" width="35" onerror="this.style.display='none'"><div style="text-align:left; margin-left:10px;"><b id="p3-n">GOLD</b><br><small id="p3-d">+25 PLT | +0.001 USDT</small></div><button class="buy-btn" style="width:auto; margin:0">50 TON</button></div>
-    <p onclick="toggleModal('shop-modal')" style="cursor:pointer; color:#aaa;" id="c-2">Close</p>
+    <h3 id="h-shop">АНГАР</h3>
+    <div class="lot-item"><img src="plane_copper.png" width="35" onerror="this.style.display='none'"><div style="text-align:left; margin-left:10px;"><b id="p1-n">МЕДНЫЙ</b><br><small id="p1-d">+5 PLT | +0.00005 USDT</small></div><button class="buy-btn" style="width:auto; margin:0">10 TON</button></div>
+    <div class="lot-item"><img src="plane_bronze.png" width="35" onerror="this.style.display='none'"><div style="text-align:left; margin-left:10px;"><b id="p2-n">БРОНЗОВЫЙ</b><br><small id="p2-d">+10 PLT | +0.0001 USDT</small></div><button class="buy-btn" style="width:auto; margin:0">25 TON</button></div>
+    <div class="lot-item"><img src="plane_gold.png" width="35" onerror="this.style.display='none'"><div style="text-align:left; margin-left:10px;"><b id="p3-n">ЗОЛОТОЙ</b><br><small id="p3-d">+25 PLT | +0.001 USDT</small></div><button class="buy-btn" style="width:auto; margin:0">50 TON</button></div>
+    <p onclick="toggleModal('shop-modal')" style="cursor:pointer; color:#aaa;" id="c-2">Закрыть</p>
 </div></div>
 
-<div id="tasks-modal" class="modal"><div class="modal-content"><h3 id="h-tasks">TASKS</h3><p id="m-tasks">Empty</p><button class="buy-btn" onclick="toggleModal('tasks-modal')">OK</button></div></div>
-<div id="rank-modal" class="modal"><div class="modal-content"><h3 id="h-rank">RANK</h3><p id="m-rank">Coming soon...</p><button class="buy-btn" onclick="toggleModal('rank-modal')">OK</button></div></div>
+<div id="tasks-modal" class="modal"><div class="modal-content"><h3 id="h-tasks">ЗАДАНИЯ</h3><p id="m-tasks">Список пуст</p><button class="buy-btn" onclick="toggleModal('tasks-modal')">OK</button></div></div>
+<div id="rank-modal" class="modal"><div class="modal-content"><h3 id="h-rank">РЕЙТИНГ</h3><p id="m-rank">Скоро...</p><button class="buy-btn" onclick="toggleModal('rank-modal')">OK</button></div></div>
 
 <div id="friends-modal" class="modal">
     <div class="modal-content">
-        <h3 id="h-friends">FRIENDS</h3>
-        <p id="m-friends">Invite friends and get bonuses!</p>
+        <h3 id="h-friends">ДРУЗЬЯ</h3>
+        <p id="m-friends">Приглашай друзей и получай бонусы!</p>
         <div class="invite-box">
-            <div id="ref-link-text" class="ref-link">Loading link...</div>
-            <button class="buy-btn" onclick="inviteFriend()">INVITE</button>
+            <div id="ref-link-text" class="ref-link">Загрузка ссылки...</div>
+            <button class="buy-btn" onclick="inviteFriend()">ПРИГЛАСИТЬ</button>
         </div>
-        <p onclick="toggleModal('friends-modal')" style="cursor:pointer; color:#aaa; margin-top:15px;">Close</p>
+        <p onclick="toggleModal('friends-modal')" style="cursor:pointer; color:#aaa; margin-top:15px;">Закрыть</p>
     </div>
 </div>
 
-<div id="wallet-modal" class="modal"><div class="modal-content"><h3 id="h-wallet">WALLET</h3><p id="m-wallet">Connect wallet</p><button class="buy-btn" onclick="toggleModal('wallet-modal')">OK</button></div></div>
+<div id="wallet-modal" class="modal"><div class="modal-content"><h3 id="h-wallet">КОШЕЛЕК</h3><p id="m-wallet">Подключите кошелек</p><button class="buy-btn" onclick="toggleModal('wallet-modal')">OK</button></div></div>
 
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    const botUsername = "PepePilot_bot";
+    const trans = {
+        ru: { shop:"АНГАР", tasks:"ЗАДАНИЯ", rank:"РЕЙТИНГ", friends:"ДРУЗЬЯ", wallet:"КОШЕЛЕК", sett:"НАСТРОЙКИ", close:"Закрыть", p1:"МЕДНЫЙ", p2:"БРОНЗОВЫЙ", p3:"ЗОЛОТОЙ", empty:"Пусто", soon:"Скоро", invite: "ПРИГЛАСИТЬ" },
+        en: { shop:"HANGAR", tasks:"TASKS", rank:"RANK", friends:"FRIENDS", wallet:"WALLET", sett:"SETTINGS", close:"Close", p1:"COPPER", p2:"BRONZE", p3:"GOLD", empty:"Empty", soon:"Soon", invite: "INVITE" }
+    };
+
+    // --- ОБНОВЛЕННЫЕ НАСТРОЙКИ ССЫЛКИ ---
+    const botUsername = "PepePilot_bot"; // Твой рабочий юзернейм
     const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "0";
-    const inviteURL = `https://t.me/${botUsername}/game?startapp=${userId}`;
+    // Используем /game, так как ты успешно создал Short Name 'game' в BotFather
+    const inviteURL = https://t.me/${botUsername}/game?startapp=${userId};
     document.getElementById('ref-link-text').innerText = inviteURL;
 
     function inviteFriend() {
-        const msg = encodeURIComponent("Join Pepe Pilot and earn PLT with me! 🐸🚀");
-        const fullUrl = `https://t.me/share/url?url=${inviteURL}&text=${msg}`;
+        const msg = encodeURIComponent("Стань пилотом Pepe Pilot и зарабатывай PLT вместе со мной! 🐸🚀");
+        const fullUrl = https://t.me/share/url?url=${inviteURL}&text=${msg};
         tg.openTelegramLink(fullUrl);
     }
+    // ------------------------------------
 
-    function setLang(l) { }
-
-    const API_BASE = 'https://pepe-pilot.onrender.com';
-    window.energy = 100;
-    window.plt = 3;
-    window.usdt = 0.00004;
-
-    async function loadUserData() {
-        try {
-            const res = await fetch(`${API_BASE}/api/user/${userId}`);
-            const user = await res.json();
-            if (user) {
-                window.plt = user.balancePLT || 0;
-                window.usdt = user.balanceUSDT || 0;
-                updateUI();
-            }
-        } catch (e) { console.log("Error loading:", e); }
+function setLang(l) {
+        const t = trans[l];
+        document.getElementById('t-shop').innerText = t.shop; document.getElementById('t-tasks').innerText = t.tasks;
+        document.getElementById('t-rank').innerText = t.rank; document.getElementById('t-friends').innerText = t.friends;
+        document.getElementById('t-wallet').innerText = t.wallet; document.getElementById('h-sett').innerText = t.sett;
+        document.getElementById('h-shop').innerText = t.shop; document.getElementById('h-tasks').innerText = t.tasks;
+        document.getElementById('h-rank').innerText = t.rank; document.getElementById('h-friends').innerText = t.friends;
+        document.getElementById('h-wallet').innerText = t.wallet; document.getElementById('p1-n').innerText = t.p1;
+        document.getElementById('p2-n').innerText = t.p2; document.getElementById('p3-n').innerText = t.p3;
+        document.getElementById('c-1').innerText = t.close; document.getElementById('c-2').innerText = t.close;
+        document.getElementById('m-tasks').innerText = t.empty; document.getElementById('m-rank').innerText = t.soon;
     }
 
-    async function saveBalance() {
-        try {
-            await fetch(`${API_BASE}/api/collect`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tgId: userId, amount: window.plt, type: 'plt' })
-            });
-        } catch (e) { console.log("Error saving:", e); }
-    }
-
+    window.energy = 100; window.plt = 3; window.usdt = 0.00004;
     function updateUI() {
         document.getElementById('en-val').innerText = window.energy;
-        document.getElementById('p-val').innerText = Math.floor(window.plt);
+        document.getElementById('p-val').innerText = window.plt;
         document.getElementById('u-val').innerText = window.usdt.toFixed(5);
         document.getElementById('restore-btn').style.display = (window.energy <= 0) ? "block" : "none";
     }
-
-    let adWatched = false;
-    function watchAd() {
-        adWatched = false;
-        document.getElementById('ad-modal').style.display = 'flex';
-        document.getElementById('skip-btn').style.display = 'none';
-        let timer = 5;
-        const interval = setInterval(() => {
-            timer--;
-            document.getElementById('timer-val').innerText = timer;
-            if (timer <= 0) {
-                clearInterval(interval);
-                document.getElementById('skip-btn').style.display = 'block';
-                adWatched = true;
-            }
-        }, 1000);
-    }
-
-    function skipAd() {
-        if (adWatched) {
-            window.energy = 100;
-            updateUI();
-            document.getElementById('ad-modal').style.display = 'none';
-            saveBalance();
-        }
-    }
-
-    function toggleModal(id) { 
-        let m = document.getElementById(id); 
-        m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; 
-    }
+    function watchAd() { window.energy = 100; updateUI(); }
+    function toggleModal(id) { let m = document.getElementById(id); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; }
 
     let audioCtx = null;
     function playBeep(hz, dur, vol = 0.015) {
         try {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            let osc = audioCtx.createOscillator();
-            let gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.frequency.value = hz;
-            gain.gain.value = vol;
-            osc.start();
-            setTimeout(() => osc.stop(), dur * 1000);
+            let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.frequency.value = hz; gain.gain.value = vol;
+            osc.start(); setTimeout(() => osc.stop(), dur * 1000);
         } catch(e){}
     }
 
@@ -198,11 +149,9 @@
     let angle = 0, swingSpeed = 0.015, distance = 25;
 
     function preload() {
-        this.load.image('sky', 'pg.jpeg');
-        this.load.image('hook', 'kleshn.png');
-        this.load.image('usdt', 'usdt.png');
-        this.load.image('plt', 'logo..png');
-        this.load.image('plane', 'pepe.png');
+        this.load.image('sky', 'pg.jpeg'); this.load.image('hook', 'kleshn.png');
+        this.load.image('usdt', 'usdt.png'); this.load.image('plt', 'logo..png');
+        this.load.image('plane', 'pepe.png'); 
         try { this.load.audio('theme', 'music.mp3'); } catch(e){}
     }
 
@@ -218,28 +167,18 @@
 
         this.physics.add.overlap(hook, targets, (h, item) => {
             if (isLaunching && !caughtItem) {
-                caughtItem = item;
-                item.body.enable = false;
+                caughtItem = item; item.body.enable = false;
                 playBeep(400, 0.06);
-                isLaunching = false;
-                isReturning = true;
+                isLaunching = false; isReturning = true;
             }
         });
 
-        this.input.on('pointerdown', (p) => {
-            if (p.y > 60 && p.y < config.height - 80 && !isLaunching && !isReturning) {
-                if (window.energy <= 0) {
-                    watchAd();
-                } else {
-                    isLaunching = true;
-                    window.energy--;
-                    updateUI();
-                    if(bgMusic && !bgMusic.isPlaying) bgMusic.play();
-                }
+this.input.on('pointerdown', (p) => {
+            if (p.y > 60 && p.y < config.height - 80 && !isLaunching && !isReturning && window.energy > 0) {
+                isLaunching = true; window.energy--; updateUI();
+                if(bgMusic && !bgMusic.isPlaying) bgMusic.play();
             }
         });
-
-        setInterval(() => saveBalance(), 10000);
     }
 
     function spawn(scene) {
@@ -255,15 +194,9 @@
         let startX = plane.x - 5, startY = plane.y + 20;
 
         if (!isLaunching && !isReturning) {
-            angle += swingSpeed;
-            if (angle > 0.4 || angle < -0.4) swingSpeed *= -1;
-            distance = 25;
+            angle += swingSpeed; if (angle > 0.4 || angle < -0.4) swingSpeed *= -1; distance = 25;
         } else if (isLaunching) {
-            distance += 14;
-            if (distance > config.height - 110) {
-                isLaunching = false;
-                isReturning = true;
-            }
+            distance += 14; if (distance > config.height - 110) { isLaunching = false; isReturning = true; }
         } else if (isReturning) {
             distance -= 4;
             if (distance <= 25) {
@@ -276,24 +209,14 @@
                     }).setOrigin(0.5).setDepth(200);
                     this.tweens.add({ targets: txt, y: txt.y - 80, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
                     if(isP) window.plt += 1; else window.usdt += 0.00001;
-                    updateUI();
-                    caughtItem.destroy();
-                    caughtItem = null;
-                    spawn(this);
+                    updateUI(); caughtItem.destroy(); caughtItem = null; spawn(this);
                 }
             }
         }
-        hook.x = startX + Math.sin(angle) * distance;
-        hook.y = startY + Math.cos(angle) * distance;
-        hook.rotation = -angle;
+        hook.x = startX + Math.sin(angle) * distance; hook.y = startY + Math.cos(angle) * distance; hook.rotation = -angle;
         rope.clear().lineStyle(2, 0xffffff, 0.6).lineBetween(startX, startY, startX + Math.sin(angle) * (distance - 20), startY + Math.cos(angle) * (distance - 20));
-        if (caughtItem) {
-            caughtItem.x = hook.x;
-            caughtItem.y = hook.y + 15;
-        }
+        if (caughtItem) { caughtItem.x = hook.x; caughtItem.y = hook.y + 15; }
     }
-
-    loadUserData();
 </script>
 </body>
 </html>
