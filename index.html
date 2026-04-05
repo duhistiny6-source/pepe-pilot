@@ -89,8 +89,8 @@
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    // --- НАСТРОЙКИ СЕРВЕРА (ЗАМЕНИ НА СВОЮ ССЫЛКУ RENDER) ---
-    const API_URL = "https://duhistiny6-source.onrender.com"; 
+    // Ссылка на твой сервер в Render (убедись, что она верная)
+    const API_URL = "https://duhistiny6-source.onrender.com";
 
     const trans = {
         ru: { shop:"АНГАР", tasks:"ЗАДАНИЯ", rank:"РЕЙТИНГ", friends:"ДРУЗЬЯ", wallet:"КОШЕЛЕК", sett:"НАСТРОЙКИ", close:"Закрыть", p1:"МЕДНЫЙ", p2:"БРОНЗОВЫЙ", p3:"ЗОЛОТОЙ", empty:"Пусто", soon:"Скоро", invite: "ПРИГЛАСИТЬ" },
@@ -99,72 +99,4 @@
 
     const botUsername = "PepePilot_bot"; 
     const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "0";
-    const inviteURL = `https://t.me/${botUsername}/game?startapp=${userId}`;
-    document.getElementById('ref-link-text').innerText = inviteURL;
-
-    // --- ФУНКЦИИ БАЗЫ ДАННЫХ ---
-    async function loadUserData() {
-        try {
-            const response = await fetch(`${API_URL}/api/user/${userId}`);
-            const data = await response.json();
-            window.plt = data.balancePLT || 0;
-            window.usdt = data.balanceUSDT || 0;
-            updateUI();
-        } catch (e) { console.error("Ошибка загрузки данных:", e); }
-    }
-
-    async function saveCoinToDB(amount, type) {
-        try {
-            await fetch(`${API_URL}/api/collect`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tgId: userId, amount: amount, type: type })
-            });
-        } catch (e) { console.error("Ошибка сохранения:", e); }
-    }
-
-    function inviteFriend() {
-        const msg = encodeURIComponent("Стань пилотом Pepe Pilot и зарабатывай PLT вместе со мной! 🐸🚀");
-        const fullUrl = `https://t.me/share/url?url=${inviteURL}&text=${msg}`;
-        tg.openTelegramLink(fullUrl);
-    }
-
-    function setLang(l) {
-        const t = trans[l];
-        document.getElementById('t-shop').innerText = t.shop; document.getElementById('t-tasks').innerText = t.tasks;
-        document.getElementById('t-rank').innerText = t.rank; document.getElementById('t-friends').innerText = t.friends;
-        document.getElementById('t-wallet').innerText = t.wallet; document.getElementById('h-sett').innerText = t.sett;
-        document.getElementById('h-shop').innerText = t.shop; document.getElementById('h-tasks').innerText = t.tasks;
-        document.getElementById('h-rank').innerText = t.rank; document.getElementById('h-friends').innerText = t.friends;
-        document.getElementById('h-wallet').innerText = t.wallet; document.getElementById('p1-n').innerText = t.p1;
-        document.getElementById('p2-n').innerText = t.p2; document.getElementById('p3-n').innerText = t.p3;
-        document.getElementById('c-1').innerText = t.close; document.getElementById('c-2').innerText = t.close;
-        document.getElementById('m-tasks').innerText = t.empty; document.getElementById('m-rank').innerText = t.soon;
-    }
-
-    window.energy = 100; window.plt = 0; window.usdt = 0;
-    
-    function updateUI() {
-        document.getElementById('en-val').innerText = window.energy;
-        document.getElementById('p-val').innerText = window.plt;
-        document.getElementById('u-val').innerText = window.usdt.toFixed(5);
-        document.getElementById('restore-btn').style.display = (window.energy <= 0) ? "block" : "none";
-    }
-    function watchAd() { window.energy = 100; updateUI(); }
-    function toggleModal(id) { let m = document.getElementById(id); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; }
-
-    let audioCtx = null;
-    function playBeep(hz, dur, vol = 0.015) {
-        try {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.frequency.value = hz; gain.gain.value = vol;
-            osc.start(); setTimeout(() => osc.stop(), dur * 1000);
-        } catch(e){}
-    }
-
-    const config = { type: Phaser.AUTO, width: window.innerWidth, height: window.innerHeight, physics: { default: 'arcade' }, scene: { preload, create, update } };
-    const game = new Phaser.Game(config);
-    let plane,
+    const inviteURL = `https://t.me/${botUsername}/game?
